@@ -92,6 +92,7 @@ export const bm = {
   'race.holdToPause': 'Tekan lama untuk jeda',
   'race.submit': 'Hantar',
   'race.tryAgain': 'Cuba lagi.',
+  'race.setback': 'Undur 1 langkah. Cuba lagi!',
   'race.correct': 'Betul!',
   'race.simpler': 'Soalan lebih mudah',
   'race.done': 'Siap!',

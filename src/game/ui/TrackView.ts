@@ -3,10 +3,46 @@ import type { Translator } from '../../locales';
 import type { PlayerStyle, VehicleId } from '../core/players';
 import { TextPool } from './DrawContext';
 import type { Rect } from './geometry';
+import { CarMotion } from './motion';
+import type { Direction } from './motion';
 import { drawSymbol } from './shapes';
 import { THEME, hexToNumber, lighten } from './theme';
 
 export type TrackPlayer = { id: string; name: string; style: PlayerStyle };
+
+/** How a racer is drawn this frame; derived from its CarMotion. */
+type Pose = {
+  direction: Direction;
+  /** Signed speed in race steps per second. */
+  speed: number;
+  /** Body tilt in radians (positive = nose down). */
+  lean: number;
+  /** Wheel rotation in radians (increases when rolling forward). */
+  wheelAngle: number;
+};
+
+const STILL_POSE: Pose = { direction: 'still', speed: 0, lean: 0, wheelAngle: 0 };
+
+/** A short-lived puff of dust or exhaust. Pooled: the array is fixed-size and reused. */
+type Puff = {
+  alive: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+  size: number;
+  grow: number;
+  color: number;
+  alpha: number;
+};
+
+const MAX_PUFFS = 120;
+const LEAN_LIMIT = 0.14;
+const TRAIL_COLOR = 0xe2e8f0;
+// Neutral warm grey for a setback: deliberately not red and never a warning colour.
+const DUST_COLOR = 0xd6c7a8;
 
 type Confetti = {
   x: number;
@@ -30,8 +66,21 @@ export class TrackView {
   private readonly g: Phaser.GameObjects.Graphics;
   private readonly pool: TextPool;
   private rect: Rect = { x: 0, y: 0, w: 1, h: 1 };
-  private readonly target = new Map<string, number>();
-  private readonly shown = new Map<string, number>();
+  private readonly motion = new Map<string, CarMotion>();
+  private readonly emitAcc = new Map<string, number>();
+  private readonly puffs: Puff[] = Array.from({ length: MAX_PUFFS }, () => ({
+    alive: false,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    age: 0,
+    life: 1,
+    size: 0,
+    grow: 0,
+    color: 0,
+    alpha: 0,
+  }));
   private clock = 0;
   private confetti: Confetti[] = [];
   private banner: { text: string; sub: string; winnerId: string | null } | null = null;
@@ -49,8 +98,8 @@ export class TrackView {
     this.g = scene.add.graphics().setDepth(depth);
     this.pool = new TextPool(scene, depth + 1);
     for (const p of players) {
-      this.target.set(p.id, 0);
-      this.shown.set(p.id, 0);
+      this.motion.set(p.id, new CarMotion());
+      this.emitAcc.set(p.id, 0);
     }
   }
 
@@ -64,11 +113,17 @@ export class TrackView {
 
   setReducedMotion(value: boolean): void {
     this.reducedMotion = value;
+    if (value) for (const puff of this.puffs) puff.alive = false;
   }
 
+  /** Move a racer to `progress` steps. The car drives forward or rolls backward depending on the change. */
   setProgress(playerId: string, progress: number, immediate = false): void {
-    this.target.set(playerId, progress);
-    if (immediate) this.shown.set(playerId, progress);
+    this.motion.get(playerId)?.setTarget(progress, this.reducedMotion, immediate);
+  }
+
+  /** The position a racer is drawn at, in steps (fractional while moving). For tests and diagnostics. */
+  shownProgress(playerId: string): number {
+    return this.motion.get(playerId)?.progress ?? 0;
   }
 
   showCountdown(text: string | null): void {
@@ -103,18 +158,13 @@ export class TrackView {
   update(dtMs: number): void {
     if (this.destroyed) return;
     this.clock += dtMs;
-    for (const p of this.players) {
-      const goal = this.target.get(p.id) ?? 0;
-      const now = this.shown.get(p.id) ?? 0;
-      if (this.reducedMotion) {
-        this.shown.set(p.id, goal);
-      } else {
-        // exponential approach: identical feel at any frame rate
-        const k = 1 - Math.exp(-dtMs / 150);
-        const next = now + (goal - now) * k;
-        this.shown.set(p.id, Math.abs(goal - next) < 0.002 ? goal : next);
-      }
-    }
+    this.players.forEach((p, i) => {
+      const m = this.motion.get(p.id);
+      if (!m) return;
+      m.step(dtMs, this.reducedMotion);
+      if (!this.reducedMotion) this.emitPuffs(p.id, i, m, dtMs);
+    });
+    this.stepPuffs(dtMs);
     for (const c of this.confetti) {
       c.x += c.vx * dtMs + Math.sin(this.clock * 0.004 + c.phase) * 0.4;
       c.y += c.vy * dtMs;
@@ -144,6 +194,112 @@ export class TrackView {
       finishX: r.x + r.w * 0.925,
       checkerW: r.w * 0.02,
     };
+  }
+
+  /** Where a racer's lane, size and position are, from its displayed progress. */
+  private racerGeometry(
+    index: number,
+    progressSteps: number,
+  ): { x: number; baseY: number; size: number; stepPx: number } {
+    const { rect } = this;
+    const { top, laneH, startX, finishX, checkerW } = this.lanes();
+    const size = Math.min(laneH * 0.78, rect.w * 0.085);
+    const minX = startX + size * 0.5;
+    const maxX = finishX - checkerW - size * 0.55;
+    const stepPx = (maxX - minX) / this.raceLength;
+    return {
+      x: minX + stepPx * progressSteps,
+      baseY: top + index * laneH + laneH * 0.68,
+      size,
+      stepPx,
+    };
+  }
+
+  private poseOf(m: CarMotion, size: number, stepPx: number): Pose {
+    if (this.reducedMotion) return STILL_POSE;
+    const lean = Math.max(-LEAN_LIMIT, Math.min(LEAN_LIMIT, -m.accel / 1200)) + m.wobble * 0.06;
+    const wheelRadius = (size / 2) * 0.26;
+    return {
+      direction: m.direction,
+      speed: m.velocity,
+      lean,
+      wheelAngle: (m.travelled * stepPx) / wheelRadius,
+    };
+  }
+
+  private spawnPuff(init: Partial<Puff> & Pick<Puff, 'x' | 'y' | 'life' | 'size' | 'color'>): void {
+    const slot = this.puffs.find((p) => !p.alive);
+    if (!slot) return;
+    slot.alive = true;
+    slot.age = 0;
+    slot.vx = 0;
+    slot.vy = 0;
+    slot.grow = 0;
+    slot.alpha = 0.5;
+    Object.assign(slot, init);
+  }
+
+  /** Exhaust behind a car driving forward; a small dust puff at the front bumper while it rolls back. */
+  private emitPuffs(id: string, index: number, m: CarMotion, dtMs: number): void {
+    const speed = Math.abs(m.velocity);
+    if (!m.moving || speed < 0.15 || dtMs <= 0) return;
+    const forward = m.velocity > 0;
+    const rate = forward ? 22 * Math.min(1, speed / 3) : 12 * Math.min(1, speed / 1.5);
+    let acc = (this.emitAcc.get(id) ?? 0) + (rate * dtMs) / 1000;
+    const { x, baseY, size } = this.racerGeometry(index, m.progress);
+    while (acc >= 1) {
+      acc -= 1;
+      const jitter = (Math.random() - 0.5) * size * 0.12;
+      if (forward) {
+        this.spawnPuff({
+          x: x - size * 0.5,
+          y: baseY + size * 0.22 + jitter,
+          vx: -size * 0.0006,
+          vy: -size * 0.0002,
+          size: size * 0.07,
+          grow: size * 0.00018,
+          life: 420,
+          color: TRAIL_COLOR,
+          alpha: 0.55,
+        });
+      } else {
+        this.spawnPuff({
+          x: x + size * 0.45,
+          y: baseY + size * 0.3 + jitter,
+          vx: size * 0.0003,
+          vy: -size * 0.00015,
+          size: size * 0.06,
+          grow: size * 0.00014,
+          life: 520,
+          color: DUST_COLOR,
+          alpha: 0.5,
+        });
+      }
+    }
+    this.emitAcc.set(id, acc);
+  }
+
+  private stepPuffs(dtMs: number): void {
+    for (const p of this.puffs) {
+      if (!p.alive) continue;
+      p.age += dtMs;
+      if (p.age >= p.life) {
+        p.alive = false;
+        continue;
+      }
+      p.x += p.vx * dtMs;
+      p.y += p.vy * dtMs;
+      p.size += p.grow * dtMs;
+    }
+  }
+
+  private drawPuffs(): void {
+    const { g } = this;
+    for (const p of this.puffs) {
+      if (!p.alive) continue;
+      g.fillStyle(p.color, p.alpha * (1 - p.age / p.life));
+      g.fillCircle(p.x, p.y, p.size);
+    }
   }
 
   private render(): void {
@@ -229,20 +385,39 @@ export class TrackView {
     );
 
     // racers
-    const size = Math.min(laneH * 0.78, rect.w * 0.085);
+    this.drawPuffs();
     this.players.forEach((p, i) => {
-      const progress = (this.shown.get(p.id) ?? 0) / this.raceLength;
-      const minX = startX + size * 0.5;
-      const maxX = finishX - checkerW - size * 0.55;
-      const x = minX + (maxX - minX) * progress;
-      const moving = Math.abs((this.target.get(p.id) ?? 0) - (this.shown.get(p.id) ?? 0)) > 0.01;
-      const bob = !this.reducedMotion && moving ? Math.sin(this.clock * 0.03) * size * 0.04 : 0;
+      const m = this.motion.get(p.id) ?? new CarMotion();
+      const geo = this.racerGeometry(i, m.progress);
+      const { size } = geo;
+      const pose = this.poseOf(m, size, geo.stepPx);
+      const moving = !this.reducedMotion && m.moving;
+      // Speed lines behind a car driving forward: short, white, fading with speed.
+      if (moving && pose.speed > 0.6) {
+        const len = size * 0.34 * Math.min(1, pose.speed / 4);
+        g.lineStyle(Math.max(1.5, size * 0.025), 0xffffff, 0.4 * Math.min(1, pose.speed / 3));
+        for (let k = -1; k <= 1; k++) {
+          const ly = geo.baseY + k * size * 0.17;
+          const lx = geo.x - size * (0.72 + 0.05 * (k + 1));
+          g.lineBetween(lx, ly, lx - len, ly);
+        }
+      }
+      const bob = moving
+        ? Math.sin(this.clock * 0.03) * size * 0.04 * Math.min(1, Math.abs(pose.speed))
+        : 0;
+      const shake = m.wobble * size * 0.045;
       const winnerBounce =
         this.banner?.winnerId === p.id && !this.reducedMotion
           ? Math.abs(Math.sin(this.clock * 0.008)) * size * 0.18
           : 0;
-      const y = top + i * laneH + laneH * 0.68 + bob - winnerBounce;
-      this.drawRacer(p.style, x, y, size, moving);
+      const x = geo.x + shake;
+      const y = geo.baseY + bob - winnerBounce;
+      if (this.reducedMotion && m.highlightMs > 0) {
+        // Reduced motion: no movement, so a brief static ring shows that this racer's position changed.
+        g.lineStyle(Math.max(3, size * 0.06), 0xfde68a, Math.min(1, m.highlightMs / 200));
+        g.strokeCircle(x, y, size * 0.62);
+      }
+      this.drawRacer(p.style, x, y, size, pose);
       // the name chip sits just above the vehicle and stays inside its own lane
       this.pool.text(`name:${p.id}`, p.name, x, y - size * 0.36, {
         size: Math.max(11, Math.min(laneH * 0.2, 24)),
@@ -328,18 +503,21 @@ export class TrackView {
     }
   }
 
-  private drawRacer(style: PlayerStyle, x: number, y: number, size: number, moving: boolean): void {
+  private drawRacer(style: PlayerStyle, x: number, y: number, size: number, pose: Pose): void {
     const { g } = this;
     const u = size / 2;
+    const cosL = Math.cos(pose.lean);
+    const sinL = Math.sin(pose.lean);
     const body = hexToNumber(style.color);
     const dark = hexToNumber(style.dark);
     const light = lighten(style.color, 0.55);
     // ground shadow
     g.fillStyle(0x000000, 0.25);
     g.fillEllipse(x, y + u * 0.62, u * 1.9, u * 0.28);
+    // Vehicle-space point -> screen, tilted by the lean (nose up while accelerating, nose down when braking).
     const P = (px: number, py: number): { x: number; y: number } => ({
-      x: x + px * u,
-      y: y + py * u,
+      x: x + (px * cosL - py * sinL) * u,
+      y: y + (px * sinL + py * cosL) * u,
     });
     const poly = (pts: Array<[number, number]>, fill: number, stroke = dark): void => {
       const first = pts[0];
@@ -356,8 +534,15 @@ export class TrackView {
     const wheel = (px: number, py: number, r = 0.26): void => {
       g.fillStyle(0x111827, 1);
       g.fillCircle(P(px, py).x, P(px, py).y, u * r);
+      // Spokes turn with the distance rolled, so the wheels visibly roll forward or backward.
+      const c = P(px, py);
+      g.lineStyle(Math.max(1.2, u * r * 0.16), 0xe5e7eb, 1);
+      for (let k = 0; k < 3; k++) {
+        const a = pose.wheelAngle + (k * Math.PI * 2) / 3;
+        g.lineBetween(c.x, c.y, c.x + Math.cos(a) * u * r * 0.86, c.y + Math.sin(a) * u * r * 0.86);
+      }
       g.fillStyle(0xe5e7eb, 1);
-      g.fillCircle(P(px, py).x, P(px, py).y, u * r * 0.42);
+      g.fillCircle(c.x, c.y, u * r * 0.42);
     };
     const drawBadge = (px: number, py: number): void => {
       g.fillStyle(0xffffff, 1);
@@ -367,8 +552,9 @@ export class TrackView {
     const vehicle: VehicleId = style.vehicle;
     switch (vehicle) {
       case 'rocket':
-        if (moving && !this.reducedMotion) {
-          const f = 0.35 + 0.12 * Math.sin(this.clock * 0.04);
+        if (pose.direction === 'forward') {
+          // The flame grows with speed, so a burst of speed on a correct answer is visible.
+          const f = 0.2 + Math.min(0.4, pose.speed * 0.1) + 0.1 * Math.sin(this.clock * 0.04);
           poly(
             [
               [-0.9, -0.16],

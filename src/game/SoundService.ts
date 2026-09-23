@@ -1,4 +1,5 @@
-export type SoundName = 'click' | 'correct' | 'gentle' | 'tick' | 'go' | 'ready' | 'win';
+export type SoundName =
+  'click' | 'correct' | 'gentle' | 'setback' | 'tick' | 'go' | 'ready' | 'win';
 
 type Note = { freq: number; start: number; dur: number; type?: OscillatorType; gain?: number };
 
@@ -10,6 +11,11 @@ const SOUNDS: Record<SoundName, Note[]> = {
   ],
   // A wrong answer gets a soft, short, low note: never a buzzer, never punishing.
   gentle: [{ freq: 294, start: 0, dur: 0.14, type: 'sine', gain: 0.45 }],
+  // A setback is two soft descending low notes ("aww", not a buzzer), quieter than the correct chime.
+  setback: [
+    { freq: 330, start: 0, dur: 0.16, type: 'sine', gain: 0.45 },
+    { freq: 262, start: 0.15, dur: 0.24, type: 'sine', gain: 0.45 },
+  ],
   tick: [{ freq: 740, start: 0, dur: 0.07, gain: 0.6 }],
   go: [
     { freq: 660, start: 0, dur: 0.1 },

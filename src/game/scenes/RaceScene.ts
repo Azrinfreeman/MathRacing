@@ -51,6 +51,12 @@ export class RaceScene extends StageScene {
         this.track.setProgress(event.playerId, event.progress);
         break;
       }
+      case 'setback': {
+        // The car rolls backward; the panel's step counter and pips follow the new position.
+        this.track.setProgress(event.playerId, event.progress);
+        this.panelById(event.playerId)?.markDirty();
+        break;
+      }
       case 'hint': {
         this.panelById(event.playerId)?.showHint(event.hint);
         break;
@@ -101,8 +107,13 @@ export class RaceScene extends StageScene {
         sound.play('correct');
       } else if (result.status === 'incorrect') {
         panel.applyWrong(action.answer);
-        panel.showTryAgain(now);
-        sound.play('gentle');
+        if (result.setback) {
+          panel.showSetback(now);
+          sound.play('setback');
+        } else {
+          panel.showTryAgain(now);
+          sound.play('gentle');
+        }
       }
     } else if (action.type === 'simpler') {
       engine.requestSimpler(playerId, this.session.now());

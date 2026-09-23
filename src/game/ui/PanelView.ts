@@ -127,6 +127,12 @@ export class PanelView {
     this.dirty = true;
   }
 
+  /** The 3rd wrong answer moved this racer back: say so privately, in the same gentle style. */
+  showSetback(nowMs: number): void {
+    this.feedback = { kind: 'tryAgain', text: this.t('race.setback'), until: nowMs + 2400 };
+    this.dirty = true;
+  }
+
   showHint(hint: string): void {
     this.feedback = { kind: 'hint', text: hint, until: Number.POSITIVE_INFINITY };
     this.dirty = true;
