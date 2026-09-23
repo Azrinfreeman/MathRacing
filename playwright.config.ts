@@ -1,7 +1,35 @@
+import { execSync } from 'node:child_process';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-// The e2e suite runs against the production build served by `vite preview`, because the
-// service worker (offline support) only exists in the built app.
+/** Newest modification time (ms) of anything that goes into the production bundle. */
+function newestSourceTime(): number {
+  let newest = 0;
+  const visit = (p: string): void => {
+    const s = statSync(p);
+    if (s.isDirectory()) for (const name of readdirSync(p)) visit(path.join(p, name));
+    else newest = Math.max(newest, s.mtimeMs);
+  };
+  for (const p of ['src', 'public', 'index.html', 'vite.config.ts', 'package.json'])
+    if (existsSync(p)) visit(p);
+  return newest;
+}
+
+// The suite tests the production build (the service worker only exists there). Rebuild only when the
+// bundle is older than the sources: a fresh dist is reused, so repeat runs skip the ~1 minute build and
+// never test a stale bundle. Set E2E_REBUILD=1 to force a rebuild. Workers re-load this file, so only the
+// main process builds.
+const distIndex = path.join('dist', 'index.html');
+const stale =
+  process.env.E2E_REBUILD === '1' ||
+  !existsSync(distIndex) ||
+  statSync(distIndex).mtimeMs < newestSourceTime();
+if (stale && process.env.TEST_WORKER_INDEX === undefined) {
+  console.log('e2e: dist is missing or older than the sources, building...');
+  execSync('npm run build', { stdio: 'inherit' });
+}
+
 export default defineConfig({
   testDir: 'e2e',
   outputDir: 'test-results',
@@ -25,9 +53,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview',
+    command: 'npm run preview',
     url: 'http://localhost:4173',
     reuseExistingServer: true,
-    timeout: 240_000,
+    timeout: 60_000,
   },
 });

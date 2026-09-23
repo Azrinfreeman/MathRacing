@@ -38,5 +38,10 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // Command-line tooling reports through the console.
+    files: ['scripts/**', 'playwright.config.ts'],
+    rules: { 'no-console': 'off' },
+  },
   prettier,
 );
