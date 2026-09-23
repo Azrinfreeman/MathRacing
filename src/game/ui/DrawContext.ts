@@ -100,11 +100,29 @@ export class TextPool {
             }
           : { x: 0, y: 0 },
       });
-      obj.setWordWrapWidth(style.maxWidth ?? null, true);
+      // A width limit alone means "one line, shrink to fit" (names, labels, big numbers). Only text that
+      // also has a height limit is allowed to wrap onto several lines (prompts, tile captions).
+      obj.setWordWrapWidth(style.maxHeight !== undefined ? (style.maxWidth ?? null) : null, true);
       obj.setText(value);
     };
-    let size = style.size;
-    setup(size);
+    // Phaser throws ("wordWrapWidth < a single character") when a wrap box is narrower than one glyph, which
+    // can happen with very large text in an unusual window shape. That must never escape into the game loop
+    // (it would freeze the whole screen), so shrink until the wrap succeeds and finally fall back to no wrap.
+    const safeSetup = (target: number): number => {
+      let attempt = target;
+      for (let i = 0; i < 12; i++) {
+        try {
+          setup(attempt);
+          return attempt;
+        } catch {
+          attempt = Math.max(6, attempt * 0.8);
+        }
+      }
+      obj.setWordWrapWidth(null);
+      obj.setText(value);
+      return attempt;
+    };
+    let size = safeSetup(style.size);
     if (style.maxWidth !== undefined && style.maxHeight !== undefined) {
       const min = style.minSize ?? 9;
       let guard = 0;
@@ -113,16 +131,14 @@ export class TextPool {
         size > min &&
         guard < 24
       ) {
-        size = Math.max(min, size * 0.9);
-        setup(size);
+        size = safeSetup(Math.max(min, size * 0.9));
         guard++;
       }
     } else if (style.maxWidth !== undefined && obj.width > style.maxWidth + 1) {
       // single unbreakable word wider than the box: shrink to fit
       let guard = 0;
       while (obj.width > style.maxWidth + 1 && size > (style.minSize ?? 9) && guard < 24) {
-        size = Math.max(style.minSize ?? 9, size * 0.9);
-        setup(size);
+        size = safeSetup(Math.max(style.minSize ?? 9, size * 0.9));
         guard++;
       }
     }

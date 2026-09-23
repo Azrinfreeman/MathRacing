@@ -259,6 +259,7 @@ export class AppController {
           onRaceStarted: () => this.chrome?.setPhase('racing'),
           onCelebrationDone: () => void this.showResults(),
           onHidden: () => this.pauseRace(),
+          onFatal: (error) => void this.abortToSetup(error),
         },
       };
 
@@ -307,6 +308,17 @@ export class AppController {
     if (!engine) return;
     engine.endRace(this.now());
     this.chrome?.setPhase('racing');
+  }
+
+  /** The game could not keep drawing: stop cleanly and tell the teacher, rather than leave a frozen screen. */
+  private async abortToSetup(error: unknown): Promise<void> {
+    console.error('Race aborted after repeated errors', error);
+    const reason = error instanceof Error ? error.message : String(error);
+    if (this.machine.phase === 'RACING') this.engine?.pause(this.now());
+    if (this.machine.phase === 'PAUSED' || this.machine.phase === 'READY')
+      this.machine.transition('SETUP');
+    await this.showSetup();
+    toast(this.toasts, this.t('app.raceError', { reason }), 'warn', 15000);
   }
 
   private async cancelReady(): Promise<void> {

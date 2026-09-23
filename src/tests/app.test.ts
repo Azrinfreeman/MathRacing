@@ -389,6 +389,20 @@ describe('failure handling', () => {
     expect(document.querySelector('.toast-warn')?.textContent).toContain('tidak dapat disimpan');
   });
 
+  it('stops a race whose frames keep failing and returns to Setup with a message, never a frozen screen', async () => {
+    harness = await boot();
+    await click('start');
+    await click('skip-ready');
+    expect(harness.app.phase).toBe('RACING');
+    harness.session().callbacks.onFatal(new Error('boom'));
+    await flush();
+    await flush();
+    expect(harness.app.phase).toBe('SETUP');
+    expect(q('start')).not.toBeNull();
+    expect(document.querySelector('.toast-warn')?.textContent).toContain('boom');
+    expect(harness.destroyed).toBe(1);
+  });
+
   it('an invalid race setup is reported and the app stays usable', async () => {
     harness = await boot();
     await click('topics-none');

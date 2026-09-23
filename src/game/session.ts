@@ -26,6 +26,8 @@ export interface RaceSessionContext {
     onCelebrationDone(): void;
     /** The browser tab or window was hidden; the app should pause the race. */
     onHidden(): void;
+    /** Frames keep failing: the app should stop the race and return to Setup with a message. */
+    onFatal(error: unknown): void;
   };
 }
 

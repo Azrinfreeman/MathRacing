@@ -48,6 +48,10 @@ export class ReadyScene extends StageScene {
   }
 
   override update(_time: number, delta: number): void {
+    this.guardedFrame(() => this.frame(delta));
+  }
+
+  private frame(delta: number): void {
     this.stageUpdate();
     const now = this.session.now();
     if (this.countdownStart !== null && !this.launched) {

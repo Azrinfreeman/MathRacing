@@ -111,4 +111,4 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the state machine, dependen
 - Cooperative/team modes, a clock-setting widget, shape drawing and a Year 1 "2027 pack" are not implemented.
 - The service worker cannot register in Claude's embedded browser pane; offline behaviour is verified in Playwright's Chromium.
 - The Phaser bundle is about 1.4 MB (375 KB gzipped); it is loaded when the first race starts and then cached.
-- No git repository existed in the project folder, so nothing was committed.
+- `example.mp4` (the reference video, which shows real pupils) is kept on disk but deliberately not tracked by git.

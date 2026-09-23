@@ -257,19 +257,23 @@ export class TrackView {
     });
 
     if (this.countdown) {
+      // Card width follows the text ("Mula!" is the widest label) and the font is capped by both the track
+      // height and width, so the label fits any window shape (tall/narrow windows included).
+      const cardW = Math.min(rect.w * 0.4, rect.h * 1.5);
+      const cardH = rect.h * 0.76;
       g.fillStyle(0x0b1d3a, 0.55);
       g.fillRoundedRect(
-        rect.x + rect.w * 0.4,
+        rect.x + (rect.w - cardW) / 2,
         rect.y + rect.h * 0.12,
-        rect.w * 0.2,
-        rect.h * 0.76,
+        cardW,
+        cardH,
         rect.h * 0.08,
       );
       this.pool.text('countdown', this.countdown, rect.x + rect.w / 2, rect.y + rect.h / 2, {
-        size: rect.h * 0.55,
+        size: Math.min(rect.h * 0.5, cardW * 0.42),
         color: THEME.white,
         bold: true,
-        maxWidth: rect.w * 0.19,
+        maxWidth: cardW * 0.92,
         minSize: 20,
       });
     }

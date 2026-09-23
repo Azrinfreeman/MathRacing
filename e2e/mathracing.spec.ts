@@ -209,6 +209,46 @@ test.describe('layout at classroom resolutions', () => {
   }
 });
 
+// Regression: on a narrow/tall window with 150% display scaling the giant "Mula!" label made Phaser throw while
+// drawing, which killed the game loop and froze the screen on the countdown "1". Every child now confirms Ready
+// by touch (the real classroom path) in several window shapes and the race must start with no errors.
+const AWKWARD_SHAPES = [
+  [1103, 887, 1.5],
+  [800, 455, 1.5],
+  [600, 900, 1],
+  [1366, 768, 1.25],
+] as const;
+for (const [w, h, dsf] of AWKWARD_SHAPES) {
+  test.describe(`window ${w}x${h} at ${dsf}x scaling`, () => {
+    test.use({ viewport: { width: w, height: h }, deviceScaleFactor: dsf });
+
+    test('all players confirm Ready by touch, the countdown finishes and the race starts', async ({
+      page,
+    }) => {
+      const errors = await freshPage(page);
+      await fillSetup(page, {
+        seed: `E2E-SHAPE-${w}`,
+        topics: ['y1-operations'],
+        level: 1,
+        players: 4,
+        length: 5,
+      });
+      await page.getByTestId('start').click();
+      await expect(page.locator('canvas')).toBeVisible();
+      await page.waitForTimeout(600);
+      // Game pixels are device pixels; the mouse works in CSS pixels.
+      const layout = computeStageLayout(Math.round(w * dsf), Math.round(h * dsf), 4);
+      for (const panel of layout.panels) {
+        await page.mouse.click((panel.x + panel.w / 2) / dsf, (panel.y + panel.h * 0.8) / dsf);
+        await page.waitForTimeout(120);
+      }
+      await expect(page.getByTestId('pause')).toBeVisible({ timeout: 15_000 });
+      await page.screenshot({ path: `${SHOTS}/09-race-${w}x${h}-${dsf}x.png` });
+      expect(errors).toEqual([]);
+    });
+  });
+}
+
 test.describe('2x display scaling (4K panel at 200 percent)', () => {
   test.use({ viewport: { width: 960, height: 540 }, deviceScaleFactor: 2 });
 

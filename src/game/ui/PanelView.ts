@@ -330,6 +330,7 @@ export class PanelView {
         color: THEME.white,
         bold: true,
         maxWidth: btn.w * 0.9,
+        maxHeight: btn.h * 0.86,
         minSize: 10,
       },
     );

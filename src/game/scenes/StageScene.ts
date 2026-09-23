@@ -30,6 +30,29 @@ export abstract class StageScene extends Phaser.Scene {
   private readonly cleanups: Array<() => void> = [];
   private tornDown = false;
 
+  private consecutiveFrameErrors = 0;
+  private fatalReported = false;
+
+  /**
+   * Run one frame of scene work so that an error can never kill Phaser's game loop (an uncaught exception
+   * there freezes the whole screen on its last frame). The error is logged; if frames keep failing, the app is
+   * told so it can stop the race and return to Setup instead of leaving a frozen screen.
+   */
+  protected guardedFrame(work: () => void): void {
+    try {
+      work();
+      this.consecutiveFrameErrors = 0;
+    } catch (error) {
+      this.consecutiveFrameErrors += 1;
+      if (this.consecutiveFrameErrors <= 3)
+        console.error('Frame error (the game keeps running)', error);
+      if (this.consecutiveFrameErrors >= 30 && !this.fatalReported) {
+        this.fatalReported = true;
+        this.session.callbacks.onFatal(error);
+      }
+    }
+  }
+
   /** Register cleanup that must run when the scene stops OR when the whole game is destroyed. */
   protected addCleanup(fn: () => void): void {
     this.cleanups.push(fn);
