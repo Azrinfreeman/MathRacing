@@ -6,6 +6,8 @@ import type { Rect } from './geometry';
 import { CarMotion } from './motion';
 import type { Direction } from './motion';
 import { drawSymbol } from './shapes';
+import { computeTrackGeometry } from './trackGeometry';
+import type { TrackGeometry } from './trackGeometry';
 import { THEME, hexToNumber, lighten } from './theme';
 
 export type TrackPlayer = { id: string; name: string; style: PlayerStyle };
@@ -174,44 +176,21 @@ export class TrackView {
     this.render();
   }
 
-  private lanes(): {
-    top: number;
-    laneH: number;
-    startX: number;
-    finishX: number;
-    checkerW: number;
-  } {
-    const r = this.rect;
-    // A top band holds the START/FINISH labels and the teacher's toolbar (centred, in the DOM layer).
-    const topBand = Math.max(r.h * 0.085, 34);
-    const bottomPad = r.h * 0.03;
-    const top = r.y + topBand;
-    const laneH = (r.h - topBand - bottomPad) / this.players.length;
-    return {
-      top,
-      laneH,
-      startX: r.x + r.w * 0.085,
-      finishX: r.x + r.w * 0.925,
-      checkerW: r.w * 0.02,
-    };
+  private geometry(): TrackGeometry {
+    return computeTrackGeometry(this.rect, this.players.length, this.raceLength);
   }
 
   /** Where a racer's lane, size and position are, from its displayed progress. */
   private racerGeometry(
     index: number,
     progressSteps: number,
+    geo: TrackGeometry = this.geometry(),
   ): { x: number; baseY: number; size: number; stepPx: number } {
-    const { rect } = this;
-    const { top, laneH, startX, finishX, checkerW } = this.lanes();
-    const size = Math.min(laneH * 0.78, rect.w * 0.085);
-    const minX = startX + size * 0.5;
-    const maxX = finishX - checkerW - size * 0.55;
-    const stepPx = (maxX - minX) / this.raceLength;
     return {
-      x: minX + stepPx * progressSteps,
-      baseY: top + index * laneH + laneH * 0.68,
-      size,
-      stepPx,
+      x: geo.carXAt(progressSteps),
+      baseY: geo.top + index * geo.laneH + geo.laneH * 0.68,
+      size: geo.carSize,
+      stepPx: geo.stepPx,
     };
   }
 
@@ -314,7 +293,8 @@ export class TrackView {
       g.fillStyle(lighten('#0ea5e9', 0.05 + t * 0.55), 1);
       g.fillRect(rect.x, rect.y + (rect.h * i) / bands, rect.w, rect.h / bands + 1);
     }
-    const { top, laneH, startX, finishX, checkerW } = this.lanes();
+    const geo = this.geometry();
+    const { top, laneH, startLineX, finishLineX, checkerW } = geo;
     const lanesH = laneH * this.players.length;
     // asphalt
     g.fillStyle(THEME.track, 1);
@@ -330,15 +310,13 @@ export class TrackView {
       g.fillStyle(i % 2 === 0 ? 0x3b4a63 : 0x33425a, 1);
       g.fillRect(rect.x + rect.w * 0.015, y, rect.w * 0.97, laneH);
       // lane marker: colour, symbol and number (never colour alone)
-      const cx = rect.x + rect.w * 0.04;
+      const { cx, r } = geo.badge;
       const cy = y + laneH / 2;
-      const r = Math.min(laneH * 0.3, rect.w * 0.02);
       g.fillStyle(hexToNumber(p.style.color), 1);
-      g.fillCircle(cx, cy, r * 1.25);
-      drawSymbol(g, p.style.symbol, cx, cy, r * 0.8, '#ffffff');
-      // progress ticks
-      for (let s = 1; s < this.raceLength; s++) {
-        const x = startX + ((finishX - checkerW - startX) * s) / this.raceLength;
+      g.fillCircle(cx, cy, r);
+      drawSymbol(g, p.style.symbol, cx, cy, r * 0.64, '#ffffff');
+      // step marks: exactly where the car's nose stops after each correct answer
+      for (const x of geo.markXs) {
         g.lineStyle(Math.max(1, laneH * 0.015), 0xffffff, 0.22);
         g.lineBetween(x, cy - laneH * 0.14, x, cy + laneH * 0.14);
       }
@@ -354,7 +332,7 @@ export class TrackView {
     // start line (dashed) and checkered finish
     for (let y = top; y < top + lanesH; y += laneH * 0.14) {
       g.lineStyle(Math.max(2, laneH * 0.03), 0xffffff, 0.9);
-      g.lineBetween(startX - laneH * 0.35, y, startX - laneH * 0.35, y + laneH * 0.08);
+      g.lineBetween(startLineX, y, startLineX, y + laneH * 0.08);
     }
     const cell = laneH / 4;
     const rows = Math.ceil(lanesH / cell);
@@ -362,7 +340,7 @@ export class TrackView {
       for (let col = 0; col < 2; col++) {
         g.fillStyle((row + col) % 2 === 0 ? 0x0f172a : 0xffffff, 1);
         g.fillRect(
-          finishX - checkerW + (col * checkerW) / 2,
+          finishLineX + (col * checkerW) / 2,
           top + row * cell,
           checkerW / 2,
           Math.min(cell, top + lanesH - (top + row * cell)),
@@ -370,7 +348,7 @@ export class TrackView {
       }
     }
     const labelSize = Math.max(11, Math.min(laneH * 0.22, 22));
-    this.pool.text('start', this.t('race.startLine'), startX - laneH * 0.35, top - laneH * 0.08, {
+    this.pool.text('start', this.t('race.startLine'), startLineX, top - laneH * 0.08, {
       size: labelSize,
       color: THEME.white,
       bold: true,
@@ -379,7 +357,7 @@ export class TrackView {
     this.pool.text(
       'finish',
       this.t('race.finishLine'),
-      finishX - checkerW / 2,
+      finishLineX + checkerW / 2,
       top - laneH * 0.08,
       { size: labelSize, color: THEME.white, bold: true, ay: 1 },
     );
@@ -388,17 +366,17 @@ export class TrackView {
     this.drawPuffs();
     this.players.forEach((p, i) => {
       const m = this.motion.get(p.id) ?? new CarMotion();
-      const geo = this.racerGeometry(i, m.progress);
-      const { size } = geo;
-      const pose = this.poseOf(m, size, geo.stepPx);
+      const racer = this.racerGeometry(i, m.progress, geo);
+      const { size } = racer;
+      const pose = this.poseOf(m, size, racer.stepPx);
       const moving = !this.reducedMotion && m.moving;
       // Speed lines behind a car driving forward: short, white, fading with speed.
       if (moving && pose.speed > 0.6) {
         const len = size * 0.34 * Math.min(1, pose.speed / 4);
         g.lineStyle(Math.max(1.5, size * 0.025), 0xffffff, 0.4 * Math.min(1, pose.speed / 3));
         for (let k = -1; k <= 1; k++) {
-          const ly = geo.baseY + k * size * 0.17;
-          const lx = geo.x - size * (0.72 + 0.05 * (k + 1));
+          const ly = racer.baseY + k * size * 0.17;
+          const lx = racer.x - size * (0.72 + 0.05 * (k + 1));
           g.lineBetween(lx, ly, lx - len, ly);
         }
       }
@@ -410,8 +388,8 @@ export class TrackView {
         this.banner?.winnerId === p.id && !this.reducedMotion
           ? Math.abs(Math.sin(this.clock * 0.008)) * size * 0.18
           : 0;
-      const x = geo.x + shake;
-      const y = geo.baseY + bob - winnerBounce;
+      const x = racer.x + shake;
+      const y = racer.baseY + bob - winnerBounce;
       if (this.reducedMotion && m.highlightMs > 0) {
         // Reduced motion: no movement, so a brief static ring shows that this racer's position changed.
         g.lineStyle(Math.max(3, size * 0.06), 0xfde68a, Math.min(1, m.highlightMs / 200));

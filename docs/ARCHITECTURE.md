@@ -69,7 +69,7 @@ Pure models (`game/widgets`) hold input state and lay out their controls; `Panel
 
 ## Rendering
 
-`TextPool` reuses Phaser Text objects by key (no per-frame leaks), `VisualRenderer` draws every question picture (clock, money, shapes, nets, fractions, ruler, measuring cup, pictograph, bar chart, pattern) as original vector art, and `TrackView` draws lanes, racers with five distinct silhouettes, countdown and celebration. All motion is time-based (delta ms), so it is frame-rate independent; reduced motion snaps instead of animating. The layout (`game/ui/layout.ts`) is computed from the real viewport and player count: the track takes 42-46% of the height and the panels split the rest equally.
+`TextPool` reuses Phaser Text objects by key (no per-frame leaks), `VisualRenderer` draws every question picture (clock, money, shapes, nets, fractions, ruler, measuring cup, pictograph, bar chart, pattern) as original vector art, and `TrackView` draws lanes, racers with five distinct silhouettes, countdown and celebration. All motion is time-based (delta ms), so it is frame-rate independent; reduced motion snaps instead of animating. The layout (`game/ui/layout.ts`) is computed from the real viewport and player count: the track takes 42-46% of the height and the panels split the rest equally. Inside the track, `game/ui/trackGeometry.ts` (pure) places the lane badges, start line, step marks and finish chequer as positions of the car's nose, with margins from the lane height, so the marks line up with the cars on every screen.
 
 ## Persistence and reporting
 

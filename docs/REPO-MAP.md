@@ -4,7 +4,7 @@
 
 ## e2e/
 
-- `mathracing.spec.ts` (493): classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
+- `mathracing.spec.ts` (535): classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
 - `setback.spec.ts` (161): setback after 3 wrong answers
 - `support.ts` (219): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, readAttempts, readSessionCount
 
@@ -89,13 +89,14 @@
 
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
 - `PanelView.ts` (703): PanelAction, PanelMode, PanelView
-- `TrackView.ts` (703): TrackPlayer, TrackView
+- `TrackView.ts` (681): TrackPlayer, TrackView
 - `VisualRenderer.ts` (845): drawVisual
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (109): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones
 - `motion.ts` (109): Direction, CarMotion
 - `shapes.ts` (282): drawPolygon, regularPolygon, starPoints, drawSymbol, drawObject, drawShape2D
 - `theme.ts` (50): FONT_FAMILY, THEME, hexToNumber, lighten, darken
+- `trackGeometry.ts` (84): CAR_TAIL, CAR_NOSE, TrackGeometry, computeTrackGeometry
 
 ## src/game/widgets/
 
@@ -126,7 +127,7 @@
 
 - `IndexedDbSessionRepository.ts` (125): IndexedDbSessionRepository, RepositoryChoice, createRepository
 - `SessionRepository.ts` (74): SessionRepository, compareAttempts, InMemorySessionRepository
-- `settings.ts` (137): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, withSystemDefaults, SettingsStore
+- `settings.ts` (137): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, SettingsStore
 
 ## src/tests/
 
@@ -142,5 +143,6 @@
 - `raceEngine.test.ts` (703): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint
 - `seededRng.test.ts` (95): SeededRng
 - `stateMachine.test.ts` (60): SessionStateMachine
-- `storage.test.ts` (337): session repositories, CSV export, settings
+- `storage.test.ts` (344): session repositories, CSV export, settings
+- `trackGeometry.test.ts` (56): track geometry
 - `widgets.test.ts` (295): NumberPadWidget, ChoiceTilesWidget, TapPictureWidget, OrderStripWidget, BuildValueWidget, hitControl, widget layout across every template

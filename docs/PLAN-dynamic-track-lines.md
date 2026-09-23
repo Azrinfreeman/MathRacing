@@ -1,6 +1,6 @@
 # Implementation plan: start line, step marks and finish line that fit every screen
 
-Status: proposed, not started. Target screens: Android tablets (1280x800, 1920x1200) and TV smartboards
+Status: implemented (D1-D3, D5 as recommended; D4 kept the thin marks). Target screens: Android tablets (1280x800, 1920x1200) and TV smartboards
 (1920x1080 CSS pixels, often 3840x2160 at 2x), plus desktop windows.
 
 ## 1. What is being asked
