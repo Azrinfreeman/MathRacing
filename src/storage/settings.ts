@@ -36,6 +36,11 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 const KEY = 'mathracing.settings.v1';
+/**
+ * Stored alongside the settings. Before revision 2 the app copied the device's reduced-motion flag into
+ * `reducedMotion` and saved it, so an old stored `true` usually was not the teacher's choice (DECISIONS #33).
+ */
+const REVISION = 2;
 
 export interface KeyValueStore {
   getItem(key: string): string | null;
@@ -89,13 +94,6 @@ export function sanitizeSettings(raw: unknown): Settings {
   };
 }
 
-/** First run: honour the operating system's reduced-motion preference until the teacher chooses otherwise. */
-export function withSystemDefaults(settings: Settings): Settings {
-  const prefersReduced =
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  return prefersReduced ? { ...settings, reducedMotion: true } : settings;
-}
-
 export class SettingsStore {
   /**
    * @param onError called (never thrown) when storage is blocked or corrupt, so the app can log it. Settings
@@ -107,21 +105,23 @@ export class SettingsStore {
   ) {}
 
   load(): Settings {
-    if (!this.store) return withSystemDefaults(sanitizeSettings(null));
+    if (!this.store) return sanitizeSettings(null);
     try {
       const text = this.store.getItem(KEY);
-      if (text === null) return withSystemDefaults(sanitizeSettings(null));
-      return sanitizeSettings(JSON.parse(text) as unknown);
+      const raw = text === null ? null : (JSON.parse(text) as unknown);
+      const settings = sanitizeSettings(raw);
+      const revision = (raw as { revision?: unknown } | null)?.revision;
+      return revision === REVISION ? settings : { ...settings, reducedMotion: false };
     } catch (error) {
       this.onError(error);
-      return withSystemDefaults(sanitizeSettings(null));
+      return sanitizeSettings(null);
     }
   }
 
   save(settings: Settings): void {
     if (!this.store) return;
     try {
-      this.store.setItem(KEY, JSON.stringify(settings));
+      this.store.setItem(KEY, JSON.stringify({ ...settings, revision: REVISION }));
     } catch (error) {
       this.onError(error);
     }

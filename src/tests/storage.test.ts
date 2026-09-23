@@ -314,19 +314,26 @@ describe('settings', () => {
     expect(onError).toHaveBeenCalledOnce();
   });
 
-  it('defaults reduced motion to on when the system asks for it, but a saved choice wins', () => {
+  it('keeps animation on by default even when the device asks for reduced motion; a saved choice wins', () => {
     const original = globalThis.matchMedia;
     globalThis.matchMedia = ((q: string) => ({
       matches: q.includes('reduce'),
     })) as typeof matchMedia;
     try {
-      expect(new SettingsStore(fakeStore()).load().reducedMotion).toBe(true);
+      expect(new SettingsStore(fakeStore()).load().reducedMotion).toBe(false);
       const store = fakeStore();
-      new SettingsStore(store).save({ ...DEFAULT_SETTINGS, reducedMotion: false });
-      expect(new SettingsStore(store).load().reducedMotion).toBe(false);
+      new SettingsStore(store).save({ ...DEFAULT_SETTINGS, reducedMotion: true });
+      expect(new SettingsStore(store).load().reducedMotion).toBe(true);
     } finally {
       globalThis.matchMedia = original;
     }
+  });
+
+  it('drops a reduced-motion flag saved by older builds (it was copied from the device), keeping the rest', () => {
+    const old = JSON.stringify({ ...DEFAULT_SETTINGS, reducedMotion: true, language: 'en' });
+    const store = fakeStore({ 'mathracing.settings.v1': old });
+    const loaded = new SettingsStore(store).load();
+    expect(loaded).toMatchObject({ reducedMotion: false, language: 'en' });
   });
 
   it('works with no storage at all', () => {
