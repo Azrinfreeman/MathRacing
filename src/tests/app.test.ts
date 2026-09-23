@@ -282,6 +282,24 @@ describe('teacher settings', () => {
     await click('teacher-back');
     expect(q('menu-race')).not.toBeNull();
   });
+
+  it('cruise is on by default; the setback option appears only for the step race', async () => {
+    const store = memoryStore();
+    harness = await boot(undefined, new SettingsStore(store));
+    await click('menu-teacher');
+    expect(q('opt-cruise')).not.toBeNull();
+    expect(q('opt-setback')).toBeNull();
+    await click('opt-cruise');
+    expect(JSON.parse(store.getItem('mathracing.settings.v1') ?? '')).toMatchObject({
+      cruiseEnabled: false,
+    });
+    expect(q('opt-setback')).not.toBeNull();
+    await click('teacher-back');
+    await openSetup();
+    await click('step-4');
+    await click('start');
+    expect(harness.session().config.movement).toBe('steps');
+  });
 });
 
 describe('race flow', () => {
@@ -335,7 +353,9 @@ describe('race flow', () => {
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({ seed: 'APP-SEED', winnerName: 'Aina', raceLength: 5 });
     const attempts = await harness.repo.getAttempts(sessions[0]?.sessionId as string);
-    expect(attempts).toHaveLength(5);
+    // Cruise: boosts land over time, so a pupil may answer a few more than raceLength before arriving.
+    expect(attempts.length).toBeGreaterThanOrEqual(1);
+    expect(attempts).toHaveLength(harness.session().engine.attempts.length);
     expect(attempts.every((a: AttemptRecord) => a.correct && a.playerName === 'Aina')).toBe(true);
   });
 
@@ -441,7 +461,7 @@ describe('export and deletion', () => {
     expect(BOM.charCodeAt(0)).toBe(0xfeff);
     const text = await readBlob(blob); // decoding strips the BOM
     const lines = text.trim().split('\r\n');
-    expect(lines).toHaveLength(6); // header + 5 attempts
+    expect(lines).toHaveLength(1 + harness.session().engine.attempts.length); // header + attempts
     expect(lines[0]).toContain('session_id');
     expect(q('results-status')?.textContent).toMatch(/mathracing-.*\.csv/);
   });

@@ -6,6 +6,7 @@ import type { GameHandle } from '../game/createGame';
 import { RaceEngine } from '../game/core/RaceEngine';
 import type { AttemptRecord, RaceConfig, SessionMeta } from '../game/core/RaceState';
 import { DEFAULT_RACE_TIMING, SessionStateMachine } from '../game/core/RaceState';
+import { DEFAULT_CRUISE } from '../game/core/cruise';
 import { createSessionSeed } from '../game/core/SeededRng';
 import { PLAYER_STYLES, styleForSlot } from '../game/core/players';
 import type { RaceSessionContext } from '../game/session';
@@ -284,7 +285,10 @@ export class AppController {
         language: input.language,
         hintsEnabled: input.hintsEnabled,
         supportEnabled: input.supportEnabled,
-        setbackEnabled: input.setbackEnabled && input.mode === 'quick',
+        // Setback belongs to the step race; in cruise a wrong answer slows the car instead.
+        setbackEnabled: input.setbackEnabled && input.mode === 'quick' && !input.cruiseEnabled,
+        movement: input.cruiseEnabled ? 'cruise' : 'steps',
+        cruise: DEFAULT_CRUISE,
         ...DEFAULT_RACE_TIMING,
         successDelayMs: input.reducedMotion ? 450 : DEFAULT_RACE_TIMING.successDelayMs,
       };
@@ -327,6 +331,7 @@ export class AppController {
         winnerName: null,
         finishedAtMs: null,
         setbackEnabled: config.setbackEnabled,
+        movement: config.movement,
       };
       this.repo.saveSession(this.meta).catch((e: unknown) => this.reportStorageError(e));
       engine.on((e) => {

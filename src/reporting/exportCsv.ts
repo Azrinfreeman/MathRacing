@@ -49,6 +49,8 @@ export const CSV_COLUMNS: readonly Column[] = [
   { header: 'support_used', value: (r) => r.supportUsed },
   { header: 'step_delta', value: (r) => r.stepDelta },
   { header: 'progress_after', value: (r) => r.progressAfter },
+  // Records saved before cruise movement have no speed effect; the cell is then left empty.
+  { header: 'speed_effect', value: (r) => r.speedEffect },
   { header: 'parameters_json', value: (r) => r.parameters },
 ];
 

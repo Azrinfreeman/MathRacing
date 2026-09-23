@@ -17,8 +17,10 @@ export type SetupInput = {
   reducedMotion: boolean;
   hintsEnabled: boolean;
   supportEnabled: boolean;
-  /** Quick Race only: the 3rd wrong answer to one question moves the racer back a step. */
+  /** Quick Race step movement only: the 3rd wrong answer to one question moves the racer back a step. */
   setbackEnabled: boolean;
+  /** Cars drive forward on their own; answers boost or slow them. Off = the step race. */
+  cruiseEnabled: boolean;
   /** Teacher-supplied seed for reproducing a session, or null for a random one. */
   seed: string | null;
 };
@@ -42,6 +44,7 @@ export type SetupState = {
   hintsEnabled: boolean;
   supportEnabled: boolean;
   setbackEnabled: boolean;
+  cruiseEnabled: boolean;
   seed: string;
 };
 
@@ -60,6 +63,7 @@ export function stateFromSettings(s: Settings): SetupState {
     hintsEnabled: s.hintsEnabled,
     supportEnabled: s.supportEnabled,
     setbackEnabled: s.setbackEnabled,
+    cruiseEnabled: s.cruiseEnabled,
     seed: '',
   };
 }
@@ -72,6 +76,7 @@ export function settingsFromState(s: SetupState): Settings {
     hintsEnabled: s.hintsEnabled,
     supportEnabled: s.supportEnabled,
     setbackEnabled: s.setbackEnabled,
+    cruiseEnabled: s.cruiseEnabled,
     year: s.year,
     topicIds: [...s.topicIds],
     level: s.level,
@@ -129,6 +134,7 @@ export function buildSetupInput(s: SetupState): SetupInput | null {
     hintsEnabled: s.hintsEnabled,
     supportEnabled: s.supportEnabled,
     setbackEnabled: s.setbackEnabled,
+    cruiseEnabled: s.cruiseEnabled,
     seed: seed === '' ? null : seed,
   };
 }

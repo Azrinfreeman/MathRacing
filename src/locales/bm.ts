@@ -57,6 +57,9 @@ export const bm = {
   'setup.hints': 'Petunjuk selepas 2 kali salah',
   'setup.support': 'Sokongan selepas 3 kali salah (gambar atau soalan lebih mudah)',
   'setup.setback': 'Kenderaan undur satu langkah selepas 3 kali salah (Lumba Pantas)',
+  'setup.cruise': 'Kenderaan bergerak sendiri (jawapan betul memecut, salah memperlahan)',
+  'setup.cruiseNote':
+    'Semua kenderaan bergerak ke hadapan pada kelajuan yang sama. Jawapan betul memberi pecutan; jawapan salah memperlahankan kenderaan seketika, tidak pernah mengundur. Tutup untuk lumba langkah demi langkah.',
   'setup.setbackNote':
     'Undur hanya sekali bagi setiap soalan, tidak pernah lebih rendah daripada garisan mula, dan tidak berlaku dalam mod Latihan. Peraturan sama untuk semua murid dan direkodkan untuk guru.',
   'setup.supportNote':
@@ -123,6 +126,8 @@ export const bm = {
   'race.submit': 'Hantar',
   'race.tryAgain': 'Cuba lagi.',
   'race.setback': 'Undur 1 langkah. Cuba lagi!',
+  'race.boost': 'Laju!',
+  'race.slowed': 'Perlahan sikit. Cuba lagi!',
   'race.correct': 'Betul!',
   'race.simpler': 'Soalan lebih mudah',
   'race.done': 'Siap!',
@@ -174,7 +179,7 @@ export const bm = {
   'help.how.1':
     'Setiap murid berdiri di hadapan kotaknya dan menjawab soalan sendiri pada masa yang sama.',
   'help.how.2':
-    'Jawapan betul menggerakkan kenderaan murid itu satu langkah ke hadapan. Dalam Lumba Pantas, jika soalan yang sama dijawab salah 3 kali, kenderaan undur satu langkah (sekali sahaja bagi setiap soalan).',
+    'Semua kenderaan bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut kenderaan murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur).',
   'help.how.3':
     'Selepas 2 kali salah, satu petunjuk kecil muncul. Selepas 3 kali salah, sokongan boleh ditawarkan.',
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',

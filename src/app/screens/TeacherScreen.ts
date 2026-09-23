@@ -113,14 +113,27 @@ export class TeacherScreen {
         ),
         this.toggle(
           t,
-          'setback',
-          'setup.setback',
-          () => s.setbackEnabled,
-          (v) => (s.setbackEnabled = v),
+          'cruise',
+          'setup.cruise',
+          () => s.cruiseEnabled,
+          (v) => (s.cruiseEnabled = v),
         ),
+        // The setback is part of the step race only, so it is offered only when cruise is off.
+        s.cruiseEnabled
+          ? null
+          : this.toggle(
+              t,
+              'setback',
+              'setup.setback',
+              () => s.setbackEnabled,
+              (v) => (s.setbackEnabled = v),
+            ),
       ),
       h('p', { class: 'note note-small', text: t('setup.supportNote') }),
-      h('p', { class: 'note note-small', text: t('setup.setbackNote') }),
+      h('p', {
+        class: 'note note-small',
+        text: t(s.cruiseEnabled ? 'setup.cruiseNote' : 'setup.setbackNote'),
+      }),
     );
 
     const session = h(

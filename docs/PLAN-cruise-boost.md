@@ -1,6 +1,16 @@
 # Implementation plan: cruising cars, boost on correct, slow-down on wrong
 
-Status: **proposal, not implemented.** Section 9 lists the decisions that are yours; the plan follows the recommended answer for each.
+Status: **approved** (see DECISIONS #36). The owner answered section 9 as follows, and the build follows them:
+
+| #   | Decision taken                                                                                              |
+| --- | ----------------------------------------------------------------------------------------------------------- |
+| D1  | A teacher toggle keeps the step race available; **cruise is the default from now on**.                      |
+| D2  | **Practice cruises too** (no winner; the race ends when every car has reached the finish).                  |
+| D3  | Cruise replaces the setback: a wrong answer only makes the trip to the finish slower. Setback is step-only. |
+| D4  | Section 3 numbers, tuned after a classroom try.                                                             |
+| D5  | A car may finish on cruise alone; answering correctly is the only way to go faster.                         |
+
+The original proposal follows. Where it says Practice stays step-based (4.3, 4.4, D2), D2 above overrides it.
 
 ## 1. What is being asked
 

@@ -1,4 +1,5 @@
 import type { GeneratedQuestion, Language, SubmittedAnswer } from '../../curriculum/schema';
+import type { CruiseConfig } from './cruise';
 
 /** The explicit application state machine: every screen the game can be in. */
 export type SessionPhase = 'SETUP' | 'READY' | 'RACING' | 'PAUSED' | 'FINISHED' | 'RESULTS';
@@ -60,6 +61,14 @@ export const DEFAULT_RACE_LENGTH = 8;
 
 export type SupportKind = 'none' | 'visual' | 'simpler';
 
+/**
+ * How cars move. 'cruise' (the default): every car drives forward at the same pace, a correct answer adds a
+ * boost and a wrong answer slows the car for a while. 'steps': a car moves one step per correct answer only.
+ */
+export type Movement = 'cruise' | 'steps';
+
+export type SpeedEffect = 'boost' | 'slow' | 'none';
+
 export type PlayerConfig = {
   id: string;
   /** Display name chosen for this session (nickname or initials; never a surname). */
@@ -83,6 +92,9 @@ export type RaceConfig = {
    * moves back `setbackSteps` (never below the start line), at most once per question. Teacher-switchable.
    */
   setbackEnabled: boolean;
+  /** Cruise or steps. The setback rule applies to steps only; in cruise a wrong answer slows the car. */
+  movement: Movement;
+  cruise: CruiseConfig;
   setbackAfter: number;
   setbackSteps: number;
   /** How long a player's answer stays locked while the success animation resolves. */
@@ -102,7 +114,17 @@ export type PlayerPhase = 'answering' | 'resolving' | 'done';
 export type PlayerRaceState = {
   readonly id: string;
   readonly name: string;
+  /** Whole steps reached: `Math.floor(distance)`. Panels, results and events use this. */
   progress: number;
+  /** Where the car really is, in fractional steps. In step movement it always equals `progress`. */
+  distance: number;
+  /** Cruise: boost distance still to be delivered, in steps. */
+  boostLeft: number;
+  /** Cruise: the car is slowed while time is before this. */
+  slowUntilMs: number;
+  /** Cruise: wrong answers that slowed the car (teacher evidence only). */
+  totalSlowdowns: number;
+  lastCorrectAtMs: number | null;
   phase: PlayerPhase;
   /**
    * Index of the current question in this player's own sequence. It comes from `itemsDealt`, NOT from
@@ -171,8 +193,13 @@ export type AttemptRecord = {
   outcome: AttemptOutcome;
   /** Change in the racer's position caused by this attempt: +1 correct, -1 setback, otherwise 0. */
   stepDelta: number;
-  /** The racer's position after this attempt. */
+  /**
+   * Steps: the racer's position after this attempt. Cruise: the car's position (2 decimals) when the attempt
+   * was made; a correct answer's boost is delivered after it.
+   */
   progressAfter: number;
+  /** Cruise: 'boost' for correct, 'slow' for wrong; always 'none' in step movement and for markers. */
+  speedEffect: SpeedEffect;
 };
 
 export type SessionMeta = {
@@ -192,6 +219,7 @@ export type SessionMeta = {
   finishedAtMs: number | null;
   /** Whether the setback rule was on for this session. */
   setbackEnabled: boolean;
+  movement: Movement;
 };
 
 export type RejectReason =
@@ -212,6 +240,8 @@ export type SubmitResult =
       supportOffered: boolean;
       /** True when this wrong answer moved the racer back a step. */
       setback: boolean;
+      /** True when this wrong answer slowed the car (cruise). */
+      slowed: boolean;
     }
   | { status: 'correct'; progress: number; finishedRace: boolean; isWinner: boolean };
 
@@ -238,6 +268,8 @@ export type RaceEvent =
   | { type: 'attempt'; record: AttemptRecord }
   | { type: 'progress'; playerId: string; progress: number; target: number }
   | { type: 'setback'; playerId: string; from: number; progress: number }
+  | { type: 'boost'; playerId: string }
+  | { type: 'slowed'; playerId: string }
   | { type: 'hint'; playerId: string; hint: string }
   | { type: 'support'; playerId: string; kind: 'visual' | 'simpler-offered' }
   | { type: 'winner'; playerId: string; atMs: number; revised: boolean }

@@ -12,6 +12,8 @@ export type Settings = {
   hintsEnabled: boolean;
   supportEnabled: boolean;
   setbackEnabled: boolean;
+  /** Cars drive forward on their own (cruise); off = the step race. Default on (DECISIONS #36). */
+  cruiseEnabled: boolean;
   year: Year;
   topicIds: string[];
   level: Level;
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hintsEnabled: true,
   supportEnabled: true,
   setbackEnabled: true,
+  cruiseEnabled: true,
   year: 1,
   topicIds: ['y1-operations'],
   level: 1,
@@ -85,6 +88,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     hintsEnabled: pickBoolean(r.hintsEnabled, d.hintsEnabled),
     supportEnabled: pickBoolean(r.supportEnabled, d.supportEnabled),
     setbackEnabled: pickBoolean(r.setbackEnabled, d.setbackEnabled),
+    cruiseEnabled: pickBoolean(r.cruiseEnabled, d.cruiseEnabled),
     year,
     topicIds: topicIds.length > 0 ? topicIds : year === 1 ? ['y1-operations'] : ['y2-operations'],
     level,

@@ -1,6 +1,8 @@
 import { evaluateAnswer } from '../../curriculum/answers';
 import type { QuestionSource } from '../../curriculum/blueprint';
 import type { GeneratedQuestion, SubmittedAnswer } from '../../curriculum/schema';
+import type { SpeedState } from './cruise';
+import { advanceCruise, applyBoost, applySlow, speedStateAt } from './cruise';
 import type {
   AttemptOutcome,
   AttemptRecord,
@@ -11,6 +13,7 @@ import type {
   RaceResult,
   SessionPhase,
   SessionStateMachine,
+  SpeedEffect,
   Standing,
   SubmitResult,
 } from './RaceState';
@@ -20,6 +23,9 @@ export type RaceEngineOptions = {
   /** Added to a monotonic `atMs` to produce the epoch timestamp stored in attempt records. */
   epochOffsetMs?: number;
 };
+
+/** Crossing times closer than this are a tie. */
+const TIE_MS = 1e-3;
 
 export class RaceConfigError extends Error {
   constructor(message: string) {
@@ -46,6 +52,8 @@ export class RaceEngine {
   private winner: { playerId: string; atMs: number } | null = null;
   private endedEarly = false;
   private pausedAtMs: number | null = null;
+  /** Cruise: every car's position is known up to this time. */
+  private integratedToMs = 0;
   private recordCounter = 0;
 
   constructor(
@@ -73,6 +81,11 @@ export class RaceEngine {
       id: p.id,
       name: p.name,
       progress: 0,
+      distance: 0,
+      boostLeft: 0,
+      slowUntilMs: 0,
+      totalSlowdowns: 0,
+      lastCorrectAtMs: null,
       phase: 'answering',
       itemIndex: 0,
       itemsDealt: 0,
@@ -114,6 +127,23 @@ export class RaceEngine {
     return this.config.mode;
   }
 
+  get movement(): RaceConfig['movement'] {
+    return this.config.movement;
+  }
+
+  private get cruising(): boolean {
+    return this.config.movement === 'cruise';
+  }
+
+  /** How a car is moving now, for drawing: 'stopped' in step movement, before the start and after the finish. */
+  speedState(playerId: string): SpeedState {
+    const p = this.player(playerId);
+    const phase = this.machine.phase;
+    if (!p || !this.cruising || p.phase === 'done') return 'stopped';
+    if (phase !== 'RACING' && phase !== 'PAUSED') return 'stopped';
+    return speedStateAt(p, this.integratedToMs);
+  }
+
   get winnerId(): string | null {
     return this.winner?.playerId ?? null;
   }
@@ -140,6 +170,7 @@ export class RaceEngine {
   /** READY -> RACING. Deals the first item to every player. */
   start(atMs: number): void {
     this.machine.transition('RACING');
+    this.integratedToMs = atMs;
     for (const p of this.playerStates) this.dealNext(p, atMs);
     this.emit({ type: 'started', atMs });
   }
@@ -161,7 +192,10 @@ export class RaceEngine {
         p.itemShownAtMs += delta;
         if (p.firstActionAtMs !== null) p.firstActionAtMs += delta;
         if (p.resolveAtMs !== null) p.resolveAtMs += delta;
+        if (p.slowUntilMs > pausedAt) p.slowUntilMs += delta;
       }
+      // Cruise: the paused stretch is skipped; the stretch before the pause is still integrated next tick.
+      if (this.integratedToMs <= pausedAt) this.integratedToMs += delta;
     }
     this.pausedAtMs = null;
     this.emit({ type: 'resumed', atMs });
@@ -170,6 +204,10 @@ export class RaceEngine {
   /** Advance timers: finish success animations and deal the next item. Call every frame. */
   tick(atMs: number): void {
     if (this.machine.phase !== 'RACING') return;
+    if (this.cruising) {
+      this.advanceTo(atMs);
+      if (this.machine.phase !== 'RACING') return;
+    }
     for (const p of this.playerStates) {
       if (p.phase === 'resolving' && p.resolveAtMs !== null && atMs >= p.resolveAtMs) {
         this.dealNext(p, atMs);
@@ -179,6 +217,7 @@ export class RaceEngine {
 
   /** Teacher ends the race early: no winner is declared, open items are recorded as unsolved. */
   endRace(atMs: number): void {
+    if (this.cruising && this.machine.phase === 'RACING') this.advanceTo(atMs);
     if (this.machine.phase !== 'RACING' && this.machine.phase !== 'PAUSED') return;
     this.endedEarly = this.winner === null;
     for (const p of this.playerStates) this.closeOpenItem(p, atMs, 'unsolved');
@@ -207,6 +246,11 @@ export class RaceEngine {
     if (phase === 'FINISHED' || phase === 'RESULTS') return this.lateSubmit(p, answer, atMs);
     if (phase !== 'RACING') return { status: 'rejected', reason: 'not-racing' };
 
+    if (this.cruising) {
+      // Bring every car up to this moment first: another car may already have finished.
+      this.advanceTo(atMs);
+      if (this.machine.phase !== 'RACING') return { status: 'rejected', reason: 'race-finished' };
+    }
     if (p.phase === 'done') return { status: 'rejected', reason: 'done' };
     if (p.phase === 'resolving') return { status: 'rejected', reason: 'resolving' };
     const question = p.question;
@@ -223,12 +267,16 @@ export class RaceEngine {
     // Quick Race only, and never below the start line.
     const setback =
       !evaluation.correct &&
+      this.config.movement === 'steps' &&
       this.config.setbackEnabled &&
       this.config.mode === 'quick' &&
       attemptNumber === this.config.setbackAfter &&
       !p.setbackApplied &&
       p.progress > 0;
     const setbackSteps = setback ? Math.min(this.config.setbackSteps, p.progress) : 0;
+    let speedEffect: SpeedEffect = 'none';
+    if (this.cruising) speedEffect = evaluation.correct ? 'boost' : 'slow';
+    const correctDelta = this.cruising ? this.config.cruise.boostSteps : 1;
     this.log(
       p,
       question,
@@ -238,16 +286,27 @@ export class RaceEngine {
       evaluation.normalized,
       evaluation.correct,
       outcome,
-      evaluation.correct ? 1 : 0 - setbackSteps, // `0 -` so "no setback" is 0, not -0
+      evaluation.correct ? correctDelta : 0 - setbackSteps, // `0 -` so "no setback" is 0, not -0
+      speedEffect,
     );
+    // Cruise effects start no earlier than the time every car is already integrated to (a pointer event
+    // can be stamped slightly before the last frame), so distance already travelled is never rewritten.
+    const effectAt = Math.max(atMs, this.integratedToMs);
 
     if (!evaluation.correct) {
       if (setback) {
         const from = p.progress;
         p.progress -= setbackSteps;
+        p.distance = p.progress;
         p.setbackApplied = true;
         p.totalSetbacks += 1;
         this.emit({ type: 'setback', playerId: p.id, from, progress: p.progress });
+      }
+      const slowed = this.cruising;
+      if (slowed) {
+        applySlow(p, effectAt, this.config.cruise);
+        p.totalSlowdowns += 1;
+        this.emit({ type: 'slowed', playerId: p.id });
       }
       let hint: string | null = null;
       if (
@@ -277,11 +336,23 @@ export class RaceEngine {
           this.emit({ type: 'support', playerId: p.id, kind: 'simpler-offered' });
         }
       }
-      return { status: 'incorrect', attemptNumber, hint, supportOffered, setback };
+      return { status: 'incorrect', attemptNumber, hint, supportOffered, setback, slowed };
+    }
+
+    if (this.cruising) {
+      // Correct in cruise: a boost, never an instant jump. The car reaches the finish in tick().
+      applyBoost(p, effectAt, this.config.cruise);
+      p.totalCorrect += 1;
+      p.lastCorrectAtMs = atMs;
+      this.emit({ type: 'boost', playerId: p.id });
+      p.phase = 'resolving';
+      p.resolveAtMs = atMs + this.config.successDelayMs;
+      return { status: 'correct', progress: p.progress, finishedRace: false, isWinner: false };
     }
 
     // Correct: advance exactly one step, atomically with the log above.
     p.progress += 1;
+    p.distance = p.progress;
     p.totalCorrect += 1;
     this.emit({
       type: 'progress',
@@ -327,6 +398,7 @@ export class RaceEngine {
     const question = p.question;
     if (
       this.config.mode !== 'quick' ||
+      this.config.movement !== 'steps' ||
       !winner ||
       winner.playerId === p.id ||
       atMs >= winner.atMs ||
@@ -352,8 +424,10 @@ export class RaceEngine {
       true,
       'correct',
       1,
+      'none',
     );
     p.progress += 1;
+    p.distance = p.progress;
     p.totalCorrect += 1;
     p.phase = 'done';
     p.finishedAtMs = atMs;
@@ -408,7 +482,7 @@ export class RaceEngine {
       .sort((a, b) => (a.finishedAtMs as number) - (b.finishedAtMs as number));
     const rest = this.playerStates
       .filter((p) => p.finishedAtMs === null)
-      .sort((a, b) => b.progress - a.progress);
+      .sort((a, b) => b.distance - a.distance);
     const ordered = [...finished, ...rest];
     const standings: Standing[] = [];
     let place = 0;
@@ -418,7 +492,7 @@ export class RaceEngine {
         previous !== null &&
         previous.finishedAtMs === null &&
         p.finishedAtMs === null &&
-        previous.progress === p.progress;
+        previous.distance === p.distance;
       if (!tied) place = i + 1;
       standings.push({
         playerId: p.id,
@@ -445,6 +519,55 @@ export class RaceEngine {
     this.emit({ type: 'finished', result: this.result() });
   }
 
+  /**
+   * Cruise: move every car to `atMs`. Cars that reach the finish arrive in the order of their exact
+   * crossing times (not the order they are processed), so a frame boundary can never change the winner.
+   */
+  private advanceTo(atMs: number): void {
+    if (atMs <= this.integratedToMs) return;
+    const from = this.integratedToMs;
+    this.integratedToMs = atMs;
+    const last = this.config.raceLength;
+    const arrivals: { p: PlayerRaceState; slot: number; at: number }[] = [];
+    this.playerStates.forEach((p, slot) => {
+      if (p.phase === 'done') return;
+      const at = advanceCruise(p, from, atMs, last, this.config.cruise);
+      const progress = at === null ? Math.min(last - 1, Math.floor(p.distance)) : last;
+      if (progress !== p.progress) {
+        p.progress = progress;
+        this.emit({ type: 'progress', playerId: p.id, progress, target: last });
+      }
+      if (at !== null) arrivals.push({ p, slot, at });
+    });
+    // A tie (crossings within a microsecond, so float rounding never decides): more correct answers, then
+    // the earlier last correct answer, then slot order.
+    arrivals.sort(
+      (a, b) =>
+        (Math.abs(a.at - b.at) > TIE_MS ? a.at - b.at : 0) ||
+        b.p.totalCorrect - a.p.totalCorrect ||
+        (a.p.lastCorrectAtMs ?? Infinity) - (b.p.lastCorrectAtMs ?? Infinity) ||
+        a.slot - b.slot,
+    );
+    for (const { p, at } of arrivals) {
+      this.closeOpenItem(p, at, 'unsolved');
+      p.phase = 'done';
+      p.finishedAtMs = at;
+      p.question = null;
+      p.resolveAtMs = null;
+      p.boostLeft = 0;
+      p.slowUntilMs = 0;
+      this.emit({ type: 'player-done', playerId: p.id });
+      if (this.config.mode === 'quick' && !this.winner) {
+        this.winner = { playerId: p.id, atMs: at };
+        this.emit({ type: 'winner', playerId: p.id, atMs: at, revised: false });
+      }
+    }
+    if (arrivals.length === 0) return;
+    if (this.config.mode === 'quick' || this.playerStates.every((s) => s.phase === 'done')) {
+      this.finish();
+    }
+  }
+
   private dealNext(p: PlayerRaceState, atMs: number): void {
     // Questions are numbered by how many were dealt, not by progress: after a setback the racer is behind
     // but must still get a NEW question, never one they already solved.
@@ -469,7 +592,7 @@ export class RaceEngine {
   /** Log an 'unsolved'/'replaced' marker for an item that had attempts but never got a correct answer. */
   private closeOpenItem(p: PlayerRaceState, atMs: number, outcome: 'unsolved' | 'replaced'): void {
     if (p.phase !== 'answering' || !p.question || p.attemptsOnItem === 0) return;
-    this.log(p, p.question, atMs, p.attemptsOnItem, '', '', false, outcome, 0);
+    this.log(p, p.question, atMs, p.attemptsOnItem, '', '', false, outcome, 0, 'none');
   }
 
   private describeSubmitted(answer: SubmittedAnswer): string {
@@ -494,6 +617,7 @@ export class RaceEngine {
     correct: boolean,
     outcome: AttemptOutcome,
     stepDelta: number,
+    speedEffect: SpeedEffect,
   ): void {
     this.recordCounter += 1;
     const record: AttemptRecord = {
@@ -528,8 +652,10 @@ export class RaceEngine {
       supportUsed: p.supportUsed,
       outcome,
       stepDelta,
-      // Called before the position changes, so this is where the racer will be after this attempt.
-      progressAfter: p.progress + stepDelta,
+      // Steps: called before the position changes, so this is where the racer will be after this attempt.
+      // Cruise: where the car is now (the boost is delivered over the next moments).
+      progressAfter: this.cruising ? Math.round(p.distance * 100) / 100 : p.progress + stepDelta,
+      speedEffect,
     };
     this.records.push(record);
     this.emit({ type: 'attempt', record });

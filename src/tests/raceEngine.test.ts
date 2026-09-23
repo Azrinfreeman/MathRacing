@@ -6,6 +6,7 @@ import type { GeneratedQuestion, Level, SubmittedAnswer } from '../curriculum/sc
 import { RaceConfigError, RaceEngine } from '../game/core/RaceEngine';
 import type { RaceConfig, RaceEvent } from '../game/core/RaceState';
 import { DEFAULT_RACE_TIMING, SessionStateMachine } from '../game/core/RaceState';
+import { DEFAULT_CRUISE } from '../game/core/cruise';
 import { correctSubmission } from './helpers';
 
 /** Deterministic fake: every item's answer is "10"; items at index >= 1 have level 3 so a simpler variant exists. */
@@ -72,6 +73,9 @@ function config(overrides: Partial<RaceConfig> = {}): RaceConfig {
     hintsEnabled: true,
     supportEnabled: true,
     setbackEnabled: true,
+    // The step-race rules are tested with step movement; cruise has its own describe block below.
+    movement: 'steps',
+    cruise: DEFAULT_CRUISE,
     ...DEFAULT_RACE_TIMING,
     ...overrides,
   };
@@ -699,5 +703,183 @@ describe('RaceEngine with the real question blueprint', () => {
     const second = run();
     expect(first.winner).toBe('a');
     expect(second).toEqual(first); // same seed -> same content and same result
+  });
+});
+
+describe('RaceEngine cruise movement', () => {
+  // Round numbers: 1 step per second, a boost adds 1 step over 0.5 s, a slow-down halves speed for 1 s.
+  const CRUISE = { cruiseStepMs: 1000, boostSteps: 1, boostMs: 500, slowFactor: 0.5, slowMs: 1000 };
+  const cruising = (overrides: Partial<RaceConfig> = {}): RaceEngine => {
+    const engine = ready(config({ movement: 'cruise', cruise: CRUISE, ...overrides }));
+    engine.start(0);
+    return engine;
+  };
+  const distances = (engine: RaceEngine): number[] => engine.players.map((p) => p.distance);
+
+  it('every car drives forward at the same pace with no answers; progress counts whole steps', () => {
+    const engine = cruising();
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    engine.tick(1500);
+    expect(distances(engine)).toEqual([1.5, 1.5, 1.5]);
+    expect(engine.players.map((p) => p.progress)).toEqual([1, 1, 1]);
+    expect(events.filter((e) => e.type === 'progress')).toHaveLength(3);
+    expect(engine.speedState('p1')).toBe('cruise');
+  });
+
+  it('a correct answer is a boost, not a jump, worth exactly one extra step', () => {
+    const engine = cruising();
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    const r = engine.submit('p1', RIGHT, 0);
+    expect(r).toMatchObject({ status: 'correct', progress: 0, finishedRace: false });
+    expect(events.map((e) => e.type)).toEqual(['attempt', 'boost']);
+    expect(engine.speedState('p1')).toBe('boost');
+    engine.tick(250);
+    expect(engine.player('p1')?.distance).toBeCloseTo(0.25 + 0.5, 10);
+    engine.tick(1500);
+    expect(engine.player('p1')?.distance).toBeCloseTo(2.5, 10);
+    expect(engine.player('p2')?.distance).toBeCloseTo(1.5, 10);
+    expect(engine.speedState('p1')).toBe('cruise');
+    expect(engine.attempts[0]).toMatchObject({
+      stepDelta: 1,
+      progressAfter: 0,
+      speedEffect: 'boost',
+    });
+  });
+
+  it('a wrong answer slows the car for a while and never moves it back (no setback in cruise)', () => {
+    const engine = cruising();
+    engine.tick(500);
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    for (let i = 0; i < 3; i++) {
+      const r = engine.submit('p1', WRONG, 500);
+      expect(r).toMatchObject({ status: 'incorrect', setback: false, slowed: true });
+    }
+    expect(events.some((e) => e.type === 'setback')).toBe(false);
+    expect(events.filter((e) => e.type === 'slowed')).toHaveLength(3);
+    expect(engine.speedState('p1')).toBe('slow');
+    engine.tick(1500);
+    expect(engine.player('p1')?.distance).toBeCloseTo(1, 10); // 0.5 + 1 s at half speed
+    expect(engine.player('p2')?.distance).toBeCloseTo(1.5, 10);
+    expect(engine.player('p1')?.totalSlowdowns).toBe(3);
+    expect(engine.attempts.map((a) => [a.stepDelta, a.progressAfter, a.speedEffect])).toEqual([
+      [0, 0.5, 'slow'],
+      [0, 0.5, 'slow'],
+      [0, 0.5, 'slow'],
+    ]);
+  });
+
+  it('the winner is the earliest exact crossing, even when both cross inside one frame', () => {
+    const engine = cruising();
+    engine.submit('p2', RIGHT, 0); // crosses at 2000
+    engine.submit('p1', WRONG, 0); // slowed for 100 ms (loses 0.05 steps) ...
+    engine.submit('p1', RIGHT, 100); // ... then boosted: crosses at 2050
+    engine.tick(5000);
+    expect(machine.phase).toBe('FINISHED');
+    expect(engine.winnerId).toBe('p2');
+    expect(engine.player('p2')?.finishedAtMs).toBeCloseTo(2000, 6);
+    expect(engine.player('p1')?.finishedAtMs).toBeCloseTo(2050, 6);
+    expect(engine.result().standings.map((s) => s.playerId)).toEqual(['p2', 'p1', 'p3']);
+  });
+
+  it('a tie goes to more correct answers, then the earlier last correct answer, then slot order', () => {
+    const engine = cruising();
+    // p2 loses exactly one step to two slow-downs and wins it back with one boost: level with idle cars.
+    engine.submit('p2', WRONG, 0);
+    engine.submit('p2', WRONG, 1000);
+    engine.submit('p2', RIGHT, 2000);
+    engine.tick(5000);
+    expect(engine.players.map((p) => p.finishedAtMs)).toEqual([3000, 3000, 3000]);
+    expect(engine.winnerId).toBe('p2');
+
+    const both = cruising();
+    both.submit('p3', RIGHT, 0);
+    both.submit('p2', RIGHT, 100); // one boost each: they cross together, p3 answered first
+    both.tick(5000);
+    expect(both.winnerId).toBe('p3');
+
+    const idle = cruising();
+    idle.tick(5000);
+    expect(idle.winnerId).toBe('p1');
+  });
+
+  it('a car can finish on cruise alone', () => {
+    const engine = cruising();
+    engine.submit('p2', WRONG, 0);
+    engine.submit('p3', WRONG, 0);
+    engine.tick(3000);
+    expect(engine.winnerId).toBe('p1');
+  });
+
+  it('an answer stamped after another car already finished is rejected', () => {
+    const engine = cruising();
+    engine.submit('p1', RIGHT, 0);
+    expect(engine.submit('p2', RIGHT, 5000)).toEqual({
+      status: 'rejected',
+      reason: 'race-finished',
+    });
+    expect(engine.winnerId).toBe('p1');
+  });
+
+  it('an answer stamped before the last frame takes effect from that frame (no rewriting)', () => {
+    const engine = cruising();
+    engine.tick(1000);
+    engine.submit('p1', RIGHT, 900);
+    engine.tick(1500);
+    expect(engine.player('p1')?.distance).toBeCloseTo(2.5, 10);
+    expect(engine.player('p2')?.distance).toBeCloseTo(1.5, 10);
+  });
+
+  it('pausing freezes every car and the slow-down timer', () => {
+    const engine = cruising();
+    engine.tick(500);
+    engine.submit('p1', WRONG, 500); // slowed until 1500
+    engine.pause(600);
+    engine.tick(5000); // ignored while paused
+    engine.resume(10600);
+    engine.tick(10600);
+    expect(engine.player('p1')?.distance).toBeCloseTo(0.55, 10);
+    expect(engine.player('p2')?.distance).toBeCloseTo(0.6, 10);
+    engine.tick(11600);
+    expect(engine.player('p1')?.distance).toBeCloseTo(0.55 + 0.45 + 0.1, 10);
+    expect(engine.player('p2')?.distance).toBeCloseTo(1.6, 10);
+  });
+
+  it('Practice cruises too: no winner, open items close as unsolved, the race ends when all arrive', () => {
+    const engine = cruising({ mode: 'practice' });
+    engine.submit('p1', WRONG, 100);
+    engine.tick(2000);
+    expect(machine.phase).toBe('RACING');
+    engine.tick(10000);
+    expect(machine.phase).toBe('FINISHED');
+    expect(engine.winnerId).toBeNull();
+    expect(engine.players.every((p) => p.phase === 'done')).toBe(true);
+    expect(engine.attempts.map((a) => a.outcome)).toEqual(['incorrect', 'unsolved']);
+  });
+
+  it('ending early ranks racers by their exact distance', () => {
+    const engine = cruising();
+    engine.submit('p3', RIGHT, 0);
+    engine.submit('p1', WRONG, 0);
+    engine.endRace(1000);
+    const result = engine.result();
+    expect(result.endedEarly).toBe(true);
+    expect(result.standings.map((s) => [s.playerId, s.place])).toEqual([
+      ['p3', 1],
+      ['p2', 2],
+      ['p1', 3],
+    ]);
+  });
+
+  it('step movement reports no speed and keeps distance equal to progress', () => {
+    const engine = ready();
+    engine.start(0);
+    engine.submit('p1', RIGHT, 0);
+    engine.tick(5000);
+    expect(engine.speedState('p1')).toBe('stopped');
+    expect(engine.player('p1')).toMatchObject({ progress: 1, distance: 1 });
+    expect(engine.attempts[0]?.speedEffect).toBe('none');
   });
 });

@@ -57,6 +57,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   'setup.hints': 'Hint after 2 wrong attempts',
   'setup.support': 'Support after 3 wrong attempts (a picture or an easier question)',
   'setup.setback': 'Vehicle moves back one step after 3 wrong attempts (Quick Race)',
+  'setup.cruise': 'Vehicles drive on their own (correct speeds up, wrong slows down)',
+  'setup.cruiseNote':
+    'Every vehicle drives forward at the same pace. A correct answer gives a boost; a wrong answer slows the vehicle for a moment and never moves it back. Switch off for a step-by-step race.',
   'setup.setbackNote':
     'Moves back once per question, never below the start line, and never in Practice mode. Same rule for every pupil and recorded for the teacher.',
   'setup.supportNote':
@@ -122,6 +125,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   'race.submit': 'Go',
   'race.tryAgain': 'Try again.',
   'race.setback': 'Back 1 step. Try again!',
+  'race.boost': 'Zoom!',
+  'race.slowed': 'A little slower. Try again!',
   'race.correct': 'Correct!',
   'race.simpler': 'An easier question',
   'race.done': 'Done!',
@@ -173,7 +178,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'help.how.1':
     'Each pupil stands in front of their own box and answers their own question at the same time.',
   'help.how.2':
-    "A correct answer moves that pupil's vehicle one step forward. In Quick Race, answering the same question wrongly 3 times moves it back one step (once per question).",
+    "Every vehicle drives itself towards the finish at the same pace. A correct answer boosts that pupil's vehicle; a wrong answer slows it for a moment (it never moves back).",
   'help.how.3':
     'After 2 wrong attempts a small hint appears. After 3 wrong attempts support can be offered.',
   'help.how.4': 'The first pupil to reach the finish wins. In Practice mode there is no winner.',

@@ -30,6 +30,7 @@ function meta(id: string, startedAtMs = 1_700_000_000_000): SessionMeta {
     winnerName: null,
     finishedAtMs: null,
     setbackEnabled: true,
+    movement: 'cruise',
   };
 }
 
@@ -68,6 +69,7 @@ function record(
     outcome: 'correct',
     stepDelta: 1,
     progressAfter: n,
+    speedEffect: 'boost',
     ...overrides,
   };
 }
@@ -208,6 +210,12 @@ describe('CSV export', () => {
     expect(lines[0]).toContain('session_id');
     expect(lines[0]).toContain('sk');
     expect(lines[0]).toContain('hint_used');
+    expect(lines[0]?.split(',').slice(-3)).toEqual([
+      'progress_after',
+      'speed_effect',
+      'parameters_json',
+    ]);
+    expect(lines[1]).toContain(',boost,');
     // parameters_json contains commas and quotes, so it must be quoted and the column count stays right
     expect(lines[1]).toContain('"{""params"":{""a"":3,""b"":4}}"');
     expect(lines[1]).toContain('2023-11-14T22:13:21.000Z');
@@ -288,6 +296,13 @@ describe('settings', () => {
       'y2-time',
     ]); // wrong-year topics dropped
     expect(sanitizeSettings(null)).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('cruise is on by default, including for settings saved before it existed, and a choice is kept', () => {
+    expect(DEFAULT_SETTINGS.cruiseEnabled).toBe(true);
+    expect(sanitizeSettings({ setbackEnabled: true }).cruiseEnabled).toBe(true);
+    expect(sanitizeSettings({ cruiseEnabled: false }).cruiseEnabled).toBe(false);
+    expect(sanitizeSettings({ cruiseEnabled: 'no' }).cruiseEnabled).toBe(true);
   });
 
   it('reports corrupt storage instead of crashing, and still returns defaults', () => {
