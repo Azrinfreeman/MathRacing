@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 // Static, relative-base build so it can be hosted from any folder or opened from a school file server.
 export default defineConfig({
   base: './',
+  // The preview tool assigns a free port through PORT; otherwise Vite's default (5173) applies.
+  server: process.env.PORT ? { port: Number(process.env.PORT) } : {},
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 2500,
