@@ -1,7 +1,7 @@
 export type Direction = 'forward' | 'backward' | 'still';
 
 /** Spring rates (per second). A critically damped spring never overshoots; larger is faster. */
-const FORWARD_RATE = 12;
+const FORWARD_RATE = 16;
 /** Backward is deliberately slower and softer, so a setback reads as "rolling back", not a crash. */
 const BACKWARD_RATE = 7;
 const SETTLE_DISTANCE = 0.002;

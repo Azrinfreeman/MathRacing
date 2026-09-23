@@ -85,7 +85,7 @@ describe('CarMotion', () => {
   it('turning around mid-move stays bounded', () => {
     const m = new CarMotion();
     m.setTarget(2, false);
-    run(m, 120, 10);
+    run(m, 80, 10); // still short of the new target (1), with forward momentum
     m.setTarget(1, false);
     const start = m.progress;
     let min = start;
