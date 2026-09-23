@@ -125,7 +125,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'race.submit': 'Go',
   'race.tryAgain': 'Try again.',
   'race.setback': 'Back 1 step. Try again!',
-  'race.boost': 'Zoom!',
+  'race.boost': 'Correct! Zoom!',
   'race.slowed': 'A little slower. Try again!',
   'race.correct': 'Correct!',
   'race.simpler': 'An easier question',

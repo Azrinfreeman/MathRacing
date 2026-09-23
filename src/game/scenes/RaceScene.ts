@@ -30,7 +30,7 @@ export class RaceScene extends StageScene {
       const panel = this.panelById(p.id);
       panel?.bindState(p);
       panel?.setQuestion(p.question);
-      this.track.setProgress(p.id, p.progress, true);
+      this.track.setProgress(p.id, p.distance, true);
     }
     this.track.update(0);
     this.unsubscribe = engine.on((e) => this.onEngineEvent(e));
@@ -48,7 +48,15 @@ export class RaceScene extends StageScene {
         break;
       }
       case 'progress': {
-        this.track.setProgress(event.playerId, event.progress);
+        // Cruise cars are placed every frame from their exact distance; steps move on this event.
+        if (this.session.engine.movement === 'steps')
+          this.track.setProgress(event.playerId, event.progress);
+        this.panelById(event.playerId)?.markDirty();
+        break;
+      }
+      case 'boost':
+      case 'slowed': {
+        this.track.flash(event.playerId);
         break;
       }
       case 'setback': {
@@ -103,13 +111,16 @@ export class RaceScene extends StageScene {
       const result = engine.submit(playerId, action.answer, at);
       const now = this.session.now();
       if (result.status === 'correct') {
-        panel.showCorrect(now);
+        panel.showCorrect(now, engine.movement === 'cruise');
         sound.play('correct');
       } else if (result.status === 'incorrect') {
         panel.applyWrong(action.answer);
         if (result.setback) {
           panel.showSetback(now);
           sound.play('setback');
+        } else if (result.slowed) {
+          panel.showSlowed(now);
+          sound.play('gentle');
         } else {
           panel.showTryAgain(now);
           sound.play('gentle');
@@ -130,6 +141,10 @@ export class RaceScene extends StageScene {
     const now = this.session.now();
     const phase = engine.phase;
     if (phase === 'RACING') engine.tick(now);
+    if (engine.movement === 'cruise') {
+      for (const p of engine.players)
+        this.track.setDistance(p.id, p.distance, engine.speedState(p.id));
+    }
 
     if (this.celebrationPending) {
       this.celebrationPending = false;

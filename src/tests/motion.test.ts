@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CarMotion } from '../game/ui/motion';
+import type { SpeedState } from '../game/core/cruise';
 
 /** Run the motion for `ms` in frames of `frameMs`. */
 function run(m: CarMotion, ms: number, frameMs: number, reduced = false): void {
@@ -170,5 +171,77 @@ describe('CarMotion', () => {
     m.step(10, true);
     expect(m.progress).toBe(2);
     expect(m.velocity).toBe(0);
+  });
+});
+
+describe('CarMotion follow mode (cruise)', () => {
+  /** Drive a target along at `speed` steps per second, following it every 1000/60 ms frame. */
+  function cruise(
+    m: CarMotion,
+    fromDistance: number,
+    speed: number,
+    ms: number,
+    state: SpeedState = 'cruise',
+  ): number {
+    const frame = 1000 / 60;
+    let d = fromDistance;
+    for (let t = 0; t < ms; t += frame) {
+      d += (speed * frame) / 1000;
+      m.follow(d, state, false);
+      m.step(frame, false);
+    }
+    return d;
+  }
+
+  it('trails a moving target closely, never ahead of it, and always reads as driving forward', () => {
+    const m = new CarMotion();
+    let d = 0;
+    const frame = 1000 / 60;
+    for (let t = 0; t < 3000; t += frame) {
+      d += (0.9 * frame) / 1000;
+      m.follow(d, 'boost', false);
+      m.step(frame, false);
+      expect(m.progress).toBeLessThanOrEqual(d + 1e-9);
+      expect(m.direction).toBe('forward');
+    }
+    expect(d - m.progress).toBeLessThan(0.15);
+  });
+
+  it('does not stop and start while cruising slowly (no settle snapping)', () => {
+    const m = new CarMotion();
+    const d = cruise(m, 0, 1 / 15, 2000);
+    let previous = m.progress;
+    for (let i = 0; i < 60; i++) {
+      m.follow(d + ((i + 1) * (1 / 15)) / 60, 'cruise', false);
+      m.step(1000 / 60, false);
+      expect(m.velocity).toBeGreaterThan(0);
+      expect(m.progress).toBeGreaterThan(previous);
+      previous = m.progress;
+    }
+  });
+
+  it('catches up without overshooting when the target stops at the finish', () => {
+    const m = new CarMotion();
+    const d = cruise(m, 0, 0.9, 1500, 'boost');
+    m.follow(d, 'stopped', false);
+    for (let i = 0; i < 120; i++) {
+      m.step(1000 / 60, false);
+      expect(m.progress).toBeLessThanOrEqual(d + 1e-9);
+    }
+    expect(m.progress).toBe(d);
+    expect(m.moving).toBe(false);
+  });
+
+  it('reduced motion places the car exactly and flashes on a speed change', () => {
+    const m = new CarMotion();
+    m.follow(1.234, 'slow', true);
+    m.step(16, true);
+    expect(m.progress).toBe(1.234);
+    expect(m.highlightMs).toBe(0);
+    m.flash(true);
+    expect(m.highlightMs).toBeGreaterThan(0);
+    const n = new CarMotion();
+    n.flash(false);
+    expect(n.highlightMs).toBe(0);
   });
 });

@@ -126,7 +126,7 @@ export const bm = {
   'race.submit': 'Hantar',
   'race.tryAgain': 'Cuba lagi.',
   'race.setback': 'Undur 1 langkah. Cuba lagi!',
-  'race.boost': 'Laju!',
+  'race.boost': 'Betul! Laju!',
   'race.slowed': 'Perlahan sikit. Cuba lagi!',
   'race.correct': 'Betul!',
   'race.simpler': 'Soalan lebih mudah',

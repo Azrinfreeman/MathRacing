@@ -116,8 +116,10 @@ export class PanelView {
     this.dirty = true;
   }
 
-  showCorrect(nowMs: number): void {
-    this.feedback = { kind: 'correct', text: this.t('race.correct'), until: nowMs + 900 };
+  /** `boost`: cruise movement, where a correct answer also speeds the car up. */
+  showCorrect(nowMs: number, boost = false): void {
+    const text = this.t(boost ? 'race.boost' : 'race.correct');
+    this.feedback = { kind: 'correct', text, until: nowMs + 900 };
     this.flashUntil = this.reducedMotion ? 0 : nowMs + 650;
     this.dirty = true;
   }
@@ -130,6 +132,12 @@ export class PanelView {
   /** The 3rd wrong answer moved this racer back: say so privately, in the same gentle style. */
   showSetback(nowMs: number): void {
     this.feedback = { kind: 'tryAgain', text: this.t('race.setback'), until: nowMs + 2400 };
+    this.dirty = true;
+  }
+
+  /** Cruise: a wrong answer slowed this car for a moment. Private and gentle, like the setback message. */
+  showSlowed(nowMs: number): void {
+    this.feedback = { kind: 'tryAgain', text: this.t('race.slowed'), until: nowMs + 1700 };
     this.dirty = true;
   }
 

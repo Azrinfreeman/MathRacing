@@ -8,6 +8,7 @@ import {
   SUCCESS_WAIT_MS,
   answerItems,
   clickTaps,
+  rocketNoseX,
   fillSetup,
   questionSource,
   readAttempts,
@@ -273,7 +274,8 @@ test.describe('layout at classroom resolutions', () => {
     const [w, h] = [2560, 1440];
     await page.setViewportSize({ width: w, height: h });
     const errors = await freshPage(page);
-    const o: RaceOptions = { ...TWO, seed: 'E2E-MARKS', length: 8 };
+    // The step race: the car stops exactly on a mark (a cruising car never stops).
+    const o: RaceOptions = { ...TWO, seed: 'E2E-MARKS', length: 8, options: { cruise: false } };
     await fillSetup(page, o);
     await startRace(page);
     await clickTaps(page, tapPlan(questionSource(o).question('p1', 0), { w, h }, 2, 0));
@@ -281,29 +283,7 @@ test.describe('layout at classroom resolutions', () => {
     await page.screenshot({ path: `${SHOTS}/07-marks-2p-${w}x${h}.png` });
 
     const geo = computeTrackGeometry(computeStageLayout(w, h, 2).track, 2, o.length);
-    const laneTop = Math.round(geo.top);
-    const png = await page.screenshot({
-      clip: { x: 0, y: laneTop, width: w, height: Math.round(geo.laneH) },
-    });
-    // Player 1 drives the orange rocket: its right-most orange pixel is the nose.
-    const nose = await page.evaluate(async (b64) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      const ctx = c.getContext('2d');
-      if (!ctx) return -1;
-      ctx.drawImage(img, 0, 0);
-      const d = ctx.getImageData(0, 0, c.width, c.height).data;
-      let max = -1;
-      for (let i = 0; i < d.length; i += 4) {
-        const [r, g, b] = [d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0];
-        if (r > 170 && g > 45 && g < 110 && b < 40) max = Math.max(max, (i / 4) % c.width);
-      }
-      return max;
-    }, png.toString('base64'));
+    const nose = await rocketNoseX(page, geo);
     expect(Math.abs(nose - (geo.markXs[0] ?? 0))).toBeLessThan(geo.carSize * 0.08);
     expect(errors).toEqual([]);
   });

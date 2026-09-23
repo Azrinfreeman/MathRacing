@@ -4,9 +4,10 @@
 
 ## e2e/
 
-- `mathracing.spec.ts` (596): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
-- `setback.spec.ts` (163): setback after 3 wrong answers
-- `support.ts` (235): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, readAttempts, readSessionCount
+- `cruise.spec.ts` (126): cruise: cars drive on their own
+- `mathracing.spec.ts` (576): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
+- `setback.spec.ts` (169): setback after 3 wrong answers
+- `support.ts` (267): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
 
 ## scripts/
 
@@ -88,19 +89,19 @@
 ## src/game/scenes/
 
 - `BootScene.ts` (15): BootScene
-- `RaceScene.ts` (159): RaceScene
+- `RaceScene.ts` (174): RaceScene
 - `ReadyScene.ts` (80): ReadyScene
 - `StageScene.ts` (209): StageScene
 
 ## src/game/ui/
 
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
-- `PanelView.ts` (703): PanelAction, PanelMode, PanelView
-- `TrackView.ts` (681): TrackPlayer, TrackView
+- `PanelView.ts` (711): PanelAction, PanelMode, PanelView
+- `TrackView.ts` (742): TrackPlayer, TrackView
 - `VisualRenderer.ts` (845): drawVisual
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (109): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones
-- `motion.ts` (109): Direction, CarMotion
+- `motion.ts` (132): Direction, CarMotion
 - `shapes.ts` (282): drawPolygon, regularPolygon, starPoints, drawSymbol, drawObject, drawShape2D
 - `theme.ts` (50): FONT_FAMILY, THEME, hexToNumber, lighten, darken
 - `trackGeometry.ts` (84): CAR_TAIL, CAR_NOSE, TrackGeometry, computeTrackGeometry
@@ -146,7 +147,7 @@
 - `inputOwnership.test.ts` (101): InputOwnership
 - `layout.test.ts` (174): geometry helpers, stage layout, player identity palette
 - `locales.test.ts` (53): locales
-- `motion.test.ts` (174): CarMotion
+- `motion.test.ts` (247): CarMotion, CarMotion follow mode (cruise)
 - `pointerRouter.test.ts` (150): PointerRouter
 - `raceEngine.test.ts` (885): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint, RaceEngine cruise movement
 - `seededRng.test.ts` (95): SeededRng

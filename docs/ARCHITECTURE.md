@@ -47,8 +47,9 @@ Rules that keep this honest: scenes and views render engine state and send inten
 
 Time is passed in (`atMs`), so every rule is deterministic and testable.
 
-- `submit()` validates through the answer service, advances a racer **exactly one step per accepted correct answer**, logs the attempt atomically, and locks that one player during the success animation (per-player debounce). `tick()` then deals the next item.
-- Two finishing answers close together are resolved by timestamp against the finished flag (see DECISIONS.md #4): one winner, runner-up progress kept.
+- `submit()` validates through the answer service, logs the attempt atomically, and locks that one player during the success animation (per-player debounce). `tick()` then deals the next item.
+- **Cruise movement** (default, `movement: 'cruise'`): `core/cruise.ts` (pure) keeps each car's fractional `distance`. Speed is piecewise constant (base pace, times `slowFactor` while slowed, plus a boost rate while boost distance is left), so `advanceCruise` integrates exactly and returns the exact finish-crossing time. `tick(atMs)` moves every car, emits `progress` on each whole step (`progress = floor(distance)`), and finishes cars in order of their crossing times, so frame boundaries never change the winner (DECISIONS.md #36). A correct answer queues a one-step boost and cancels a slow-down; a wrong answer (re)starts the slow-down. Scenes read `distance` and `speedState()` every frame.
+- **Step movement** (`movement: 'steps'`): a correct answer advances a racer **exactly one step**; two finishing answers close together are resolved by timestamp against the finished flag (see DECISIONS.md #4): one winner, runner-up progress kept.
 - Hints (after 2 wrong), visual support then an offered simpler item (after 3 wrong) are tracked per player.
 - Pause shifts timers so paused time is not counted; `endRace()` records open items as `unsolved` and declares no winner.
 
@@ -73,7 +74,7 @@ Pure models (`game/widgets`) hold input state and lay out their controls; `Panel
 
 ## Rendering
 
-`TextPool` reuses Phaser Text objects by key (no per-frame leaks), `VisualRenderer` draws every question picture (clock, money, shapes, nets, fractions, ruler, measuring cup, pictograph, bar chart, pattern) as original vector art, and `TrackView` draws lanes, racers with five distinct silhouettes, countdown and celebration. All motion is time-based (delta ms), so it is frame-rate independent; reduced motion snaps instead of animating. The layout (`game/ui/layout.ts`) is computed from the real viewport and player count: the track takes 42-46% of the height and the panels split the rest equally. Inside the track, `game/ui/trackGeometry.ts` (pure) places the lane badges, start line, step marks and finish chequer as positions of the car's nose, with margins from the lane height, so the marks line up with the cars on every screen.
+`TextPool` reuses Phaser Text objects by key (no per-frame leaks), `VisualRenderer` draws every question picture (clock, money, shapes, nets, fractions, ruler, measuring cup, pictograph, bar chart, pattern) as original vector art, and `TrackView` draws lanes, racers with five distinct silhouettes, countdown and celebration. All motion is time-based (delta ms), so it is frame-rate independent; reduced motion snaps instead of animating. In cruise, `CarMotion.follow` trails the engine's distance with the same spring, and the speed state picks the effects (boost: flame, exhaust, speed lines; slowed: nose-down and neutral dust). The layout (`game/ui/layout.ts`) is computed from the real viewport and player count: the track takes 42-46% of the height and the panels split the rest equally. Inside the track, `game/ui/trackGeometry.ts` (pure) places the lane badges, start line, step marks and finish chequer as positions of the car's nose, with margins from the lane height, so the marks line up with the cars on every screen.
 
 ## Persistence and reporting
 

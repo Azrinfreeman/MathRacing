@@ -10,6 +10,8 @@ Status: **approved** (see DECISIONS #36). The owner answered section 9 as follow
 | D4  | Section 3 numbers, tuned after a classroom try.                                                             |
 | D5  | A car may finish on cruise alone; answering correctly is the only way to go faster.                         |
 
+Deviations from the proposal: the teacher evidence view has no separate "Perlahan" column (in cruise every wrong attempt slows the car, so it equals attempts minus correct, which the view already shows); the correct-answer message in cruise is "Betul! Laju!"; crossings within 1 µs count as a tie so float rounding never picks the winner.
+
 The original proposal follows. Where it says Practice stays step-based (4.3, 4.4, D2), D2 above overrides it.
 
 ## 1. What is being asked

@@ -6,6 +6,7 @@ import { getDefaultRegistry } from '../src/curriculum/registry';
 import type { GeneratedQuestion, Level, Year } from '../src/curriculum/schema';
 import type { AttemptRecord } from '../src/game/core/RaceState';
 import type { Rect } from '../src/game/ui/geometry';
+import type { TrackGeometry } from '../src/game/ui/trackGeometry';
 import { computePanelZones, computeStageLayout } from '../src/game/ui/layout';
 import { createWidget } from '../src/game/widgets';
 
@@ -20,7 +21,9 @@ export type RaceOptions = {
   mode?: 'quick' | 'practice';
   language?: 'bm' | 'en';
   /** Teacher settings to switch on or off, by their `opt-*` test id suffix. */
-  options?: Partial<Record<'sound' | 'reducedMotion' | 'hints' | 'support' | 'setback', boolean>>;
+  options?: Partial<
+    Record<'sound' | 'reducedMotion' | 'hints' | 'support' | 'setback' | 'cruise', boolean>
+  >;
 };
 
 export type Point = { x: number; y: number };
@@ -191,6 +194,35 @@ export async function answerItems(
     await clickTaps(page, tapPlan(q, { w: vp.width, h: vp.height }, o.players, playerIndex));
     if (i < count - 1) await page.waitForTimeout(SUCCESS_WAIT_MS);
   }
+}
+
+/**
+ * The x of player 1's vehicle nose, in page pixels: player 1 drives the orange rocket, so its right-most
+ * orange pixel in lane 1 is the nose. Returns -1 when no orange pixel is found.
+ */
+export async function rocketNoseX(page: Page, geo: TrackGeometry): Promise<number> {
+  const vp = page.viewportSize() ?? { width: 1920, height: 1080 };
+  const png = await page.screenshot({
+    clip: { x: 0, y: Math.round(geo.top), width: vp.width, height: Math.round(geo.laneH) },
+  });
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d');
+    if (!ctx) return -1;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    let max = -1;
+    for (let i = 0; i < d.length; i += 4) {
+      const [r, g, b] = [d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0];
+      if (r > 170 && g > 45 && g < 110 && b < 40) max = Math.max(max, (i / 4) % c.width);
+    }
+    return max;
+  }, png.toString('base64'));
 }
 
 /** Read every stored attempt straight from IndexedDB (the same evidence the CSV export uses). */

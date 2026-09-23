@@ -17,7 +17,8 @@ import {
 const SHOTS = 'e2e/screenshots';
 mkdirSync(SHOTS, { recursive: true });
 
-// Year 1 operations at level 1 deals number pads, which the wrong-answer helper needs.
+// Year 1 operations at level 1 deals number pads, which the wrong-answer helper needs. The setback is part
+// of the step race, so cruise is switched off first (the setback option only appears then).
 const BASE: RaceOptions = {
   seed: 'E2E-SETBACK',
   topics: ['y1-operations'],
@@ -25,6 +26,7 @@ const BASE: RaceOptions = {
   players: 2,
   length: 8,
   names: ['Aina', 'Budi'],
+  options: { cruise: false },
 };
 
 async function freshPage(page: Page): Promise<string[]> {
@@ -109,7 +111,11 @@ test.describe('setback after 3 wrong answers', () => {
 
   test('no setback when the teacher switches it off', async ({ page }) => {
     const errors = await freshPage(page);
-    const o: RaceOptions = { ...BASE, seed: 'E2E-SETBACK-OFF', options: { setback: false } };
+    const o: RaceOptions = {
+      ...BASE,
+      seed: 'E2E-SETBACK-OFF',
+      options: { cruise: false, setback: false },
+    };
     await fillSetup(page, o);
     await startRace(page);
     await right(page, o, 0);
@@ -148,7 +154,7 @@ test.describe('setback after 3 wrong answers', () => {
     const o: RaceOptions = {
       ...BASE,
       seed: 'E2E-SETBACK-REDUCED',
-      options: { reducedMotion: true },
+      options: { cruise: false, reducedMotion: true },
     };
     await fillSetup(page, o);
     await startRace(page);

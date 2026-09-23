@@ -1,5 +1,6 @@
 import type * as Phaser from 'phaser';
 import type { Translator } from '../../locales';
+import type { SpeedState } from '../core/cruise';
 import type { PlayerStyle, VehicleId } from '../core/players';
 import { TextPool } from './DrawContext';
 import type { Rect } from './geometry';
@@ -15,6 +16,8 @@ export type TrackPlayer = { id: string; name: string; style: PlayerStyle };
 /** How a racer is drawn this frame; derived from its CarMotion. */
 type Pose = {
   direction: Direction;
+  /** Cruise speed state; 'stopped' in step movement. */
+  speedState: SpeedState;
   /** Signed speed in race steps per second. */
   speed: number;
   /** Body tilt in radians (positive = nose down). */
@@ -23,7 +26,15 @@ type Pose = {
   wheelAngle: number;
 };
 
-const STILL_POSE: Pose = { direction: 'still', speed: 0, lean: 0, wheelAngle: 0 };
+const STILL_POSE: Pose = {
+  direction: 'still',
+  speedState: 'stopped',
+  speed: 0,
+  lean: 0,
+  wheelAngle: 0,
+};
+/** Nose-down tilt while slowed, so a slow-down reads as braking. */
+const SLOW_LEAN = 0.05;
 
 /** A short-lived puff of dust or exhaust. Pooled: the array is fixed-size and reused. */
 type Puff = {
@@ -123,6 +134,16 @@ export class TrackView {
     this.motion.get(playerId)?.setTarget(progress, this.reducedMotion, immediate);
   }
 
+  /** Cruise: place a racer at the engine's distance every frame, with its speed state for the effects. */
+  setDistance(playerId: string, distance: number, speedState: SpeedState): void {
+    this.motion.get(playerId)?.follow(distance, speedState, this.reducedMotion);
+  }
+
+  /** Reduced motion: a brief static ring when a racer's speed changes (boost or slow-down). */
+  flash(playerId: string): void {
+    this.motion.get(playerId)?.flash(this.reducedMotion);
+  }
+
   /** The position a racer is drawn at, in steps (fractional while moving). For tests and diagnostics. */
   shownProgress(playerId: string): number {
     return this.motion.get(playerId)?.progress ?? 0;
@@ -196,10 +217,14 @@ export class TrackView {
 
   private poseOf(m: CarMotion, size: number, stepPx: number): Pose {
     if (this.reducedMotion) return STILL_POSE;
-    const lean = Math.max(-LEAN_LIMIT, Math.min(LEAN_LIMIT, -m.accel / 1200)) + m.wobble * 0.06;
+    const lean =
+      Math.max(-LEAN_LIMIT, Math.min(LEAN_LIMIT, -m.accel / 1200)) +
+      m.wobble * 0.06 +
+      (m.speedState === 'slow' ? SLOW_LEAN : 0);
     const wheelRadius = (size / 2) * 0.26;
     return {
       direction: m.direction,
+      speedState: m.speedState,
       speed: m.velocity,
       lean,
       wheelAngle: (m.travelled * stepPx) / wheelRadius,
@@ -218,12 +243,25 @@ export class TrackView {
     Object.assign(slot, init);
   }
 
-  /** Exhaust behind a car driving forward; a small dust puff at the front bumper while it rolls back. */
+  /**
+   * Exhaust behind a car driving forward (a steady stream while boosting); neutral dust at the front bumper
+   * while it rolls back, and under the rear wheel while it is slowed. A plain cruise makes no puffs.
+   */
   private emitPuffs(id: string, index: number, m: CarMotion, dtMs: number): void {
     const speed = Math.abs(m.velocity);
-    if (!m.moving || speed < 0.15 || dtMs <= 0) return;
+    if (dtMs <= 0) return;
+    if (m.speedState === 'slow') {
+      this.emitSlowDust(id, index, m, dtMs);
+      return;
+    }
+    const boosting = m.speedState === 'boost';
+    if (!boosting && (!m.moving || speed < 0.15)) return;
     const forward = m.velocity > 0;
-    const rate = forward ? 22 * Math.min(1, speed / 3) : 12 * Math.min(1, speed / 1.5);
+    const rate = boosting
+      ? 18
+      : forward
+        ? 22 * Math.min(1, speed / 3)
+        : 12 * Math.min(1, speed / 1.5);
     let acc = (this.emitAcc.get(id) ?? 0) + (rate * dtMs) / 1000;
     const { x, baseY, size } = this.racerGeometry(index, m.progress);
     while (acc >= 1) {
@@ -254,6 +292,26 @@ export class TrackView {
           alpha: 0.5,
         });
       }
+    }
+    this.emitAcc.set(id, acc);
+  }
+
+  private emitSlowDust(id: string, index: number, m: CarMotion, dtMs: number): void {
+    let acc = (this.emitAcc.get(id) ?? 0) + (8 * dtMs) / 1000;
+    const { x, baseY, size } = this.racerGeometry(index, m.progress);
+    while (acc >= 1) {
+      acc -= 1;
+      this.spawnPuff({
+        x: x - size * 0.35 + (Math.random() - 0.5) * size * 0.1,
+        y: baseY + size * 0.3,
+        vx: -size * 0.0002,
+        vy: -size * 0.00012,
+        size: size * 0.05,
+        grow: size * 0.00012,
+        life: 480,
+        color: DUST_COLOR,
+        alpha: 0.45,
+      });
     }
     this.emitAcc.set(id, acc);
   }
@@ -370,10 +428,11 @@ export class TrackView {
       const { size } = racer;
       const pose = this.poseOf(m, size, racer.stepPx);
       const moving = !this.reducedMotion && m.moving;
-      // Speed lines behind a car driving forward: short, white, fading with speed.
-      if (moving && pose.speed > 0.6) {
-        const len = size * 0.34 * Math.min(1, pose.speed / 4);
-        g.lineStyle(Math.max(1.5, size * 0.025), 0xffffff, 0.4 * Math.min(1, pose.speed / 3));
+      // Speed lines behind a car driving forward (always while boosting): short, white, fading with speed.
+      if (moving && (pose.speed > 0.6 || pose.speedState === 'boost')) {
+        const strength = Math.max(pose.speedState === 'boost' ? 0.6 : 0, pose.speed / 3);
+        const len = size * 0.34 * Math.min(1, strength * 0.75);
+        g.lineStyle(Math.max(1.5, size * 0.025), 0xffffff, 0.4 * Math.min(1, strength));
         for (let k = -1; k <= 1; k++) {
           const ly = racer.baseY + k * size * 0.17;
           const lx = racer.x - size * (0.72 + 0.05 * (k + 1));
@@ -530,9 +589,11 @@ export class TrackView {
     const vehicle: VehicleId = style.vehicle;
     switch (vehicle) {
       case 'rocket':
-        if (pose.direction === 'forward') {
-          // The flame grows with speed, so a burst of speed on a correct answer is visible.
-          const f = 0.2 + Math.min(0.4, pose.speed * 0.1) + 0.1 * Math.sin(this.clock * 0.04);
+        if (pose.direction === 'forward' && pose.speedState !== 'slow') {
+          // The flame grows with speed (and is long while boosting), so a correct answer is visible.
+          const boost = pose.speedState === 'boost' ? 0.3 : 0;
+          const f =
+            0.2 + Math.min(0.4, pose.speed * 0.1 + boost) + 0.1 * Math.sin(this.clock * 0.04);
           poly(
             [
               [-0.9, -0.16],
