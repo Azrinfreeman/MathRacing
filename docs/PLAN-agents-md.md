@@ -1,6 +1,6 @@
 # Implementation plan: AGENTS.md for token-efficient, non-repetitive work
 
-Status: **proposal, nothing implemented yet.** The working tree was committed first (`2ff77aa`); this file is the only new artifact. Answer the decisions in section 7, then the steps in section 6 can be executed.
+Status: **implemented** (decisions D1-D6 all taken as recommended). Beyond the plan: `scripts/check-agents.mjs` (`npm run docs:agents`, part of `npm run check`) keeps AGENTS.md accurate; e2e rebuilds `dist/` only when it is older than the sources (`E2E_REBUILD=1` forces it); no LF-normalising commit was needed because the repo was already LF, only `.gitattributes` and local git config changed.
 
 ## 1. Goal
 

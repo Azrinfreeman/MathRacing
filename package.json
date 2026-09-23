@@ -20,7 +20,10 @@
     "test:e2e": "playwright test",
     "icons": "node scripts/make-icons.mjs",
     "docs:curriculum": "node scripts/gen-curriculum-doc.mjs",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "docs:map": "node scripts/gen-repo-map.mjs",
+    "docs:agents": "node scripts/check-agents.mjs",
+    "check:fast": "node scripts/check-fast.mjs",
+    "check": "npm run docs:agents && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "phaser": "4.2.1"
