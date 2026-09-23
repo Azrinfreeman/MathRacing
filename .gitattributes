@@ -1,0 +1,5 @@
+* text=auto
+*.png binary
+*.pdf binary
+*.mp4 binary
+package-lock.json -diff

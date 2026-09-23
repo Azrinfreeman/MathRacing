@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MathRacing">
+  <rect width="512" height="512" rx="96" fill="#0b1d3a"/>
+  <path d="M0 360h512v92a60 60 0 0 1-60 60H60A60 60 0 0 1 0 452z" fill="#16335f"/>
+  <g fill="#ffffff" opacity=".9">
+    <rect x="40" y="372" width="60" height="20"/><rect x="160" y="372" width="60" height="20"/>
+    <rect x="280" y="372" width="60" height="20"/><rect x="400" y="372" width="60" height="20"/>
+  </g>
+  <!-- rocket kart -->
+  <g transform="translate(70 150)">
+    <path d="M40 130h250l90-40-90-40H90z" fill="#ff6b3d"/>
+    <path d="M150 55h120l60 35H150z" fill="#ffd166"/>
+    <circle cx="120" cy="150" r="38" fill="#111827"/><circle cx="120" cy="150" r="16" fill="#e5e7eb"/>
+    <circle cx="290" cy="150" r="38" fill="#111827"/><circle cx="290" cy="150" r="16" fill="#e5e7eb"/>
+    <path d="M40 130l-46 20 46 20z" fill="#ffb703"/>
+  </g>
+  <!-- plus / equals mark -->
+  <g fill="#7dd3fc">
+    <rect x="76" y="62" width="76" height="16" rx="8"/><rect x="106" y="32" width="16" height="76" rx="8"/>
+    <rect x="360" y="52" width="76" height="16" rx="8"/><rect x="360" y="82" width="76" height="16" rx="8"/>
+  </g>
+</svg>
