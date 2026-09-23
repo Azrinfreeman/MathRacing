@@ -56,6 +56,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   'setup.reducedMotion': 'Reduce motion',
   'setup.hints': 'Hint after 2 wrong attempts',
   'setup.support': 'Support after 3 wrong attempts (a picture or an easier question)',
+  'setup.setback': 'Vehicle moves back one step after 3 wrong attempts (Quick Race)',
+  'setup.setbackNote':
+    'Moves back once per question, never below the start line, and never in Practice mode. Same rule for every pupil and recorded for the teacher.',
   'setup.supportNote':
     'Support is offered to every player under the same rule and is recorded for the teacher.',
   'setup.seed': 'Session seed (optional)',
@@ -129,6 +132,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'results.evidence.attempts': 'Attempts',
   'results.evidence.hints': 'Hints',
   'results.evidence.support': 'Support',
+  'results.evidence.setbacks': 'Setbacks',
   'results.evidence.topic': 'Topic',
   'results.evidence.sk': 'SK',
   'results.evidence.items': 'Items',
@@ -138,7 +142,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'help.how.1':
     'Each pupil stands in front of their own box and answers their own question at the same time.',
   'help.how.2':
-    "A correct answer moves that pupil's vehicle one step. A wrong answer never moves it backwards.",
+    "A correct answer moves that pupil's vehicle one step forward. In Quick Race, answering the same question wrongly 3 times moves it back one step (once per question).",
   'help.how.3':
     'After 2 wrong attempts a small hint appears. After 3 wrong attempts support can be offered.',
   'help.how.4': 'The first pupil to reach the finish wins. In Practice mode there is no winner.',

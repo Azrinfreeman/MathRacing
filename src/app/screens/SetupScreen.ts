@@ -29,6 +29,8 @@ export type SetupInput = {
   reducedMotion: boolean;
   hintsEnabled: boolean;
   supportEnabled: boolean;
+  /** Quick Race only: the 3rd wrong answer to one question moves the racer back a step. */
+  setbackEnabled: boolean;
   /** Teacher-supplied seed for reproducing a session, or null for a random one. */
   seed: string | null;
 };
@@ -82,6 +84,7 @@ export class SetupScreen {
     reducedMotion: boolean;
     hintsEnabled: boolean;
     supportEnabled: boolean;
+    setbackEnabled: boolean;
     seed: string;
   };
   private error = '';
@@ -104,6 +107,7 @@ export class SetupScreen {
       reducedMotion: s.reducedMotion,
       hintsEnabled: s.hintsEnabled,
       supportEnabled: s.supportEnabled,
+      setbackEnabled: s.setbackEnabled,
       seed: '',
     };
     this.storedSessions = deps.sessionCount;
@@ -141,6 +145,7 @@ export class SetupScreen {
       reducedMotion: s.reducedMotion,
       hintsEnabled: s.hintsEnabled,
       supportEnabled: s.supportEnabled,
+      setbackEnabled: s.setbackEnabled,
       year: s.year,
       topicIds: [...s.topicIds],
       level: s.level,
@@ -504,8 +509,15 @@ export class SetupScreen {
           () => s.supportEnabled,
           (v) => (s.supportEnabled = v),
         ),
+        toggle(
+          'setback',
+          t('setup.setback'),
+          () => s.setbackEnabled,
+          (v) => (s.setbackEnabled = v),
+        ),
       ),
       h('p', { class: 'note', text: t('setup.supportNote') }),
+      h('p', { class: 'note', text: t('setup.setbackNote') }),
       h(
         'div',
         { class: 'seed-row' },
@@ -652,6 +664,7 @@ export class SetupScreen {
       reducedMotion: s.reducedMotion,
       hintsEnabled: s.hintsEnabled,
       supportEnabled: s.supportEnabled,
+      setbackEnabled: s.setbackEnabled,
       seed: seed === '' ? null : seed,
     };
   }

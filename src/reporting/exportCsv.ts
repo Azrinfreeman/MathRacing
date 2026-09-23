@@ -47,6 +47,8 @@ export const CSV_COLUMNS: readonly Column[] = [
   { header: 'first_action_ms', value: (r) => r.firstActionMs },
   { header: 'hint_used', value: (r) => r.hintUsed },
   { header: 'support_used', value: (r) => r.supportUsed },
+  { header: 'step_delta', value: (r) => r.stepDelta },
+  { header: 'progress_after', value: (r) => r.progressAfter },
   { header: 'parameters_json', value: (r) => r.parameters },
 ];
 

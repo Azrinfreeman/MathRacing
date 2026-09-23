@@ -78,11 +78,24 @@ export type RaceConfig = {
   supportEnabled: boolean;
   hintAfter: number;
   supportAfter: number;
+  /**
+   * Setback rule (Quick Race only): on the `setbackAfter`-th wrong answer to the SAME question the racer
+   * moves back `setbackSteps` (never below the start line), at most once per question. Teacher-switchable.
+   */
+  setbackEnabled: boolean;
+  setbackAfter: number;
+  setbackSteps: number;
   /** How long a player's answer stays locked while the success animation resolves. */
   successDelayMs: number;
 };
 
-export const DEFAULT_RACE_TIMING = { hintAfter: 2, supportAfter: 3, successDelayMs: 700 } as const;
+export const DEFAULT_RACE_TIMING = {
+  hintAfter: 2,
+  supportAfter: 3,
+  setbackAfter: 3,
+  setbackSteps: 1,
+  successDelayMs: 700,
+} as const;
 
 export type PlayerPhase = 'answering' | 'resolving' | 'done';
 
@@ -91,7 +104,16 @@ export type PlayerRaceState = {
   readonly name: string;
   progress: number;
   phase: PlayerPhase;
+  /**
+   * Index of the current question in this player's own sequence. It comes from `itemsDealt`, NOT from
+   * progress: progress can go down after a setback, and a question already solved must never be dealt again.
+   */
   itemIndex: number;
+  /** How many questions have been dealt to this player so far (the next question's index). */
+  itemsDealt: number;
+  /** True once this question already cost a setback (at most one setback per question). */
+  setbackApplied: boolean;
+  totalSetbacks: number;
   question: GeneratedQuestion | null;
   attemptsOnItem: number;
   itemShownAtMs: number;
@@ -147,6 +169,10 @@ export type AttemptRecord = {
   hintUsed: boolean;
   supportUsed: SupportKind;
   outcome: AttemptOutcome;
+  /** Change in the racer's position caused by this attempt: +1 correct, -1 setback, otherwise 0. */
+  stepDelta: number;
+  /** The racer's position after this attempt. */
+  progressAfter: number;
 };
 
 export type SessionMeta = {
@@ -164,6 +190,8 @@ export type SessionMeta = {
   playerNames: string[];
   winnerName: string | null;
   finishedAtMs: number | null;
+  /** Whether the setback rule was on for this session. */
+  setbackEnabled: boolean;
 };
 
 export type RejectReason =
@@ -177,7 +205,14 @@ export type RejectReason =
 
 export type SubmitResult =
   | { status: 'rejected'; reason: RejectReason }
-  | { status: 'incorrect'; attemptNumber: number; hint: string | null; supportOffered: boolean }
+  | {
+      status: 'incorrect';
+      attemptNumber: number;
+      hint: string | null;
+      supportOffered: boolean;
+      /** True when this wrong answer moved the racer back a step. */
+      setback: boolean;
+    }
   | { status: 'correct'; progress: number; finishedRace: boolean; isWinner: boolean };
 
 export type Standing = {
@@ -202,6 +237,7 @@ export type RaceEvent =
   | { type: 'question'; playerId: string; question: GeneratedQuestion }
   | { type: 'attempt'; record: AttemptRecord }
   | { type: 'progress'; playerId: string; progress: number; target: number }
+  | { type: 'setback'; playerId: string; from: number; progress: number }
   | { type: 'hint'; playerId: string; hint: string }
   | { type: 'support'; playerId: string; kind: 'visual' | 'simpler-offered' }
   | { type: 'winner'; playerId: string; atMs: number; revised: boolean }

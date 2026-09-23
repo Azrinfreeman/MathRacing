@@ -11,6 +11,7 @@ export type Settings = {
   reducedMotion: boolean;
   hintsEnabled: boolean;
   supportEnabled: boolean;
+  setbackEnabled: boolean;
   year: Year;
   topicIds: string[];
   level: Level;
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   hintsEnabled: true,
   supportEnabled: true,
+  setbackEnabled: true,
   year: 1,
   topicIds: ['y1-operations'],
   level: 1,
@@ -77,6 +79,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     reducedMotion: pickBoolean(r.reducedMotion, d.reducedMotion),
     hintsEnabled: pickBoolean(r.hintsEnabled, d.hintsEnabled),
     supportEnabled: pickBoolean(r.supportEnabled, d.supportEnabled),
+    setbackEnabled: pickBoolean(r.setbackEnabled, d.setbackEnabled),
     year,
     topicIds: topicIds.length > 0 ? topicIds : year === 1 ? ['y1-operations'] : ['y2-operations'],
     level,

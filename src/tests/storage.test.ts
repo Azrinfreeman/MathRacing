@@ -29,6 +29,7 @@ function meta(id: string, startedAtMs = 1_700_000_000_000): SessionMeta {
     playerNames: ['Aina', 'Budi'],
     winnerName: null,
     finishedAtMs: null,
+    setbackEnabled: true,
   };
 }
 
@@ -65,6 +66,8 @@ function record(
     hintUsed: false,
     supportUsed: 'none',
     outcome: 'correct',
+    stepDelta: 1,
+    progressAfter: n,
     ...overrides,
   };
 }

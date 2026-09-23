@@ -232,6 +232,7 @@ export class ResultsScreen {
         h('td', { text: String(p.attempts) }),
         h('td', { text: String(p.hintsUsed) }),
         h('td', { text: String(p.supportUsed) }),
+        h('td', { text: String(p.setbacks) }),
       ),
     );
     const topicRows: Child[] = summary.topics.map((tp) =>
@@ -264,6 +265,7 @@ export class ResultsScreen {
             th(t('results.evidence.attempts')),
             th(t('results.evidence.hints')),
             th(t('results.evidence.support')),
+            th(t('results.evidence.setbacks')),
           ),
         ),
         h('tbody', {}, ...playerRows),

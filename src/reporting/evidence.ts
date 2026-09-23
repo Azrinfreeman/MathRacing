@@ -9,6 +9,8 @@ export type PlayerEvidence = {
   hintsUsed: number;
   /** Items where any support (visual picture or simpler item) was used. */
   supportUsed: number;
+  /** Times the racer moved back after repeated wrong answers to one item. */
+  setbacks: number;
 };
 
 export type TopicEvidence = {
@@ -43,6 +45,7 @@ export function summarizeEvidence(
       attempts: 0,
       hintsUsed: 0,
       supportUsed: 0,
+      setbacks: 0,
       hintItems: new Set(),
       supportItems: new Set(),
     });
@@ -59,6 +62,7 @@ export function summarizeEvidence(
     if (player) {
       player.attempts += 1;
       if (r.correct) player.correct += 1;
+      if (r.stepDelta < 0) player.setbacks += 1;
       if (r.hintUsed) player.hintItems.add(`${r.itemIndex}`);
       if (r.supportUsed !== 'none') player.supportItems.add(`${r.itemIndex}`);
     }

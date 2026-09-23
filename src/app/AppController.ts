@@ -197,6 +197,7 @@ export class AppController {
         language: input.language,
         hintsEnabled: input.hintsEnabled,
         supportEnabled: input.supportEnabled,
+        setbackEnabled: input.setbackEnabled && input.mode === 'quick',
         ...DEFAULT_RACE_TIMING,
         successDelayMs: input.reducedMotion ? 450 : DEFAULT_RACE_TIMING.successDelayMs,
       };
@@ -208,8 +209,11 @@ export class AppController {
         raceLength: input.raceLength,
         language: input.language,
       });
-      // Pre-validate every item every player can reach, so a defective template fails here, not mid-race.
-      for (const p of players) for (let i = 0; i < input.raceLength; i++) source.question(p.id, i);
+      // Pre-validate the items every player can reach, so a defective template fails here, not mid-race.
+      // A setback means a racer may see more than `raceLength` questions; the blueprint repeats its
+      // templates, so covering two rounds exercises every template that could be dealt.
+      for (const p of players)
+        for (let i = 0; i < input.raceLength * 2; i++) source.question(p.id, i);
       const createGameFn = this.makeGame ?? (await import('../game/createGame')).createGame;
 
       if (this.machine.phase === 'SETUP' || this.machine.phase === 'RESULTS')
@@ -235,6 +239,7 @@ export class AppController {
         playerNames: players.map((p) => p.name),
         winnerName: null,
         finishedAtMs: null,
+        setbackEnabled: config.setbackEnabled,
       };
       this.repo.saveSession(this.meta).catch((e: unknown) => this.reportStorageError(e));
       engine.on((e) => {

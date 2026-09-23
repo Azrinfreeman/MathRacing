@@ -56,6 +56,9 @@ export const bm = {
   'setup.reducedMotion': 'Kurangkan gerakan',
   'setup.hints': 'Petunjuk selepas 2 kali salah',
   'setup.support': 'Sokongan selepas 3 kali salah (gambar atau soalan lebih mudah)',
+  'setup.setback': 'Kenderaan undur satu langkah selepas 3 kali salah (Lumba Pantas)',
+  'setup.setbackNote':
+    'Undur hanya sekali bagi setiap soalan, tidak pernah lebih rendah daripada garisan mula, dan tidak berlaku dalam mod Latihan. Peraturan sama untuk semua murid dan direkodkan untuk guru.',
   'setup.supportNote':
     'Sokongan ditawarkan kepada semua pemain dengan peraturan yang sama dan direkodkan untuk guru.',
   'setup.seed': 'Benih sesi (pilihan)',
@@ -130,6 +133,7 @@ export const bm = {
   'results.evidence.attempts': 'Percubaan',
   'results.evidence.hints': 'Petunjuk',
   'results.evidence.support': 'Sokongan',
+  'results.evidence.setbacks': 'Undur',
   'results.evidence.topic': 'Topik',
   'results.evidence.sk': 'SK',
   'results.evidence.items': 'Soalan',
@@ -139,7 +143,7 @@ export const bm = {
   'help.how.1':
     'Setiap murid berdiri di hadapan kotaknya dan menjawab soalan sendiri pada masa yang sama.',
   'help.how.2':
-    'Jawapan betul menggerakkan kenderaan murid itu satu langkah. Jawapan salah tidak menggerakkan kenderaan ke belakang.',
+    'Jawapan betul menggerakkan kenderaan murid itu satu langkah ke hadapan. Dalam Lumba Pantas, jika soalan yang sama dijawab salah 3 kali, kenderaan undur satu langkah (sekali sahaja bagi setiap soalan).',
   'help.how.3':
     'Selepas 2 kali salah, satu petunjuk kecil muncul. Selepas 3 kali salah, sokongan boleh ditawarkan.',
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',

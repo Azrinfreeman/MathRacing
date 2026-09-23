@@ -75,6 +75,9 @@ export class RaceEngine {
       progress: 0,
       phase: 'answering',
       itemIndex: 0,
+      itemsDealt: 0,
+      setbackApplied: false,
+      totalSetbacks: 0,
       question: null,
       attemptsOnItem: 0,
       itemShownAtMs: 0,
@@ -216,6 +219,16 @@ export class RaceEngine {
     p.totalAttempts += 1;
     const attemptNumber = p.attemptsOnItem;
     const outcome: AttemptOutcome = evaluation.correct ? 'correct' : 'incorrect';
+    // The setback rule: the Nth wrong answer to the same question costs steps, once per question, in
+    // Quick Race only, and never below the start line.
+    const setback =
+      !evaluation.correct &&
+      this.config.setbackEnabled &&
+      this.config.mode === 'quick' &&
+      attemptNumber === this.config.setbackAfter &&
+      !p.setbackApplied &&
+      p.progress > 0;
+    const setbackSteps = setback ? Math.min(this.config.setbackSteps, p.progress) : 0;
     this.log(
       p,
       question,
@@ -225,9 +238,17 @@ export class RaceEngine {
       evaluation.normalized,
       evaluation.correct,
       outcome,
+      evaluation.correct ? 1 : 0 - setbackSteps, // `0 -` so "no setback" is 0, not -0
     );
 
     if (!evaluation.correct) {
+      if (setback) {
+        const from = p.progress;
+        p.progress -= setbackSteps;
+        p.setbackApplied = true;
+        p.totalSetbacks += 1;
+        this.emit({ type: 'setback', playerId: p.id, from, progress: p.progress });
+      }
       let hint: string | null = null;
       if (
         this.config.hintsEnabled &&
@@ -256,7 +277,7 @@ export class RaceEngine {
           this.emit({ type: 'support', playerId: p.id, kind: 'simpler-offered' });
         }
       }
-      return { status: 'incorrect', attemptNumber, hint, supportOffered };
+      return { status: 'incorrect', attemptNumber, hint, supportOffered, setback };
     }
 
     // Correct: advance exactly one step, atomically with the log above.
@@ -330,6 +351,7 @@ export class RaceEngine {
       evaluation.normalized,
       true,
       'correct',
+      1,
     );
     p.progress += 1;
     p.totalCorrect += 1;
@@ -424,10 +446,14 @@ export class RaceEngine {
   }
 
   private dealNext(p: PlayerRaceState, atMs: number): void {
-    p.itemIndex = p.progress;
+    // Questions are numbered by how many were dealt, not by progress: after a setback the racer is behind
+    // but must still get a NEW question, never one they already solved.
+    p.itemIndex = p.itemsDealt;
+    p.itemsDealt += 1;
     const question = this.source.question(p.id, p.itemIndex);
     p.question = question;
     p.phase = 'answering';
+    p.setbackApplied = false;
     p.attemptsOnItem = 0;
     p.itemShownAtMs = atMs;
     p.firstActionAtMs = null;
@@ -443,7 +469,7 @@ export class RaceEngine {
   /** Log an 'unsolved'/'replaced' marker for an item that had attempts but never got a correct answer. */
   private closeOpenItem(p: PlayerRaceState, atMs: number, outcome: 'unsolved' | 'replaced'): void {
     if (p.phase !== 'answering' || !p.question || p.attemptsOnItem === 0) return;
-    this.log(p, p.question, atMs, p.attemptsOnItem, '', '', false, outcome);
+    this.log(p, p.question, atMs, p.attemptsOnItem, '', '', false, outcome, 0);
   }
 
   private describeSubmitted(answer: SubmittedAnswer): string {
@@ -467,6 +493,7 @@ export class RaceEngine {
     normalized: string,
     correct: boolean,
     outcome: AttemptOutcome,
+    stepDelta: number,
   ): void {
     this.recordCounter += 1;
     const record: AttemptRecord = {
@@ -500,6 +527,9 @@ export class RaceEngine {
       hintUsed: p.hintShown,
       supportUsed: p.supportUsed,
       outcome,
+      stepDelta,
+      // Called before the position changes, so this is where the racer will be after this attempt.
+      progressAfter: p.progress + stepDelta,
     };
     this.records.push(record);
     this.emit({ type: 'attempt', record });

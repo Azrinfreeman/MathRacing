@@ -71,6 +71,7 @@ function config(overrides: Partial<RaceConfig> = {}): RaceConfig {
     language: 'bm',
     hintsEnabled: true,
     supportEnabled: true,
+    setbackEnabled: true,
     ...DEFAULT_RACE_TIMING,
     ...overrides,
   };
@@ -162,7 +163,7 @@ describe('RaceEngine movement rules', () => {
     expect(engine.players.map((p) => p.progress)).toEqual([1, 0, 0]);
   });
 
-  it('an incorrect answer never moves a racer (and never backwards)', () => {
+  it('one or two wrong answers never move a racer (the setback needs the 3rd)', () => {
     engine.submit('p1', RIGHT, 100);
     engine.tick(1000);
     const before = engine.player('p1')?.progress;
@@ -211,6 +212,137 @@ describe('RaceEngine movement rules', () => {
     expect(engine.submit('p1', num(''), 100)).toEqual({ status: 'rejected', reason: 'incomplete' });
     expect(engine.player('p1')?.attemptsOnItem).toBe(0);
     expect(engine.attempts).toHaveLength(0);
+  });
+});
+
+describe('RaceEngine setback rule', () => {
+  /** Race p1 forward `steps` correct answers, returning the clock. */
+  function advance(engine: RaceEngine, id: string, steps: number, from = 100): number {
+    let t = from;
+    for (let i = 0; i < steps; i++) t = solve(engine, id, t) + 10;
+    return t;
+  }
+
+  it('the 3rd wrong answer to one question moves the racer back one step, and emits an event', () => {
+    const engine = ready();
+    engine.start(0);
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    const t = advance(engine, 'p1', 2);
+    expect(engine.player('p1')?.progress).toBe(2);
+
+    expect(engine.submit('p1', WRONG, t)).toMatchObject({ status: 'incorrect', setback: false });
+    expect(engine.submit('p1', WRONG, t + 10)).toMatchObject({ setback: false });
+    expect(engine.player('p1')?.progress).toBe(2);
+    const third = engine.submit('p1', WRONG, t + 20);
+    expect(third).toMatchObject({ status: 'incorrect', attemptNumber: 3, setback: true });
+    expect(engine.player('p1')?.progress).toBe(1);
+    expect(events.find((e) => e.type === 'setback')).toEqual({
+      type: 'setback',
+      playerId: 'p1',
+      from: 2,
+      progress: 1,
+    });
+    expect(engine.player('p1')?.totalSetbacks).toBe(1);
+  });
+
+  it('costs at most one step per question, however many more wrong answers follow', () => {
+    const engine = ready(config({ raceLength: 6 }));
+    engine.start(0);
+    const t = advance(engine, 'p1', 3);
+    for (let i = 0; i < 6; i++) engine.submit('p1', WRONG, t + i * 10);
+    expect(engine.player('p1')?.progress).toBe(2);
+    expect(engine.player('p1')?.totalSetbacks).toBe(1);
+  });
+
+  it('never drops below the start line', () => {
+    const engine = ready();
+    engine.start(0);
+    for (let i = 0; i < 5; i++) engine.submit('p1', WRONG, 100 + i * 10);
+    expect(engine.player('p1')?.progress).toBe(0);
+    expect(engine.player('p1')?.totalSetbacks).toBe(0);
+    expect(engine.attempts.every((a) => a.stepDelta === 0)).toBe(true);
+  });
+
+  it('is off in Practice mode and when the teacher switches it off', () => {
+    for (const cfg of [
+      config({ mode: 'practice', raceLength: 5 }),
+      config({ setbackEnabled: false }),
+    ]) {
+      const engine = ready(cfg);
+      engine.start(0);
+      const t = advance(engine, 'p1', 1);
+      for (let i = 0; i < 4; i++) engine.submit('p1', WRONG, t + i * 10);
+      expect(engine.player('p1')?.progress).toBe(1);
+    }
+  });
+
+  it('a racer who is set back is dealt a NEW question, never one already solved', () => {
+    const engine = ready(config({ raceLength: 6 }));
+    engine.start(0);
+    let t = advance(engine, 'p1', 2);
+    expect(engine.player('p1')?.question?.id).toBe('p1#2');
+    for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+    t += 100;
+    expect(engine.submit('p1', RIGHT, t).status).toBe('correct');
+    engine.tick(t + DEFAULT_RACE_TIMING.successDelayMs);
+    expect(engine.player('p1')?.progress).toBe(2);
+    expect(engine.player('p1')?.question?.id).toBe('p1#3');
+    expect(engine.player('p1')?.itemIndex).toBe(3);
+  });
+
+  it('a new question can cost a setback again', () => {
+    const engine = ready(config({ raceLength: 6 }));
+    engine.start(0);
+    let t = advance(engine, 'p1', 3);
+    for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+    expect(engine.player('p1')?.progress).toBe(2);
+    t += 100;
+    t = solve(engine, 'p1', t) + 10;
+    for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+    expect(engine.player('p1')?.progress).toBe(2);
+    expect(engine.player('p1')?.totalSetbacks).toBe(2);
+  });
+
+  it('records step_delta and progress_after in the evidence log', () => {
+    const engine = ready();
+    engine.start(0);
+    const t = advance(engine, 'p1', 2);
+    for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+    const mine = engine.attempts.filter((a) => a.playerId === 'p1');
+    expect(mine.map((a) => [a.stepDelta, a.progressAfter])).toEqual([
+      [1, 1],
+      [1, 2],
+      [0, 2],
+      [0, 2],
+      [-1, 1],
+    ]);
+  });
+
+  it('does not affect other players, and hints and support still fire', () => {
+    const engine = ready(config(), makeSource({ visual: true }));
+    engine.start(0);
+    const t = advance(engine, 'p1', 1);
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+    expect(engine.players.map((p) => p.progress)).toEqual([0, 0, 0]);
+    expect(events.map((e) => e.type)).toEqual(
+      expect.arrayContaining(['hint', 'support', 'setback']),
+    );
+  });
+
+  it('is deterministic: the same inputs give the same positions and records', () => {
+    const run = (): string => {
+      const engine = ready();
+      engine.start(0);
+      let t = advance(engine, 'p1', 2);
+      for (let i = 0; i < 3; i++) engine.submit('p1', WRONG, t + i * 10);
+      t += 100;
+      advance(engine, 'p1', 2, t);
+      return JSON.stringify([engine.players.map((p) => p.progress), engine.attempts]);
+    };
+    expect(run()).toBe(run());
   });
 });
 
