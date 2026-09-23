@@ -1,6 +1,6 @@
 # Architecture
 
-MathRacing is a static, offline-first web app. Teacher screens (Setup, Results, help, pause) are plain accessible DOM. The live race is a Phaser 4 canvas that exists only for the Ready and Race screens. All rules and curriculum logic live in framework-independent TypeScript.
+MathRacing is a static, offline-first web app. The splash, menu, setup steps, teacher settings, results, help and pause screens are plain accessible DOM. The live race is a Phaser 4 canvas that exists only for the Ready and Race screens. All rules and curriculum logic live in framework-independent TypeScript.
 
 ## Screen flow and state machine
 
@@ -66,6 +66,10 @@ Time is passed in (`atMs`), so every rule is deterministic and testable.
 ## Widgets
 
 Pure models (`game/widgets`) hold input state and lay out their controls; `PanelView` draws them. Number pad and choice tiles are the primary widgets; tap-picture, order-strip and build-value are implemented with tap-only interaction. Widgets never validate answers.
+
+## Screens
+
+`index.html` holds the launch splash inline (it shows before any script); `screens/SplashScreen` takes it over while the game engine preloads, then `AppController` shows `MenuScreen`. From the menu: `SetupScreen` (four steps: Tahun, Topik & Tahap, Pemain, Sedia?) or `TeacherScreen` (options, seed, local data, PBD notice). All three share one in-memory `SetupState` (`app/setupState.ts`); only classroom-level fields are saved as `Settings`, never names or the seed. These screens live inside the `SETUP` phase; the race state machine is unchanged. Inline SVG art (vehicles, topic icons, stars) comes from `app/art.ts`, drawn with the same vehicle coordinates as `TrackView`.
 
 ## Rendering
 

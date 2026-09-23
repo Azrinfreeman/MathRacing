@@ -1,6 +1,6 @@
 # Implementation plan: splash screen, main menu and a touch-first race setup
 
-Status: proposed, not started. Target: Android tablets (1024x600 to 1920x1200) and TV smartboards (1920x1080 CSS
+Status: implemented (D1 changed: the splash moves on by itself; D2-D8 as recommended). Target: Android tablets (1024x600 to 1920x1200) and TV smartboards (1920x1080 CSS
 pixels), landscape, used by a teacher and 2-5 Year 1-2 pupils standing at one screen.
 
 ## 1. What is being asked

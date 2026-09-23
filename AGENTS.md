@@ -11,13 +11,13 @@ Full file list with exports: `docs/REPO-MAP.md` (generated). Rationale for every
 - `src/game/ui/` drawing: `TrackView` (track, cars, particles), `PanelView` (pupil panel), `motion.ts` (car spring), layout (pure).
 - `src/game/scenes/` Phaser scenes (`ReadyScene`, `RaceScene`, `StageScene`). Frames run inside `guardedFrame`.
 - `src/curriculum/` schema, answers, blueprint, registry; `generators/` one file per topic group; `packs/`.
-- `src/app/` `AppController` (flow, persistence), `screens/SetupScreen`, `screens/ResultsScreen`, dialogs, help.
+- `src/app/` `AppController` (flow, persistence), `setupState` (shared choices), `screens/` Splash, Menu, Setup (4 steps), Teacher, Results; dialogs, help, `art.ts` (inline SVG).
 - `src/storage/` settings (localStorage) and evidence (IndexedDB). `src/reporting/` CSV and teacher evidence summary.
 - `src/locales/` `bm.ts` (complete: write here first), `en.ts` (falls back to BM per key).
 - `docs/` ARCHITECTURE, DECISIONS (append-only, numbered), CURRICULUM-MAPPING and REPO-MAP (both generated: never hand-edit), PLAN-\* (past plans).
 - Task to files:
   - race rule: `RaceEngine` + `RaceState` + `raceEngine.test.ts`
-  - new Setup option: `storage/settings.ts` + `SetupScreen` + `AppController` + both locales + `storage.test.ts`
+  - new teacher option: `storage/settings.ts` + `setupState` + `TeacherScreen` + both locales + `storage.test.ts`
   - new attempt field: `RaceState` + `RaceEngine.log` + `reporting/exportCsv` + `storage.test.ts` fixtures
   - new template: `generators/<group>` + `curriculum.test.ts`, then `npm run docs:curriculum`
   - car visuals: `TrackView` + `motion.ts` + `motion.test.ts`

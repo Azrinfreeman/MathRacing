@@ -19,6 +19,8 @@ export type RaceOptions = {
   names?: string[];
   mode?: 'quick' | 'practice';
   language?: 'bm' | 'en';
+  /** Teacher settings to switch on or off, by their `opt-*` test id suffix. */
+  options?: Partial<Record<'sound' | 'reducedMotion' | 'hints' | 'support' | 'setback', boolean>>;
 };
 
 export type Point = { x: number; y: number };
@@ -33,18 +35,32 @@ export function watchErrors(page: Page): string[] {
   return errors;
 }
 
-/** Fill in the teacher Setup screen from the given options (does not start the race). */
+/**
+ * From the main menu, set everything up the way a teacher would: language on the menu, seed and options on
+ * the teacher screen, then the four setup steps. Ends on the "Ready?" step with Start visible (does not start).
+ */
 export async function fillSetup(page: Page, o: RaceOptions): Promise<void> {
-  await page.getByTestId('seed').fill(o.seed);
   if (o.language === 'en') await page.getByTestId('lang-en').click();
-  if ((o.year ?? 1) === 2) await page.getByTestId('year-2').click();
+  await page.getByTestId('menu-teacher').click();
+  await page.getByTestId('seed').fill(o.seed);
+  for (const [key, on] of Object.entries(o.options ?? {}))
+    await page.getByTestId(`opt-${key}`).setChecked(on);
+  await page.getByTestId('teacher-back').click();
+  await page.getByTestId(o.mode === 'practice' ? 'menu-practice' : 'menu-race').click();
+  // step 1: tapping a year moves straight on to step 2
+  await page.getByTestId(`year-${o.year ?? 1}`).click();
+  await expect(page.getByTestId('step-2')).toHaveAttribute('aria-current', 'step');
   await page.getByTestId('topics-none').click();
   for (const topic of o.topics) await page.getByTestId(`topic-${topic}`).click();
   await page.getByTestId(`level-${o.level}`).click();
-  await page.getByTestId(`mode-${o.mode ?? 'quick'}`).click();
-  await page.getByTestId(`length-${o.length}`).click();
+  await page.getByTestId('setup-next').click();
+  // step 3: players
   await page.getByTestId(`count-${o.players}`).click();
   for (const [i, name] of (o.names ?? []).entries()) await page.getByTestId(`name-${i}`).fill(name);
+  await page.getByTestId('setup-next').click();
+  // step 4: mode and race length
+  await page.getByTestId(`mode-${o.mode ?? 'quick'}`).click();
+  await page.getByTestId(`length-${o.length}`).click();
 }
 
 /** Start the race and get past the Ready screen (teacher "start now"), ending with the race live. */

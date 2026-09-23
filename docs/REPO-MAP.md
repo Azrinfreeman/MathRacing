@@ -4,9 +4,9 @@
 
 ## e2e/
 
-- `mathracing.spec.ts` (535): classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
-- `setback.spec.ts` (161): setback after 3 wrong answers
-- `support.ts` (219): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, readAttempts, readSessionCount
+- `mathracing.spec.ts` (596): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
+- `setback.spec.ts` (163): setback after 3 wrong answers
+- `support.ts` (235): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, readAttempts, readSessionCount
 
 ## scripts/
 
@@ -18,16 +18,22 @@
 
 ## src/app/
 
-- `AppController.ts` (440): AppDeps, AppController
+- `AppController.ts` (528): AppDeps, AppController
 - `StageChrome.ts` (225): StagePhase, StageHandlers, StageChrome
+- `art.ts` (263): symbolBadgeSvg, vehicleSvg, levelStarsSvg, topicIconSvg, MENU_ICONS
+- `controls.ts` (73): choice, languageSwitch, svgArt
 - `dialogs.ts` (130): confirmDialog, contentDialog, toast
 - `dom.ts` (89): Child, Attrs, h, append, clear
-- `help.ts` (50): showHelp
+- `help.ts` (56): showHelp
+- `setupState.ts` (134): SetupInput, SetupState, stateFromSettings, settingsFromState, defaultTopicForYear, keepYearTopics, normalizeNames, buildSetupInput
 
 ## src/app/screens/
 
+- `MenuScreen.ts` (153): MenuDeps, MenuScreen
 - `ResultsScreen.ts` (311): ResultsData, ResultsCallbacks, ResultsScreen
-- `SetupScreen.ts` (767): SetupInput, SetupDeps, normalizeNames, SetupScreen
+- `SetupScreen.ts` (637): SetupStep, SetupDeps, summarizeSetup, SetupScreen
+- `SplashScreen.ts` (83): SplashOptions, runSplash
+- `TeacherScreen.ts` (217): TeacherDeps, TeacherScreen
 
 ## src/curriculum/
 
@@ -110,13 +116,13 @@
 
 ## src/locales/
 
-- `bm.ts` (167): bm, MessageKey
-- `en.ts` (164): en
+- `bm.ts` (199): bm, MessageKey
+- `en.ts` (196): en
 - `index.ts` (33): Params, Translator, translate, createTranslator, ALL_MESSAGE_KEYS
 
 ## src/
 
-- `main.ts` (68)
+- `main.ts` (69)
 
 ## src/reporting/
 
@@ -127,12 +133,12 @@
 
 - `IndexedDbSessionRepository.ts` (125): IndexedDbSessionRepository, RepositoryChoice, createRepository
 - `SessionRepository.ts` (74): SessionRepository, compareAttempts, InMemorySessionRepository
-- `settings.ts` (137): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, SettingsStore
+- `settings.ts` (147): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, SettingsStore
 
 ## src/tests/
 
 - `answers.test.ts` (169): normalizeDecimal, senToRmText, evaluateAnswer
-- `app.test.ts` (413): normalizeNames, Setup screen, race flow, export and deletion, failure handling
+- `app.test.ts` (522): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `curriculum.test.ts` (334): curriculum registry, number words
 - `helpers.ts` (20): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
@@ -142,7 +148,8 @@
 - `pointerRouter.test.ts` (150): PointerRouter
 - `raceEngine.test.ts` (703): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint
 - `seededRng.test.ts` (95): SeededRng
+- `splash.test.ts` (90): launch splash
 - `stateMachine.test.ts` (60): SessionStateMachine
-- `storage.test.ts` (344): session repositories, CSV export, settings
+- `storage.test.ts` (352): session repositories, CSV export, settings
 - `trackGeometry.test.ts` (56): track geometry
 - `widgets.test.ts` (295): NumberPadWidget, ChoiceTilesWidget, TapPictureWidget, OrderStripWidget, BuildValueWidget, hitControl, widget layout across every template

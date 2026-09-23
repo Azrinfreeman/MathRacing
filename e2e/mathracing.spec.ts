@@ -26,7 +26,7 @@ async function freshPage(page: Page): Promise<string[]> {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(page.getByTestId('start')).toBeVisible();
+  await expect(page.getByTestId('menu-race')).toBeVisible();
   return errors;
 }
 
@@ -51,10 +51,68 @@ const TWO: RaceOptions = {
   names: ['Aina', 'Budi'],
 };
 
+test.describe('splash, menu and setup steps', () => {
+  test('the splash shows at once, then moves on to the menu by itself', async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto('/');
+    await expect(page.locator('#splash')).toBeVisible();
+    await page.waitForTimeout(700); // cars mid-drive
+    await page.screenshot({ path: `${SHOTS}/00-splash.png` });
+    await expect(page.getByTestId('menu-race')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#splash')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  for (const [w, h] of [
+    [1024, 600],
+    [1280, 800],
+    [1920, 1080],
+  ] as const) {
+    test(`${w}x${h}: menu and every setup step fit without scrolling`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      const errors = await freshPage(page);
+      const shot = async (name: string): Promise<void> => {
+        if (w === 1920) await page.screenshot({ path: `${SHOTS}/${name}.png` });
+      };
+      const fits = async (): Promise<void> => {
+        const overflow = await page.evaluate(() => {
+          const body = document.querySelector('.wiz-body');
+          return {
+            page: document.documentElement.scrollHeight > window.innerHeight + 1,
+            wide: document.documentElement.scrollWidth > window.innerWidth + 1,
+            step: body ? body.scrollHeight > body.clientHeight + 1 : false,
+          };
+        });
+        expect(overflow).toEqual({ page: false, wide: false, step: false });
+      };
+      await fits();
+      await shot('01-menu');
+      await page.getByTestId('menu-race').click();
+      await fits();
+      await shot('01a-step-year');
+      await page.getByTestId('year-1').click();
+      await page.getByTestId('topic-y1-money').click();
+      await fits();
+      await shot('01b-step-topics');
+      await page.getByTestId('setup-next').click();
+      await page.getByTestId('count-5').click();
+      await fits();
+      await shot('01c-step-players');
+      await page.getByTestId('setup-next').click();
+      await fits();
+      await shot('01d-step-ready');
+      await page.getByTestId('setup-home').click();
+      await page.getByTestId('menu-teacher').click();
+      await shot('01e-teacher');
+      expect(errors).toEqual([]);
+    });
+  }
+});
+
 test.describe('classroom happy path', () => {
   test('two-player Year 1 race: winner, results, Main Lagi, back to setup', async ({ page }) => {
     const errors = await freshPage(page);
-    await page.screenshot({ path: `${SHOTS}/01-setup.png`, fullPage: true });
+    await page.screenshot({ path: `${SHOTS}/01-menu.png` });
     await fillSetup(page, TWO);
     await page.getByTestId('start').click();
     await expect(page.locator('canvas')).toBeVisible();
@@ -478,6 +536,9 @@ test.describe('evidence, export and deletion', () => {
     await answerItems(page, { ...TWO, seed: 'E2E-KEEP' }, 0, TWO.length);
     await expect(page.getByTestId('winner-banner')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('new-setup').click();
+    await page.getByTestId('setup-home').click();
+    await expect(page.getByTestId('menu-sessions')).toContainText('1 sesi');
+    await page.getByTestId('menu-teacher').click();
     await expect(page.getByTestId('session-count')).toContainText('1 sesi');
     await page.getByTestId('delete-all').click();
     await page.getByTestId('confirm-ok').click();
@@ -509,7 +570,7 @@ test.describe('offline and installability', () => {
 
     await context.setOffline(true);
     await page.reload();
-    await expect(page.getByTestId('start')).toBeVisible();
+    await expect(page.getByTestId('menu-race')).toBeVisible();
     await fillSetup(page, { ...TWO, seed: 'E2E-OFFLINE' });
     await startRace(page);
     await answerItems(page, { ...TWO, seed: 'E2E-OFFLINE' }, 0, TWO.length);

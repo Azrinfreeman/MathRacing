@@ -32,7 +32,7 @@ async function freshPage(page: Page): Promise<string[]> {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expect(page.getByTestId('start')).toBeVisible();
+  await expect(page.getByTestId('menu-race')).toBeVisible();
   return errors;
 }
 
@@ -109,9 +109,8 @@ test.describe('setback after 3 wrong answers', () => {
 
   test('no setback when the teacher switches it off', async ({ page }) => {
     const errors = await freshPage(page);
-    const o = { ...BASE, seed: 'E2E-SETBACK-OFF' };
+    const o: RaceOptions = { ...BASE, seed: 'E2E-SETBACK-OFF', options: { setback: false } };
     await fillSetup(page, o);
-    await page.getByTestId('opt-setback').uncheck();
     await startRace(page);
     await right(page, o, 0);
     await wrong(page, o, 1, 4);
@@ -146,9 +145,12 @@ test.describe('setback after 3 wrong answers', () => {
 
   test('reduced motion: the setback still happens and no errors occur', async ({ page }) => {
     const errors = await freshPage(page);
-    const o = { ...BASE, seed: 'E2E-SETBACK-REDUCED' };
+    const o: RaceOptions = {
+      ...BASE,
+      seed: 'E2E-SETBACK-REDUCED',
+      options: { reducedMotion: true },
+    };
     await fillSetup(page, o);
-    await page.getByTestId('opt-reducedMotion').check();
     await startRace(page);
     await right(page, o, 0);
     await wrong(page, o, 1, 3);
