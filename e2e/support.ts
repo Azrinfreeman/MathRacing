@@ -124,6 +124,36 @@ export function tapPlan(
   }
 }
 
+/**
+ * Taps for a wrong (but complete) number-pad answer: one digit that is not the answer. Only number-pad
+ * questions are supported, so tests that need wrong answers pick a topic and seed that deal number pads.
+ */
+export function wrongTapPlan(
+  q: GeneratedQuestion,
+  viewport: { w: number; h: number },
+  players: number,
+  playerIndex: number,
+): Point[] {
+  const a = q.acceptedAnswer;
+  if (q.widget !== 'number-pad' || a.kind !== 'number')
+    throw new Error(`wrongTapPlan needs a number-pad question, got ${q.widget}`);
+  const layout = computeStageLayout(viewport.w, viewport.h, players);
+  const panel = layout.panels[playerIndex] as Rect;
+  const widget = createWidget(q);
+  const zones = computePanelZones(panel, {
+    hasVisual: q.prompt.visual !== undefined,
+    showAnswerField: widget.showAnswerField,
+  });
+  const controls = widget.layout(zones.widget);
+  const centre = (id: string): Point => {
+    const c = controls.find((x) => x.id === id);
+    if (!c) throw new Error(`no control ${id} for ${q.templateId}`);
+    return { x: c.rect.x + c.rect.w / 2, y: c.rect.y + c.rect.h / 2 };
+  };
+  const last = Number(a.value.slice(-1));
+  return [centre(`d${(last + 1) % 10}`), centre('submit')];
+}
+
 export const SUCCESS_WAIT_MS = 900;
 
 /** Click a sequence of points with the mouse (one player, one finger). */

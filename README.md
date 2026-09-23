@@ -4,8 +4,8 @@ An offline-first mathematics racing game for Malaysian **Year 1 and Year 2** cla
 
 ![Race with five players](docs/screenshots/race-5p-1920x1080.png)
 
-- **Teacher setup in under a minute:** Year 1 or 2, one topic or a mixed race, difficulty level 1-4, 2-5 named players, Lumba Pantas (winner) or Latihan (no winner), 5/8/10/12 correct answers, Bahasa Melayu or English, sound, reduced motion, hints and support.
-- **Fair and calm:** equal movement for every correct answer, same questions blueprint and level for everyone, private "Cuba lagi." on a wrong answer, no backwards movement, no public accuracy.
+- **Teacher setup in under a minute:** Year 1 or 2, one topic or a mixed race, difficulty level 1-4, 2-5 named players, Lumba Pantas (winner) or Latihan (no winner), 5/8/10/12 correct answers, Bahasa Melayu or English, sound, reduced motion, hints, support and the setback rule.
+- **Fair and calm:** equal movement for every correct answer, same questions blueprint and level for everyone, private "Cuba lagi." on a wrong answer, no public accuracy. **Setback (Quick Race, on by default, switchable in Setup):** the 3rd wrong answer to the same question rolls the car back one step, once per question and never below the start line.
 - **Curriculum-tagged evidence:** every attempt is stored locally with pack, year, topic, SK, template, level, answer, time, hint and support use. **MathRacing records evidence; it never assigns a Tahap Penguasaan (TP).** The teacher makes the professional judgement.
 - **Private:** no accounts, server, analytics or tracking. Data stays on the device and can be exported (CSV) or deleted at any time.
 - **77 question templates** across 15 topics, 5 widget types, all generated from a seed (reproducible) and covered by property tests. See [docs/CURRICULUM-MAPPING.md](docs/CURRICULUM-MAPPING.md).
