@@ -336,6 +336,14 @@ describe('settings', () => {
     expect(loaded).toMatchObject({ reducedMotion: false, language: 'en' });
   });
 
+  it('knows whether a teacher has saved settings before', () => {
+    const store = fakeStore();
+    expect(new SettingsStore(store).hasStored()).toBe(false);
+    new SettingsStore(store).save(DEFAULT_SETTINGS);
+    expect(new SettingsStore(store).hasStored()).toBe(true);
+    expect(new SettingsStore(null).hasStored()).toBe(false);
+  });
+
   it('works with no storage at all', () => {
     const settings = new SettingsStore(null);
     expect(settings.load()).toEqual(DEFAULT_SETTINGS);

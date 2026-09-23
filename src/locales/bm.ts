@@ -77,6 +77,36 @@ export const bm = {
   'setup.data.confirmAll':
     'Padam semua data sesi pada peranti ini? Tindakan ini tidak boleh dibatalkan.',
   'setup.data.deleted': 'Semua data sesi telah dipadam.',
+  'setup.step.year': 'Tahun',
+  'setup.step.topics': 'Topik & Tahap',
+  'setup.step.players': 'Pemain',
+  'setup.step.ready': 'Sedia?',
+  'setup.stepOf': 'Langkah {n} daripada 4',
+  'setup.back': 'Kembali',
+  'setup.next': 'Seterusnya',
+  'setup.year.pick': 'Pilih Tahun',
+  'setup.year.1.example': '5 + 3 = ?',
+  'setup.year.2.example': '4 × 2 = ?',
+  'setup.players.pick': 'Berapa orang pemain?',
+  'setup.nameOptional': 'Nama (pilihan)',
+  'setup.ready.title': 'Sedia untuk berlumba?',
+  'setup.ready.change': 'Tukar',
+  'setup.summary.players': '{n} pemain',
+  'setup.summary.topics': '{n} topik',
+
+  'menu.title': 'Menu utama',
+  'menu.home': 'Menu',
+  'menu.race': 'Main',
+  'menu.race.desc': 'Lumba Pantas: yang pertama sampai penamat menang',
+  'menu.practice': 'Latihan',
+  'menu.practice.desc': 'Tiada pemenang. Setiap murid ikut rentak sendiri',
+  'menu.again': 'Main semula',
+  'menu.teacher': 'Tetapan guru',
+
+  'teacher.title': 'Tetapan guru',
+  'teacher.back': 'Menu',
+  'teacher.session': 'Sesi',
+
   'setup.pbdNotice':
     'MathRacing menyediakan bukti untuk Pentaksiran Bilik Darjah (PBD). Ia tidak menetapkan Tahap Penguasaan (TP); guru membuat pertimbangan profesional.',
 
@@ -153,6 +183,8 @@ export const bm = {
     'Tekan lama butang Jeda di bahagian atas trek, atau tekan kekunci Esc, untuk menjeda perlumbaan.',
   'help.teacher.2':
     'Selepas perlumbaan, buka "Papar bukti guru" untuk melihat rekod. Eksport CSV tersedia.',
+  'help.teacher.3':
+    'Tetapan guru (di sudut menu utama) mengawal bunyi, gerakan, petunjuk, sokongan, undur, benih sesi dan data setempat.',
   'help.pbd.title': 'Sempadan PBD',
   'help.pbd.body':
     'MathRacing merekod bukti (percubaan, sokongan, masa) yang mengikut kod SK. Ia tidak mengira atau memberi Tahap Penguasaan (TP). Pertimbangan profesional guru kekal menjadi keputusan akhir.',

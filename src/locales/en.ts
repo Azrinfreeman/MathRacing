@@ -76,6 +76,36 @@ export const en: Partial<Record<MessageKey, string>> = {
   'setup.data.deleteAll': 'Delete all session data',
   'setup.data.confirmAll': 'Delete all session data on this device? This cannot be undone.',
   'setup.data.deleted': 'All session data has been deleted.',
+  'setup.step.year': 'Year',
+  'setup.step.topics': 'Topics & level',
+  'setup.step.players': 'Players',
+  'setup.step.ready': 'Ready?',
+  'setup.stepOf': 'Step {n} of 4',
+  'setup.back': 'Back',
+  'setup.next': 'Next',
+  'setup.year.pick': 'Choose the Year',
+  'setup.year.1.example': '5 + 3 = ?',
+  'setup.year.2.example': '4 × 2 = ?',
+  'setup.players.pick': 'How many players?',
+  'setup.nameOptional': 'Name (optional)',
+  'setup.ready.title': 'Ready to race?',
+  'setup.ready.change': 'Change',
+  'setup.summary.players': '{n} players',
+  'setup.summary.topics': '{n} topics',
+
+  'menu.title': 'Main menu',
+  'menu.home': 'Menu',
+  'menu.race': 'Play',
+  'menu.race.desc': 'Quick Race: first to the finish wins',
+  'menu.practice': 'Practice',
+  'menu.practice.desc': 'No winner. Every pupil goes at their own pace',
+  'menu.again': 'Play again',
+  'menu.teacher': 'Teacher settings',
+
+  'teacher.title': 'Teacher settings',
+  'teacher.back': 'Menu',
+  'teacher.session': 'Session',
+
   'setup.pbdNotice':
     'MathRacing provides evidence for classroom-based assessment (PBD). It does not assign a Tahap Penguasaan (TP); the teacher makes the professional judgement.',
 
@@ -152,6 +182,8 @@ export const en: Partial<Record<MessageKey, string>> = {
     'Press and hold the Pause button above the track, or press the Esc key, to pause the race.',
   'help.teacher.2':
     'After the race, open "Show teacher evidence" to see the records. CSV export is available.',
+  'help.teacher.3':
+    'Teacher settings (in the corner of the main menu) control sound, motion, hints, support, setback, the session seed and local data.',
   'help.pbd.title': 'PBD boundary',
   'help.pbd.body':
     'MathRacing records evidence (attempts, support, time) tagged with SK codes. It does not calculate or award a Tahap Penguasaan (TP). The teacher’s professional judgement remains the final decision.',

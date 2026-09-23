@@ -1,7 +1,6 @@
 import { createQuestionSource } from '../curriculum/blueprint';
 import type { CurriculumRegistry } from '../curriculum/registry';
 import { getDefaultRegistry } from '../curriculum/registry';
-import type { Language } from '../curriculum/schema';
 import { pickText } from '../curriculum/schema';
 import type { GameHandle } from '../game/createGame';
 import { RaceEngine } from '../game/core/RaceEngine';
@@ -23,9 +22,13 @@ import { confirmDialog, toast } from './dialogs';
 import { clear, h } from './dom';
 import { showHelp } from './help';
 import { ResultsScreen } from './screens/ResultsScreen';
-import type { SetupInput } from './screens/SetupScreen';
-import { SetupScreen } from './screens/SetupScreen';
+import { MenuScreen } from './screens/MenuScreen';
+import type { SetupStep } from './screens/SetupScreen';
+import { SetupScreen, summarizeSetup } from './screens/SetupScreen';
 import { runSplash } from './screens/SplashScreen';
+import { TeacherScreen } from './screens/TeacherScreen';
+import type { SetupInput, SetupState } from './setupState';
+import { settingsFromState, stateFromSettings } from './setupState';
 import { StageChrome } from './StageChrome';
 
 export type AppDeps = {
@@ -69,7 +72,12 @@ export class AppController {
 
   private readonly machine = new SessionStateMachine('SETUP');
   private settings: Settings;
-  private setup: SetupScreen | null = null;
+  /** The current DOM screen: menu, setup steps or teacher settings. */
+  private screen: { unmount(): void } | null = null;
+  /** The setup choices, shared by the menu, the setup steps and the teacher screen. */
+  private readonly state: SetupState;
+  /** True once there is a setup worth repeating (saved settings or a race this session). */
+  private hasHistory: boolean;
   private results: ResultsScreen | null = null;
   private chrome: StageChrome | null = null;
   private game: GameHandle | null = null;
@@ -91,6 +99,8 @@ export class AppController {
       deps.settings ??
       new SettingsStore(undefined, (e) => console.warn('settings storage problem', e));
     this.settings = this.settingsStore.load();
+    this.state = stateFromSettings(this.settings);
+    this.hasHistory = this.settingsStore.hasStored();
     this.now = deps.now ?? (() => performance.now());
     this.sound =
       deps.sound ??
@@ -116,6 +126,7 @@ export class AppController {
   async start(): Promise<void> {
     this.keyHandler = (e) => this.onKey(e);
     document.addEventListener('keydown', this.keyHandler);
+    this.applyPageSettings();
     const t = this.t;
     // Load the game engine while the splash plays, so the first race starts without a wait.
     const preload = this.makeGame
@@ -132,13 +143,13 @@ export class AppController {
       cars: PLAYER_STYLES.slice(0, 3).map(vehicleSvg),
       still: this.settings.reducedMotion,
     });
-    await this.showSetup();
+    await this.showMenu();
   }
 
   dispose(): void {
     if (this.keyHandler) document.removeEventListener('keydown', this.keyHandler);
     this.destroyStage();
-    this.setup?.unmount();
+    this.screen?.unmount();
     this.results?.unmount();
     this.toasts.remove();
   }
@@ -154,24 +165,83 @@ export class AppController {
     }
   }
 
-  private async showSetup(): Promise<void> {
+  private storageNote(): string | null {
+    return this.storageWarning ?? (this.repo.persistent ? null : this.t('app.storageWarning'));
+  }
+
+  /** Save the classroom-level choices (never names or the seed) and apply them to the page. */
+  private saveState(): void {
+    this.settings = settingsFromState(this.state);
+    this.settingsStore.save(this.settings);
+    this.applyPageSettings();
+  }
+
+  private applyPageSettings(): void {
+    const html = document.documentElement;
+    html.lang = this.settings.language === 'en' ? 'en' : 'ms';
+    html.classList.toggle('reduce-motion', this.settings.reducedMotion);
+  }
+
+  private clearScreens(): void {
     this.destroyStage();
     this.results?.unmount();
     this.results = null;
-    this.setup?.unmount();
+    this.screen?.unmount();
+    this.screen = null;
+  }
+
+  private async showMenu(): Promise<void> {
+    this.clearScreens();
     const count = await this.sessionCount();
-    const t = this.t;
-    this.setup = new SetupScreen({
-      registry: this.registry,
-      settings: this.settings,
+    this.screen?.unmount();
+    const menu = new MenuScreen({
+      language: this.state.language,
       sessionCount: count,
-      storageNote: this.storageWarning ?? (this.repo.persistent ? null : t('app.storageWarning')),
-      onStart: (input) => void this.beginRace(input, false),
-      onChange: (s) => {
-        this.settings = s;
-        this.settingsStore.save(s);
+      storageNote: this.storageNote(),
+      lastSummary: this.hasHistory ? summarizeSetup(this.registry, this.state, this.t).line : null,
+      onLanguage: (language) => {
+        this.state.language = language;
+        this.saveState();
+        void this.showMenu();
       },
-      onLanguage: (language) => this.setLanguage(language),
+      onHelp: () => showHelp(this.t),
+      onPlay: (mode) => {
+        this.state.mode = mode;
+        this.saveState();
+        this.showSetup(1);
+      },
+      onAgain: () => this.showSetup(4),
+      onTeacher: () => void this.showTeacher(),
+    });
+    this.screen = menu;
+    menu.mount(this.root);
+  }
+
+  private showSetup(step: SetupStep): void {
+    this.clearScreens();
+    const setup = new SetupScreen({
+      registry: this.registry,
+      state: this.state,
+      step,
+      onChange: () => this.saveState(),
+      onStart: (input) => void this.beginRace(input, false),
+      onHome: () => void this.showMenu(),
+      onHelp: () => showHelp(this.t),
+    });
+    this.screen = setup;
+    setup.mount(this.root);
+  }
+
+  private async showTeacher(): Promise<void> {
+    this.clearScreens();
+    const count = await this.sessionCount();
+    this.screen?.unmount();
+    const teacher = new TeacherScreen({
+      state: this.state,
+      sessionCount: count,
+      storageNote: this.storageNote(),
+      onChange: () => this.saveState(),
+      onBack: () => void this.showMenu(),
       onHelp: () => showHelp(this.t),
       onDeleteAll: async () => {
         await this.repo.deleteAll();
@@ -179,13 +249,8 @@ export class AppController {
       },
       confirm: (message) => confirmDialog(this.t, message),
     });
-    if (this.lastInput) this.setup.setNames(this.lastInput.playerNames);
-    this.setup.mount(this.root);
-  }
-
-  private setLanguage(language: Language): void {
-    this.settings = { ...this.settings, language };
-    this.settingsStore.save(this.settings);
+    this.screen = teacher;
+    teacher.mount(this.root);
   }
 
   // ------------------------------------------------------------------------------ race
@@ -286,21 +351,22 @@ export class AppController {
           onRaceStarted: () => this.chrome?.setPhase('racing'),
           onCelebrationDone: () => void this.showResults(),
           onHidden: () => this.pauseRace(),
-          onFatal: (error) => void this.abortToSetup(error),
+          onFatal: (error) => this.abortToSetup(error),
         },
       };
 
-      this.setup?.unmount();
-      this.setup = null;
+      this.screen?.unmount();
+      this.screen = null;
+      this.hasHistory = true;
       this.results?.unmount();
       this.results = null;
       this.chrome = new StageChrome(this.root, t, {
         onPause: () => this.pauseRace(),
         onResume: () => this.resumeRace(),
         onSkipReady: () => this.game?.skipReady(),
-        onCancel: () => void this.cancelReady(),
+        onCancel: () => this.cancelReady(),
         onEnd: () => this.endRace(),
-        onExit: () => void this.exitToSetup(),
+        onExit: () => this.exitToSetup(),
         onHelp: () => showHelp(this.t),
       });
       this.chrome.setPhase('ready');
@@ -310,7 +376,7 @@ export class AppController {
       const reason = error instanceof Error ? error.message : String(error);
       if (this.machine.phase === 'READY') this.machine.transition('SETUP');
       this.destroyStage();
-      if (!this.setup) await this.showSetup();
+      if (!this.screen) this.showSetup(4);
       toast(this.toasts, t('app.raceError', { reason }), 'warn', 12000);
     }
   }
@@ -338,25 +404,25 @@ export class AppController {
   }
 
   /** The game could not keep drawing: stop cleanly and tell the teacher, rather than leave a frozen screen. */
-  private async abortToSetup(error: unknown): Promise<void> {
+  private abortToSetup(error: unknown): void {
     console.error('Race aborted after repeated errors', error);
     const reason = error instanceof Error ? error.message : String(error);
     if (this.machine.phase === 'RACING') this.engine?.pause(this.now());
     if (this.machine.phase === 'PAUSED' || this.machine.phase === 'READY')
       this.machine.transition('SETUP');
-    await this.showSetup();
+    this.showSetup(4);
     toast(this.toasts, this.t('app.raceError', { reason }), 'warn', 15000);
   }
 
-  private async cancelReady(): Promise<void> {
+  private cancelReady(): void {
     if (this.machine.phase === 'READY') this.machine.transition('SETUP');
-    await this.showSetup();
+    this.showSetup(4);
   }
 
-  private async exitToSetup(): Promise<void> {
+  private exitToSetup(): void {
     if (this.machine.phase === 'PAUSED') this.machine.transition('SETUP');
     else if (this.machine.phase === 'READY') this.machine.transition('SETUP');
-    await this.showSetup();
+    this.showSetup(4);
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -412,7 +478,7 @@ export class AppController {
         },
         onNewSetup: () => {
           if (this.machine.phase === 'RESULTS') this.machine.transition('SETUP');
-          void this.showSetup();
+          this.showSetup(4);
         },
         onExport: () => this.exportCsv(screen),
         onDelete: async () => {

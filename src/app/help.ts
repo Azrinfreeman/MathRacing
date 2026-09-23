@@ -24,7 +24,13 @@ export function showHelp(t: Translator, host: HTMLElement = document.body): { cl
         'section',
         {},
         h('h3', { text: t('help.teacher.title') }),
-        h('ul', {}, h('li', { text: t('help.teacher.1') }), h('li', { text: t('help.teacher.2') })),
+        h(
+          'ul',
+          {},
+          ...(['help.teacher.1', 'help.teacher.2', 'help.teacher.3'] as const).map((k) =>
+            h('li', { text: t(k) }),
+          ),
+        ),
       ),
       h(
         'section',

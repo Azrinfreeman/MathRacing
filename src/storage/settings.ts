@@ -118,6 +118,16 @@ export class SettingsStore {
     }
   }
 
+  /** True when a teacher has saved settings on this device before (the menu then offers "play again"). */
+  hasStored(): boolean {
+    if (!this.store) return false;
+    try {
+      return this.store.getItem(KEY) !== null;
+    } catch {
+      return false;
+    }
+  }
+
   save(settings: Settings): void {
     if (!this.store) return;
     try {

@@ -2,14 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppController } from '../app/AppController';
 import { BOM } from '../reporting/exportCsv';
-import { normalizeNames } from '../app/screens/SetupScreen';
+import { normalizeNames } from '../app/setupState';
 import type { GameHandle } from '../game/createGame';
 import type { RaceSessionContext } from '../game/session';
 import type { AttemptRecord } from '../game/core/RaceState';
 import { InMemorySessionRepository } from '../storage/SessionRepository';
 import type { SessionRepository } from '../storage/SessionRepository';
 import type { KeyValueStore } from '../storage/settings';
-import { SettingsStore } from '../storage/settings';
+import { DEFAULT_SETTINGS, SettingsStore } from '../storage/settings';
 import { correctSubmission } from './helpers';
 
 const q = <T extends HTMLElement = HTMLElement>(id: string): T | null =>
@@ -57,7 +57,10 @@ type Harness = {
 let harness: Harness;
 let clock = 1000;
 
-async function boot(repo: SessionRepository = new InMemorySessionRepository()): Promise<Harness> {
+async function boot(
+  repo: SessionRepository = new InMemorySessionRepository(),
+  settings: SettingsStore = new SettingsStore(memoryStore()),
+): Promise<Harness> {
   document.body.innerHTML = '<div id="app"></div>';
   const root = document.getElementById('app') as HTMLElement;
   let session: RaceSessionContext | null = null;
@@ -88,7 +91,7 @@ async function boot(repo: SessionRepository = new InMemorySessionRepository()): 
   };
   h.app = new AppController(root, {
     repository: repo,
-    settings: new SettingsStore(memoryStore()),
+    settings,
     createGame: fakeGame,
     now: () => clock,
     devDiagnostics: false,
@@ -144,36 +147,73 @@ describe('normalizeNames', () => {
   });
 });
 
-describe('Setup screen', () => {
-  it('opens on Setup (not an unexplained game screen) in Bahasa Melayu with the PBD boundary visible', async () => {
+/** Type into an input the way a person does (value + input event). */
+function type(id: string, value: string): void {
+  const el = q<HTMLInputElement>(id);
+  if (!el) throw new Error(`no input ${id}`);
+  el.value = value;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/** From the menu into the setup steps (Main = Quick Race, Latihan = Practice). */
+const openSetup = (mode: 'race' | 'practice' = 'race'): Promise<void> => click(`menu-${mode}`);
+
+describe('main menu', () => {
+  it('opens on the main menu (not an unexplained game screen) in Bahasa Melayu', async () => {
     harness = await boot();
     expect(harness.app.phase).toBe('SETUP');
-    expect(document.querySelector('h2')?.textContent).toBe('Sediakan perlumbaan');
-    expect(q('pack-info')?.textContent).toContain(
-      'KSSR (Semakan 2017) - Edisi 3 - Matematik Tahun 1',
-    );
-    expect(q('pbd-notice')?.textContent).toContain('tidak menetapkan Tahap Penguasaan');
-    expect(document.querySelectorAll('input[name="count"]')).toHaveLength(4); // 2-5 players
+    expect(q('menu-race')?.textContent).toContain('Main');
+    expect(q('menu-practice')?.textContent).toContain('Latihan');
+    expect(q('menu-teacher')).not.toBeNull();
+    expect(q('menu-again')).toBeNull(); // nothing to repeat on a first run
   });
 
   it('switches language to English immediately', async () => {
     harness = await boot();
     await click('lang-en');
-    expect(document.querySelector('h2')?.textContent).toBe('Set up the race');
+    expect(q('menu-race')?.textContent).toContain('Play');
+    await click('menu-teacher');
     expect(q('pbd-notice')?.textContent).toContain('does not assign a Tahap Penguasaan');
   });
 
-  it('switching year shows that year’s topics and pack', async () => {
+  it('warns the teacher when data is not stored persistently', async () => {
     harness = await boot();
+    expect(document.body.textContent).toContain('tidak disimpan secara kekal');
+  });
+
+  it('offers "Main semula" when a setup was saved before, and it opens the Ready? step', async () => {
+    const settings = new SettingsStore(memoryStore());
+    settings.save({ ...DEFAULT_SETTINGS, playerCount: 3 });
+    harness = await boot(undefined, settings);
+    expect(q('menu-again')?.textContent).toContain('3 pemain');
+    await click('menu-again');
+    expect(q('step-4')?.getAttribute('aria-current')).toBe('step');
+    expect(q('start')).not.toBeNull();
+  });
+});
+
+describe('setup steps', () => {
+  it('shows four steps with the Year first; choosing a year moves on to its topics and pack', async () => {
+    harness = await boot();
+    await openSetup();
+    expect(document.querySelector('h2')?.textContent).toBe('Sediakan perlumbaan');
+    expect(q('step-1')?.getAttribute('aria-current')).toBe('step');
     await click('year-2');
+    expect(q('step-2')?.getAttribute('aria-current')).toBe('step');
     expect(q('pack-info')?.textContent).toContain('Matematik Tahun 2');
     expect(q('topic-y2-fractions')).not.toBeNull();
     expect(q('topic-y1-money')).toBeNull();
   });
 
-  it('refuses to start with no topic selected and says why', async () => {
+  it('will not go past Topics, or start, with no topic selected, and says why', async () => {
     harness = await boot();
+    await openSetup();
+    await click('step-2');
     await click('topics-none');
+    await click('setup-next');
+    expect(q('setup-error')?.textContent).toBe('Pilih sekurang-kurangnya satu topik.');
+    expect(q('step-2')?.getAttribute('aria-current')).toBe('step');
+    await click('step-4');
     await click('start');
     expect(q('setup-error')?.textContent).toBe('Pilih sekurang-kurangnya satu topik.');
     expect(harness.games).toBe(0);
@@ -181,24 +221,78 @@ describe('Setup screen', () => {
 
   it('shows a 5-question preview with answers for the teacher', async () => {
     harness = await boot();
+    await openSetup();
+    await click('step-2');
     await click('preview');
     const items = document.querySelectorAll('.preview-item');
     expect(items).toHaveLength(5);
     expect(items[0]?.textContent).toContain('Jawapan:');
   });
 
-  it('warns the teacher when data is not stored persistently', async () => {
+  it('players step: 2 to 5 players, one car card and optional name each', async () => {
     harness = await boot();
-    expect(document.body.textContent).toContain('tidak disimpan secara kekal');
+    await openSetup();
+    await click('step-3');
+    expect(document.querySelectorAll('input[name="count"]')).toHaveLength(4);
+    expect(document.querySelectorAll('.player-card')).toHaveLength(2);
+    await click('count-5');
+    expect(document.querySelectorAll('.player-card')).toHaveLength(5);
+    expect(q('name-4')).not.toBeNull();
+  });
+
+  it('Back and Next keep every choice; Back on the first step returns to the menu', async () => {
+    harness = await boot();
+    await openSetup();
+    await click('setup-next');
+    await click('level-3');
+    await click('setup-next');
+    type('name-0', 'Aina');
+    await click('setup-back');
+    expect(q<HTMLInputElement>('level-3')?.checked).toBe(true);
+    await click('setup-next');
+    expect(q<HTMLInputElement>('name-0')?.value).toBe('Aina');
+    await click('step-1');
+    await click('setup-back');
+    expect(q('menu-race')).not.toBeNull();
+  });
+
+  it('Latihan on the menu presets Practice mode', async () => {
+    harness = await boot();
+    await openSetup('practice');
+    await click('step-4');
+    expect(q<HTMLInputElement>('mode-practice')?.checked).toBe(true);
+  });
+});
+
+describe('teacher settings', () => {
+  it('holds the options, seed, local data and the PBD boundary; saves options but never names', async () => {
+    const store = memoryStore();
+    harness = await boot(undefined, new SettingsStore(store));
+    await openSetup();
+    await click('step-3');
+    type('name-0', 'Aina');
+    await click('setup-home');
+    await click('menu-teacher');
+    expect(q('pbd-notice')?.textContent).toContain('tidak menetapkan Tahap Penguasaan');
+    expect(q('session-count')?.textContent).toContain('0 sesi');
+    await click('opt-hints');
+    const saved = store.getItem('mathracing.settings.v1') ?? '';
+    expect(JSON.parse(saved)).toMatchObject({ hintsEnabled: false });
+    expect(saved).not.toContain('Aina');
+    await click('teacher-back');
+    expect(q('menu-race')).not.toBeNull();
   });
 });
 
 describe('race flow', () => {
   async function startTwoPlayers(h: Harness): Promise<void> {
-    (q<HTMLInputElement>('seed') as HTMLInputElement).value = 'APP-SEED';
-    q('seed')?.dispatchEvent(new Event('input', { bubbles: true }));
-    (q<HTMLInputElement>('name-0') as HTMLInputElement).value = 'Aina';
-    q('name-0')?.dispatchEvent(new Event('input', { bubbles: true }));
+    await click('menu-teacher');
+    type('seed', 'APP-SEED');
+    await click('teacher-back');
+    await openSetup();
+    await click('step-3');
+    type('name-0', 'Aina');
+    await click('step-4');
     await click('length-5');
     await click('start');
     expect(h.games).toBe(1);
@@ -245,7 +339,7 @@ describe('race flow', () => {
     expect(attempts.every((a: AttemptRecord) => a.correct && a.playerName === 'Aina')).toBe(true);
   });
 
-  it('Main Lagi starts a fresh race with the same setup and new questions; New Setup returns to Setup', async () => {
+  it('Main Lagi starts a fresh race with the same setup and new questions; cancelling returns to the Ready? step', async () => {
     harness = await boot();
     await startTwoPlayers(harness);
     await click('skip-ready');
@@ -261,7 +355,8 @@ describe('race flow', () => {
     await click('cancel-ready');
     expect(harness.app.phase).toBe('SETUP');
     expect(q('start')).not.toBeNull();
-    expect((q<HTMLInputElement>('name-0') as HTMLInputElement).value).toBe('Aina'); // names carried over only in memory
+    await click('step-3');
+    expect(q<HTMLInputElement>('name-0')?.value).toBe('Aina'); // names carried over only in memory
   });
 
   it('Esc pauses and resumes; Exit returns to Setup without a winner', async () => {
@@ -281,6 +376,7 @@ describe('race flow', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await click('exit-setup');
     expect(harness.app.phase).toBe('SETUP');
+    expect(q('start')).not.toBeNull();
     expect(harness.destroyed).toBe(1);
   });
 
@@ -306,7 +402,8 @@ describe('race flow', () => {
 
   it('practice mode ends without a winner once everyone is done', async () => {
     harness = await boot();
-    await click('mode-practice');
+    await openSetup('practice');
+    await click('step-4');
     await click('length-5');
     await click('start');
     await click('skip-ready');
@@ -323,6 +420,8 @@ describe('race flow', () => {
 describe('export and deletion', () => {
   async function finishedRace(): Promise<Harness> {
     const h = await boot();
+    await openSetup();
+    await click('step-4');
     await click('length-5');
     await click('start');
     await click('skip-ready');
@@ -364,9 +463,12 @@ describe('export and deletion', () => {
     expect(harness.downloads).toHaveLength(0);
   });
 
-  it('Setup "delete all" clears every stored session after confirmation', async () => {
+  it('Teacher settings "delete all" clears every stored session after confirmation', async () => {
     harness = await finishedRace();
     await click('new-setup');
+    await click('setup-home');
+    expect(q('menu-sessions')?.textContent).toContain('1 sesi');
+    await click('menu-teacher');
     expect(q('session-count')?.textContent).toContain('1 sesi');
     await click('delete-all');
     await click('confirm-ok');
@@ -382,6 +484,8 @@ describe('failure handling', () => {
       appendAttempt: () => Promise.reject(new Error('disk full')),
     });
     harness = await boot(failing);
+    await openSetup();
+    await click('step-4');
     await click('start');
     await click('skip-ready');
     playerFinishes(harness, 'p1');
@@ -391,6 +495,8 @@ describe('failure handling', () => {
 
   it('stops a race whose frames keep failing and returns to Setup with a message, never a frozen screen', async () => {
     harness = await boot();
+    await openSetup();
+    await click('step-4');
     await click('start');
     await click('skip-ready');
     expect(harness.app.phase).toBe('RACING');
@@ -405,7 +511,10 @@ describe('failure handling', () => {
 
   it('an invalid race setup is reported and the app stays usable', async () => {
     harness = await boot();
+    await openSetup();
+    await click('step-2');
     await click('topics-none');
+    await click('step-4');
     await click('start');
     expect(harness.app.phase).toBe('SETUP');
     expect(q('start')).not.toBeNull();

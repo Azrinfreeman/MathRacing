@@ -334,6 +334,568 @@ main h2 {
   font-weight: 700;
 }
 
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.note-small {
+  font-size: 0.8rem;
+  margin: 0.3em 0 0.6em;
+}
+.btn-icon svg {
+  width: 1.3em;
+  height: 1.3em;
+  display: block;
+}
+
+/* Big touch cards (setup steps, teacher options): a chip with a raised, pressable look. */
+.card {
+  border-radius: 18px;
+  min-height: clamp(56px, 8vmin, 96px);
+  padding: 0.6em 1em;
+  gap: 0.8em;
+  background: #fff;
+  box-shadow: 0 4px 0 #cbd5e1;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+.card:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #cbd5e1;
+}
+.card.chip-on {
+  box-shadow: 0 4px 0 var(--accent);
+}
+
+/* ---------- main menu ---------- */
+.menu-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: clamp(8px, 2vmin, 24px);
+  padding: clamp(10px, 2vmin, 28px) clamp(12px, 3vw, 48px);
+}
+.menu-shell .topbar {
+  padding: 0;
+}
+main.menu-main {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(12px, 3vmin, 32px);
+}
+.menu-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 3vw, 40px);
+  width: min(100%, 1150px);
+}
+.menu-card {
+  font: inherit;
+  border: 0;
+  border-radius: 28px;
+  padding: clamp(14px, 3.5vmin, 44px) clamp(14px, 3vw, 40px);
+  min-height: clamp(160px, 34vmin, 380px);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.35em;
+  color: #fff;
+  cursor: pointer;
+  box-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.3),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+.menu-card:active {
+  transform: translateY(7px);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.menu-card-quick {
+  background: linear-gradient(160deg, #f97316, #c2410c);
+}
+.menu-card-practice {
+  background: linear-gradient(160deg, #22c55e, #15803d);
+}
+.menu-icon svg {
+  width: clamp(56px, 12vmin, 140px);
+  height: clamp(56px, 12vmin, 140px);
+  display: block;
+}
+.menu-card-title {
+  font-size: clamp(34px, 8vmin, 96px);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+.menu-card-desc {
+  font-size: clamp(15px, 2.4vmin, 26px);
+  font-weight: 700;
+  text-align: center;
+  max-width: 22em;
+}
+.menu-again {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  border: 3px solid #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.5em 1.4em;
+  min-height: 3.6rem;
+  cursor: pointer;
+  max-width: min(100%, 1150px);
+}
+.menu-again-icon svg {
+  width: 2rem;
+  height: 2rem;
+  display: block;
+}
+.menu-again-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 0.6em;
+  text-align: left;
+}
+.menu-road {
+  position: relative;
+  height: clamp(56px, 12vmin, 130px);
+  background: #334155;
+  border-top: 4px solid #e2e8f0;
+  border-bottom: 4px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  overflow: hidden;
+}
+.menu-road-car svg {
+  height: clamp(44px, 10vmin, 112px);
+  width: auto;
+  display: block;
+}
+.menu-road-car {
+  animation: menu-bob 1.6s ease-in-out infinite;
+}
+.menu-road-car-2 {
+  animation-delay: -0.3s;
+}
+.menu-road-car-3 {
+  animation-delay: -0.6s;
+}
+.menu-road-car-4 {
+  animation-delay: -0.9s;
+}
+.menu-road-car-5 {
+  animation-delay: -1.2s;
+}
+@keyframes menu-bob {
+  50% {
+    transform: translateY(-8%);
+  }
+}
+.menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: #e2e8f0;
+}
+.menu-teacher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.menu-warn {
+  color: #fde68a;
+  margin: 0;
+}
+
+/* ---------- setup steps ---------- */
+.wizard {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(6px, 1.5vmin, 16px);
+  padding: clamp(8px, 1.6vmin, 20px) clamp(10px, 2.5vw, 40px);
+}
+.wiz-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #fff;
+}
+.wiz-title {
+  margin: 0;
+  flex: 1;
+  font-size: clamp(20px, 3.4vmin, 36px);
+}
+.stepper ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(6px, 1vw, 14px);
+}
+.step-btn {
+  font: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  min-height: clamp(44px, 7vmin, 72px);
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.step-on {
+  background: #fff;
+  color: var(--bg);
+  border-color: #fff;
+}
+.step-done {
+  border-color: #86efac;
+}
+.step-num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.step-on .step-num {
+  background: var(--accent);
+  color: #fff;
+}
+.step-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+main.wiz-body {
+  overflow: auto;
+  padding: clamp(12px, 2.4vmin, 32px);
+  border-radius: 24px;
+}
+.wiz-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.wiz-nav .error {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  color: #fecaca;
+}
+.wiz-nav .btn-large {
+  min-height: clamp(52px, 8vmin, 84px);
+}
+.btn-start {
+  min-width: 10em;
+  font-size: clamp(20px, 3.4vmin, 34px);
+  background: var(--good);
+  border-color: var(--good);
+}
+.btn-start:hover:not(:disabled) {
+  background: #166534;
+}
+.step {
+  min-height: 100%;
+}
+.step-title {
+  margin: 0 0 0.6em;
+  font-size: clamp(20px, 3.6vmin, 40px);
+}
+.step-title:focus {
+  outline: none;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  flex-wrap: wrap;
+}
+.panel-head .step-title {
+  margin: 0;
+}
+.panel-head .inline-actions {
+  margin: 0;
+}
+.panel-title {
+  margin: 0 0 0.5em;
+  font-size: clamp(18px, 3vmin, 32px);
+}
+
+/* step 1: year */
+.step-year {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.year-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 3vw, 40px);
+}
+.year-card {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  min-height: clamp(180px, 40vmin, 460px);
+}
+.year-card .chip-label {
+  align-items: center;
+}
+.year-num {
+  font-size: clamp(72px, 20vmin, 220px);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent);
+}
+.year-card .chip-title {
+  font-size: clamp(22px, 4.6vmin, 52px);
+}
+.year-card .chip-desc {
+  font-size: clamp(18px, 3.4vmin, 40px);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* step 2: topics and level */
+.step-topics {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: clamp(12px, 2vw, 32px);
+}
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(6px, 1vmin, 12px);
+}
+.topic-card {
+  min-height: clamp(52px, 8vmin, 90px);
+  padding: 0.4em 0.7em;
+}
+.topic-card .chip-title {
+  font-size: 0.95rem;
+}
+.topic-card .chip-desc {
+  font-size: 0.75rem;
+}
+.topic-icon svg {
+  width: clamp(28px, 5vmin, 52px);
+  height: clamp(28px, 5vmin, 52px);
+  color: var(--accent);
+  display: block;
+}
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(6px, 1vmin, 12px);
+}
+.level-card {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 0.3em;
+  min-height: clamp(70px, 12vmin, 130px);
+}
+.level-stars svg {
+  width: clamp(64px, 12vmin, 130px);
+  height: auto;
+  display: block;
+}
+
+/* step 3: players */
+.step-players {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.count-row {
+  display: flex;
+  gap: clamp(6px, 1vw, 16px);
+}
+.count-card {
+  min-width: clamp(64px, 11vmin, 120px);
+  justify-content: center;
+}
+.count-card .chip-title {
+  font-size: clamp(24px, 5vmin, 52px);
+  font-weight: 900;
+}
+.player-cards {
+  display: grid;
+  grid-template-columns: repeat(var(--players, 2), minmax(0, 1fr));
+  gap: clamp(8px, 1.4vw, 20px);
+  align-items: stretch;
+}
+.player-card {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.5em;
+  padding: clamp(8px, 1.6vmin, 20px);
+  border-radius: 20px;
+  border: 4px solid var(--pc);
+  background: #f8fafc;
+  box-shadow: inset 0 clamp(6px, 1vmin, 12px) 0 var(--pc);
+}
+.player-car svg {
+  width: clamp(80px, 16vmin, 180px);
+  height: auto;
+  display: block;
+}
+.player-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 800;
+}
+.player-badge svg {
+  width: 1.6em;
+  height: 1.6em;
+  display: block;
+}
+.player-card .text-input {
+  max-width: 100%;
+  text-align: center;
+}
+
+/* step 4: ready */
+.step-ready {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: clamp(8px, 1.6vmin, 16px);
+}
+.step-ready .step-title {
+  margin: 0;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(8px, 1.2vw, 16px);
+}
+.summary-tile {
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 0.15em;
+  padding: 0.6em 0.9em;
+  border-radius: 16px;
+  border: 3px solid #dbe3ef;
+  background: #f8fafc;
+  cursor: pointer;
+  min-height: clamp(64px, 11vmin, 120px);
+}
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.summary-value {
+  font-size: clamp(16px, 2.8vmin, 30px);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.summary-change {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 800;
+}
+.ready-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: clamp(8px, 1.6vw, 24px);
+  align-content: start;
+}
+.ready-options .group {
+  margin: 0;
+}
+.mode-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.length-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.length-card {
+  justify-content: center;
+}
+.length-card .chip-title {
+  font-size: clamp(20px, 4vmin, 40px);
+  font-weight: 900;
+}
+
+/* ---------- teacher settings ---------- */
+.teacher-shell .topbar .brand h1 {
+  font-size: 1.6rem;
+}
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.option-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+/* short tablet screens (1024x600): tighter spacing so every setup step fits without scrolling */
+@media (max-height: 700px) {
+  main.wiz-body {
+    padding: 10px 14px;
+  }
+  .topic-card {
+    min-height: 46px;
+  }
+  .note-small {
+    margin: 0.2em 0 0.4em;
+  }
+}
+
+/* The teacher's "reduce motion" setting is the only switch; the OS flag is not inherited (DECISIONS #33, #35). */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
 /* ---------- results ---------- */
 .winner-banner {
   display: flex;
@@ -466,7 +1028,16 @@ dialog.dialog::backdrop {
   z-index: 200;
   max-width: min(28rem, 40vw);
 }
+/* outside a race, bottom centre, so a notice never covers the Menu or Back buttons */
+body:not(:has(.stage)) .toasts {
+  top: auto;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  justify-items: center;
+}
 .toast {
+  pointer-events: none;
   background: #0f172a;
   color: #fff;
   padding: 0.4rem 0.8rem;
@@ -577,14 +1148,20 @@ dialog.dialog::backdrop {
   .standing .standing-progress {
     grid-column: 1 / -1;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
+  /* narrow or portrait: stack, and let the step body scroll */
+  .menu-cards,
+  .step-topics,
+  .ready-options,
+  .teacher-grid {
+    grid-template-columns: 1fr;
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .player-cards {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+  .step-name {
+    display: none;
   }
 }

@@ -1,7 +1,7 @@
 import { answerText } from '../../curriculum/answers';
 import { previewQuestions } from '../../curriculum/blueprint';
 import type { CurriculumRegistry } from '../../curriculum/registry';
-import type { Language, Level, Year } from '../../curriculum/schema';
+import type { Level, Year } from '../../curriculum/schema';
 import { pickText } from '../../curriculum/schema';
 import type { RaceMode } from '../../game/core/RaceState';
 import { RACE_LENGTHS } from '../../game/core/RaceState';
@@ -13,111 +13,82 @@ import {
 } from '../../game/core/players';
 import { createTranslator } from '../../locales';
 import type { MessageKey, Translator } from '../../locales';
-import type { Settings } from '../../storage/settings';
+import { levelStarsSvg, symbolBadgeSvg, topicIconSvg, vehicleSvg } from '../art';
+import { choice, svgArt } from '../controls';
+import { contentDialog } from '../dialogs';
 import { clear, h } from '../dom';
 import type { Child } from '../dom';
+import type { SetupInput, SetupState } from '../setupState';
+import { buildSetupInput, defaultTopicForYear, keepYearTopics } from '../setupState';
 
-export type SetupInput = {
-  year: Year;
-  topicIds: string[];
-  level: Level;
-  mode: RaceMode;
-  raceLength: number;
-  playerNames: string[];
-  language: Language;
-  sound: boolean;
-  reducedMotion: boolean;
-  hintsEnabled: boolean;
-  supportEnabled: boolean;
-  /** Quick Race only: the 3rd wrong answer to one question moves the racer back a step. */
-  setbackEnabled: boolean;
-  /** Teacher-supplied seed for reproducing a session, or null for a random one. */
-  seed: string | null;
-};
+export type SetupStep = 1 | 2 | 3 | 4;
 
 export type SetupDeps = {
   registry: CurriculumRegistry;
-  settings: Settings;
-  sessionCount: number;
-  storageNote: string | null;
+  /** Shared with the menu and teacher screens; this screen changes it in place. */
+  state: SetupState;
+  step: SetupStep;
+  /** Called after every change so the controller can save the classroom settings. */
+  onChange(): void;
   onStart(input: SetupInput): void;
-  onChange(settings: Settings): void;
-  onLanguage(language: Language): void;
+  onHome(): void;
   onHelp(): void;
-  onDeleteAll(): Promise<void>;
-  confirm(message: string): Promise<boolean>;
 };
 
 const LEVELS: Level[] = [1, 2, 3, 4];
+const STEPS: ReadonlyArray<{ step: SetupStep; key: MessageKey }> = [
+  { step: 1, key: 'setup.step.year' },
+  { step: 2, key: 'setup.step.topics' },
+  { step: 3, key: 'setup.step.players' },
+  { step: 4, key: 'setup.step.ready' },
+];
 
-/** Make names unique and non-empty: blanks get the default name, duplicates get a numeric suffix. */
-export function normalizeNames(
-  raw: readonly string[],
-  count: number,
-  language: Language,
-): string[] {
-  const seen = new Map<string, number>();
-  const out: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const trimmed = (raw[i] ?? '').replace(/\s+/g, ' ').trim().slice(0, 20);
-    const base = trimmed === '' ? defaultPlayerName(i, language) : trimmed;
-    const key = base.toLowerCase();
-    const n = (seen.get(key) ?? 0) + 1;
-    seen.set(key, n);
-    out.push(n === 1 ? base : `${base} ${n}`);
-  }
-  return out;
+/** One line describing a setup, e.g. "Tahun 1 · 2.0 Operasi Asas · 1 Asas · 2 pemain". */
+export function summarizeSetup(
+  registry: CurriculumRegistry,
+  s: SetupState,
+  t: Translator,
+): { year: string; topics: string; level: string; players: string; line: string } {
+  const pack = registry.packForYear(s.year);
+  const chosen = pack.topics.filter((tp) => s.topicIds.has(tp.id));
+  const first = chosen[0];
+  const topics =
+    chosen.length === 1 && first
+      ? `${first.code} ${pickText(s.language, first.title)}`
+      : chosen.length === 0
+        ? '-'
+        : t('setup.summary.topics', { n: chosen.length });
+  const year = t(`setup.year.${s.year}` as MessageKey);
+  const level = t(`setup.level.${s.level}` as MessageKey);
+  const players = t('setup.summary.players', { n: s.playerCount });
+  return { year, topics, level, players, line: [year, topics, level, players].join(' · ') };
 }
 
+/**
+ * Race setup as four touch-first steps (Year, Topics & level, Players, Ready?), each one screen with large
+ * cards. A stepper at the top jumps to any step; Back and Next sit at the bottom. Teacher-only options live
+ * on the separate teacher settings screen.
+ */
 export class SetupScreen {
   private root: HTMLElement | null = null;
-  private state: {
-    year: Year;
-    topicIds: Set<string>;
-    level: Level;
-    mode: RaceMode;
-    raceLength: number;
-    playerCount: number;
-    names: string[];
-    language: Language;
-    sound: boolean;
-    reducedMotion: boolean;
-    hintsEnabled: boolean;
-    supportEnabled: boolean;
-    setbackEnabled: boolean;
-    seed: string;
-  };
+  private step: SetupStep;
   private error = '';
-  private previewHtml: HTMLElement | null = null;
-  private storedSessions: number;
   private t: Translator;
 
   constructor(private readonly deps: SetupDeps) {
-    const s = deps.settings;
-    this.state = {
-      year: s.year,
-      topicIds: new Set(s.topicIds),
-      level: s.level,
-      mode: s.mode,
-      raceLength: s.raceLength,
-      playerCount: s.playerCount,
-      names: Array.from({ length: MAX_PLAYERS }, () => ''),
-      language: s.language,
-      sound: s.sound,
-      reducedMotion: s.reducedMotion,
-      hintsEnabled: s.hintsEnabled,
-      supportEnabled: s.supportEnabled,
-      setbackEnabled: s.setbackEnabled,
-      seed: '',
-    };
-    this.storedSessions = deps.sessionCount;
-    this.t = createTranslator(s.language);
+    this.step = deps.step;
+    this.t = createTranslator(deps.state.language);
+    keepYearTopics(deps.registry, deps.state);
+  }
+
+  get currentStep(): SetupStep {
+    return this.step;
   }
 
   mount(root: HTMLElement): void {
     this.root = root;
     this.render();
-    root.querySelector<HTMLElement>('#main')?.focus();
+    this.focusStep();
   }
 
   unmount(): void {
@@ -125,334 +96,385 @@ export class SetupScreen {
     this.root = null;
   }
 
-  /** Names to prefill when the teacher comes back via New Setup. */
-  setNames(names: readonly string[]): void {
-    names.forEach((n, i) => {
-      if (i < MAX_PLAYERS) this.state.names[i] = n;
-    });
+  private get s(): SetupState {
+    return this.deps.state;
   }
 
-  setSessionCount(count: number): void {
-    this.storedSessions = count;
+  private go(step: SetupStep): void {
+    this.step = step;
+    this.error = '';
     this.render();
+    this.focusStep();
   }
 
-  private persist(): void {
-    const s = this.state;
-    this.deps.onChange({
-      language: s.language,
-      sound: s.sound,
-      reducedMotion: s.reducedMotion,
-      hintsEnabled: s.hintsEnabled,
-      supportEnabled: s.supportEnabled,
-      setbackEnabled: s.setbackEnabled,
-      year: s.year,
-      topicIds: [...s.topicIds],
-      level: s.level,
-      raceLength: s.raceLength,
-      mode: s.mode,
-      playerCount: s.playerCount,
-    });
+  private focusStep(): void {
+    this.root?.querySelector<HTMLElement>('.step-title')?.focus();
   }
 
-  /** Re-render while keeping keyboard focus on the same control. */
-  private refresh(): void {
-    const active = document.activeElement as HTMLElement | null;
-    const key = active?.dataset.key;
+  /** Save, then re-render while keeping keyboard focus on the same control. */
+  private changed(): void {
+    this.deps.onChange();
+    const key = (document.activeElement as HTMLElement | null)?.dataset.key;
     this.render();
     if (key) this.root?.querySelector<HTMLElement>(`[data-key="${key}"]`)?.focus();
   }
 
-  private choice(
-    type: 'radio' | 'checkbox',
-    name: string,
-    key: string,
-    label: string,
-    checked: boolean,
-    onChange: (checked: boolean) => void,
-    description?: string,
-  ): HTMLElement {
-    return h(
-      'label',
-      { class: `chip${checked ? ' chip-on' : ''}` },
-      h('input', {
-        type,
-        name,
-        checked,
-        dataset: { key, testid: key },
-        on: { change: (e) => onChange((e.target as HTMLInputElement).checked) },
-      }),
-      h(
-        'span',
-        { class: 'chip-label' },
-        h('span', { class: 'chip-title', text: label }),
-        description ? h('span', { class: 'chip-desc', text: description }) : null,
-      ),
-    );
+  private next(): void {
+    if (this.step === 2 && this.s.topicIds.size === 0) {
+      this.error = this.t('setup.error.topics');
+      this.render();
+      return;
+    }
+    if (this.step < 4) this.go((this.step + 1) as SetupStep);
   }
+
+  private back(): void {
+    if (this.step === 1) this.deps.onHome();
+    else this.go((this.step - 1) as SetupStep);
+  }
+
+  private start(): void {
+    const input = buildSetupInput(this.s);
+    if (!input) {
+      this.error = this.t('setup.error.topics');
+      this.render();
+      return;
+    }
+    this.deps.onChange();
+    this.deps.onStart(input);
+  }
+
+  private setYear(y: Year): void {
+    const s = this.s;
+    if (s.year === y) return;
+    s.year = y;
+    s.topicIds = new Set([defaultTopicForYear(this.deps.registry, y)]);
+  }
+
+  // ---------------------------------------------------------------------------------------- rendering
 
   private render(): void {
     const root = this.root;
     if (!root) return;
-    const s = this.state;
-    const lang = s.language;
-    this.t = createTranslator(lang);
+    this.t = createTranslator(this.s.language);
     const t = this.t;
-    const registry = this.deps.registry;
-    const pack = registry.packForYear(s.year);
     clear(root);
-
-    // valid topic selection for the active year
-    const yearTopicIds = new Set(pack.topics.map((tp) => tp.id));
-    for (const id of [...s.topicIds]) if (!yearTopicIds.has(id)) s.topicIds.delete(id);
-
-    const langButtons = (['bm', 'en'] as Language[]).map((code) =>
-      h('button', {
-        type: 'button',
-        class: `seg${lang === code ? ' seg-on' : ''}`,
-        text: code === 'bm' ? 'BM' : 'EN',
-        aria: { pressed: lang === code },
-        dataset: { key: `lang-${code}`, testid: `lang-${code}` },
-        on: {
-          click: () => {
-            s.language = code;
-            this.persist();
-            this.deps.onLanguage(code);
-            this.refresh();
-          },
-        },
-      }),
-    );
 
     const header = h(
       'header',
-      { class: 'topbar' },
-      h('img', { class: 'logo', src: './icons/icon.svg', alt: '' }),
-      h(
-        'div',
-        { class: 'brand' },
-        h('h1', { text: t('app.name') }),
-        h('p', { text: t('app.tagline') }),
-      ),
-      h(
-        'div',
-        { class: 'top-actions' },
-        h(
-          'div',
-          { class: 'segmented', role: 'group', aria: { label: t('setup.language') } },
-          ...langButtons,
-        ),
-        h('button', {
-          type: 'button',
-          class: 'btn',
-          dataset: { key: 'help', testid: 'help' },
-          text: t('setup.help'),
-          on: { click: () => this.deps.onHelp() },
-        }),
-      ),
-    );
-
-    // ---- curriculum
-    const yearFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.year') }),
-      h(
-        'div',
-        { class: 'chips' },
-        ...([1, 2] as Year[]).map((y) =>
-          this.choice(
-            'radio',
-            'year',
-            `year-${y}`,
-            t(`setup.year.${y}` as MessageKey),
-            s.year === y,
-            () => {
-              s.year = y;
-              s.topicIds = new Set([
-                registry.packForYear(y).topics[1]?.id ??
-                  (registry.packForYear(y).topics[0]?.id as string),
-              ]);
-              this.persist();
-              this.refresh();
-            },
-          ),
-        ),
-      ),
-      h('p', {
-        class: 'note',
-        dataset: { testid: 'pack-info' },
-        text: `${t('setup.pack')}: ${pickText(lang, pack.title)}. ${t('setup.packStatus', { version: pack.version })}`,
+      { class: 'wiz-top' },
+      h('button', {
+        type: 'button',
+        class: 'btn',
+        dataset: { key: 'setup-home', testid: 'setup-home' },
+        text: `⌂ ${t('menu.home')}`,
+        on: { click: () => this.deps.onHome() },
+      }),
+      h('h2', { class: 'wiz-title', text: t('setup.title') }),
+      h('button', {
+        type: 'button',
+        class: 'btn',
+        dataset: { key: 'help', testid: 'help' },
+        text: t('setup.help'),
+        on: { click: () => this.deps.onHelp() },
       }),
     );
 
-    const topicFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.topics') }),
-      h('p', { class: 'note', text: t('setup.topics.hint') }),
+    const stepper = h(
+      'nav',
+      { class: 'stepper', aria: { label: t('setup.title') } },
       h(
-        'div',
-        { class: 'inline-actions' },
-        h('button', {
-          type: 'button',
-          class: 'btn btn-small',
-          text: t('setup.topics.all'),
-          dataset: { key: 'topics-all', testid: 'topics-all' },
-          on: {
-            click: () => {
-              s.topicIds = new Set(pack.topics.map((tp) => tp.id));
-              this.persist();
-              this.refresh();
-            },
-          },
-        }),
-        h('button', {
-          type: 'button',
-          class: 'btn btn-small',
-          text: t('setup.topics.none'),
-          dataset: { key: 'topics-none', testid: 'topics-none' },
-          on: {
-            click: () => {
-              s.topicIds = new Set();
-              this.persist();
-              this.refresh();
-            },
-          },
-        }),
-      ),
-      h(
-        'div',
-        { class: 'chips chips-topics' },
-        ...pack.topics.map((topic) =>
-          this.choice(
-            'checkbox',
-            'topic',
-            `topic-${topic.id}`,
-            `${topic.code} ${pickText(lang, topic.title)}`,
-            s.topicIds.has(topic.id),
-            (on) => {
-              if (on) s.topicIds.add(topic.id);
-              else s.topicIds.delete(topic.id);
-              this.error = '';
-              this.persist();
-              this.refresh();
-            },
-            t('setup.topic.sk', { sk: topic.standardKandungan }),
+        'ol',
+        {},
+        ...STEPS.map(({ step, key }) =>
+          h(
+            'li',
+            {},
+            h(
+              'button',
+              {
+                type: 'button',
+                class: `step-btn${step === this.step ? ' step-on' : ''}${step < this.step ? ' step-done' : ''}`,
+                aria: step === this.step ? { current: 'step' } : {},
+                dataset: { key: `step-${step}`, testid: `step-${step}` },
+                on: { click: () => this.go(step) },
+              },
+              h('span', { class: 'step-num', text: step < this.step ? '✓' : String(step) }),
+              h('span', { class: 'step-name', text: t(key) }),
+            ),
           ),
         ),
       ),
     );
 
-    const levelFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.level') }),
-      h(
-        'div',
-        { class: 'chips' },
-        ...LEVELS.map((lv) =>
-          this.choice(
-            'radio',
-            'level',
-            `level-${lv}`,
-            t(`setup.level.${lv}` as MessageKey),
-            s.level === lv,
-            () => {
-              s.level = lv;
-              this.persist();
-              this.refresh();
-            },
-          ),
-        ),
-      ),
-      h('p', { class: 'note', text: t('setup.level.hint') }),
+    const body =
+      this.step === 1
+        ? this.stepYear()
+        : this.step === 2
+          ? this.stepTopics()
+          : this.step === 3
+            ? this.stepPlayers()
+            : this.stepReady();
+
+    const footer = h(
+      'footer',
+      { class: 'wiz-nav' },
+      h('button', {
+        type: 'button',
+        class: 'btn btn-large',
+        dataset: { key: 'setup-back', testid: 'setup-back' },
+        text: this.step === 1 ? `◀ ${t('menu.home')}` : `◀ ${t('setup.back')}`,
+        on: { click: () => this.back() },
+      }),
+      h('p', {
+        class: 'error',
+        role: 'alert',
+        dataset: { testid: 'setup-error' },
+        text: this.error,
+      }),
+      this.step < 4
+        ? h('button', {
+            type: 'button',
+            class: 'btn btn-primary btn-large',
+            dataset: { key: 'setup-next', testid: 'setup-next' },
+            text: `${t('setup.next')} ▶`,
+            on: { click: () => this.next() },
+          })
+        : h('button', {
+            type: 'button',
+            class: 'btn btn-primary btn-large btn-start',
+            dataset: { key: 'start', testid: 'start' },
+            text: `${t('setup.start')} ▶`,
+            on: { click: () => this.start() },
+          }),
     );
 
-    // ---- race
-    const modeFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.mode') }),
+    root.appendChild(
       h(
         'div',
-        { class: 'chips' },
-        ...(['quick', 'practice'] as RaceMode[]).map((m) =>
-          this.choice(
-            'radio',
-            'mode',
-            `mode-${m}`,
-            t(m === 'quick' ? 'setup.mode.quick' : 'setup.mode.practice'),
-            s.mode === m,
-            () => {
-              s.mode = m;
-              this.persist();
-              this.refresh();
-            },
-            t(m === 'quick' ? 'setup.mode.quick.desc' : 'setup.mode.practice.desc'),
-          ),
+        { class: 'wizard' },
+        h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
+        header,
+        stepper,
+        h(
+          'main',
+          { id: 'main', tabindex: -1, class: `wiz-body wiz-step-${this.step}` },
+          h('p', {
+            class: 'visually-hidden',
+            text: t('setup.stepOf', { n: this.step }),
+          }),
+          body,
         ),
+        footer,
       ),
     );
+  }
 
-    const lengthFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.length') }),
+  private title(key: MessageKey): HTMLElement {
+    return h('h3', { class: 'step-title', tabindex: -1, text: this.t(key) });
+  }
+
+  private stepYear(): HTMLElement {
+    const t = this.t;
+    return h(
+      'section',
+      { class: 'step step-year' },
+      this.title('setup.year.pick'),
       h(
         'div',
-        { class: 'chips' },
-        ...RACE_LENGTHS.map((n) =>
-          this.choice('radio', 'length', `length-${n}`, String(n), s.raceLength === n, () => {
-            s.raceLength = n;
-            this.persist();
-            this.refresh();
+        { class: 'year-cards', role: 'radiogroup', aria: { label: t('setup.year') } },
+        ...([1, 2] as Year[]).map((y) =>
+          choice({
+            type: 'radio',
+            name: 'year',
+            key: `year-${y}`,
+            checked: this.s.year === y,
+            title: t(`setup.year.${y}` as MessageKey),
+            description: t(`setup.year.${y}.example` as MessageKey),
+            art: h('span', { class: 'year-num', aria: { hidden: true }, text: String(y) }),
+            className: 'card year-card',
+            onChange: () => {
+              this.setYear(y);
+              this.changed();
+            },
+            // a tap on a year card (even the one already chosen) moves straight on
+            onTap: () => {
+              this.setYear(y);
+              this.deps.onChange();
+              this.go(2);
+            },
           }),
         ),
       ),
     );
+  }
 
-    // ---- players
-    const playerFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.players') }),
+  private stepTopics(): HTMLElement {
+    const t = this.t;
+    const s = this.s;
+    const lang = s.language;
+    const pack = this.deps.registry.packForYear(s.year);
+    const topicPanel = h(
+      'div',
+      { class: 'panel topics-panel' },
       h(
         'div',
-        { class: 'chips', role: 'radiogroup', aria: { label: t('setup.playerCount') } },
-        ...Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => i + MIN_PLAYERS).map(
-          (n) =>
-            this.choice('radio', 'count', `count-${n}`, String(n), s.playerCount === n, () => {
-              s.playerCount = n;
-              this.persist();
-              this.refresh();
-            }),
+        { class: 'panel-head' },
+        this.title('setup.topics'),
+        h(
+          'div',
+          { class: 'inline-actions' },
+          h('button', {
+            type: 'button',
+            class: 'btn btn-small',
+            text: t('setup.topics.all'),
+            dataset: { key: 'topics-all', testid: 'topics-all' },
+            on: {
+              click: () => {
+                s.topicIds = new Set(pack.topics.map((tp) => tp.id));
+                this.error = '';
+                this.changed();
+              },
+            },
+          }),
+          h('button', {
+            type: 'button',
+            class: 'btn btn-small',
+            text: t('setup.topics.none'),
+            dataset: { key: 'topics-none', testid: 'topics-none' },
+            on: {
+              click: () => {
+                s.topicIds = new Set();
+                this.changed();
+              },
+            },
+          }),
         ),
       ),
-      h('p', { class: 'note', text: t('setup.privacyHint') }),
+      h('p', {
+        class: 'note note-small',
+        dataset: { testid: 'pack-info' },
+        text: `${t('setup.pack')}: ${pickText(lang, pack.title)}. ${t('setup.packStatus', { version: pack.version })}`,
+      }),
       h(
         'div',
-        { class: 'names' },
+        { class: 'topic-grid' },
+        ...pack.topics.map((topic) =>
+          choice({
+            type: 'checkbox',
+            name: 'topic',
+            key: `topic-${topic.id}`,
+            checked: s.topicIds.has(topic.id),
+            title: `${topic.code} ${pickText(lang, topic.title)}`,
+            description: t('setup.topic.sk', { sk: topic.standardKandungan }),
+            art: svgArt(topicIconSvg(topic.id), 'topic-icon'),
+            className: 'card topic-card',
+            onChange: (on) => {
+              if (on) s.topicIds.add(topic.id);
+              else s.topicIds.delete(topic.id);
+              this.error = '';
+              this.changed();
+            },
+          }),
+        ),
+      ),
+    );
+    const levelPanel = h(
+      'div',
+      { class: 'panel level-panel' },
+      h('h3', { class: 'panel-title', text: t('setup.level') }),
+      h(
+        'div',
+        { class: 'level-grid', role: 'radiogroup', aria: { label: t('setup.level') } },
+        ...LEVELS.map((lv) =>
+          choice({
+            type: 'radio',
+            name: 'level',
+            key: `level-${lv}`,
+            checked: s.level === lv,
+            title: t(`setup.level.${lv}` as MessageKey),
+            art: svgArt(levelStarsSvg(lv), 'level-stars'),
+            className: 'card level-card',
+            onChange: () => {
+              s.level = lv;
+              this.changed();
+            },
+          }),
+        ),
+      ),
+      h('p', { class: 'note note-small', text: t('setup.level.hint') }),
+      h('button', {
+        type: 'button',
+        class: 'btn',
+        dataset: { key: 'preview', testid: 'preview' },
+        text: t('setup.preview'),
+        on: { click: () => this.showPreview() },
+      }),
+    );
+    return h('section', { class: 'step step-topics' }, topicPanel, levelPanel);
+  }
+
+  private stepPlayers(): HTMLElement {
+    const t = this.t;
+    const s = this.s;
+    return h(
+      'section',
+      { class: 'step step-players' },
+      h(
+        'div',
+        { class: 'panel-head' },
+        this.title('setup.players.pick'),
+        h(
+          'div',
+          { class: 'count-row', role: 'radiogroup', aria: { label: t('setup.playerCount') } },
+          ...Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => i + MIN_PLAYERS).map(
+            (n) =>
+              choice({
+                type: 'radio',
+                name: 'count',
+                key: `count-${n}`,
+                checked: s.playerCount === n,
+                title: String(n),
+                className: 'card count-card',
+                onChange: () => {
+                  s.playerCount = n;
+                  this.changed();
+                },
+              }),
+          ),
+        ),
+      ),
+      h('p', { class: 'note note-small', text: t('setup.privacyHint') }),
+      h(
+        'div',
+        { class: 'player-cards', style: `--players:${s.playerCount}` },
         ...Array.from({ length: s.playerCount }, (_, i) => {
-          const style = PLAYER_STYLES[i];
+          const style = PLAYER_STYLES[i] ?? PLAYER_STYLES[0];
+          if (!style) return null;
           const id = `name-${i}`;
+          const fallback = defaultPlayerName(i, s.language);
           return h(
             'div',
-            { class: 'name-row' },
-            h('span', {
-              class: 'name-chip',
-              style: `background:${style?.color ?? '#444'}`,
-              aria: { hidden: true },
-              text: symbolGlyph(style?.symbol),
+            { class: 'player-card', style: `--pc:${style.color};--pcd:${style.dark}` },
+            svgArt(vehicleSvg(style), 'player-car'),
+            h(
+              'span',
+              { class: 'player-tag' },
+              svgArt(symbolBadgeSvg(style), 'player-badge'),
+              h('span', { text: fallback }),
+            ),
+            h('label', {
+              for: id,
+              class: 'visually-hidden',
+              text: t('setup.playerName', { n: i + 1 }),
             }),
-            h('label', { for: id, class: 'name-label', text: t('setup.playerName', { n: i + 1 }) }),
             h('input', {
               id,
               type: 'text',
               class: 'text-input',
               maxlength: 20,
               autocomplete: 'off',
-              placeholder: defaultPlayerName(i, lang),
+              placeholder: t('setup.nameOptional'),
               value: s.names[i] ?? '',
               dataset: { key: id, testid: id },
               on: {
@@ -465,232 +487,103 @@ export class SetupScreen {
         }),
       ),
     );
+  }
 
-    // ---- options
-    const toggle = (
-      key: string,
-      label: string,
-      get: () => boolean,
-      set: (v: boolean) => void,
-    ): HTMLElement =>
-      this.choice('checkbox', key, `opt-${key}`, label, get(), (v) => {
-        set(v);
-        this.persist();
-        this.refresh();
-      });
-    const optionsFieldset = h(
-      'fieldset',
-      { class: 'group' },
-      h('legend', { text: t('setup.options') }),
+  private stepReady(): HTMLElement {
+    const t = this.t;
+    const s = this.s;
+    const sum = summarizeSetup(this.deps.registry, s, t);
+    const tile = (key: string, label: MessageKey, value: string, step: SetupStep): HTMLElement =>
       h(
-        'div',
-        { class: 'chips' },
-        toggle(
-          'sound',
-          t('setup.sound'),
-          () => s.sound,
-          (v) => (s.sound = v),
-        ),
-        toggle(
-          'reducedMotion',
-          t('setup.reducedMotion'),
-          () => s.reducedMotion,
-          (v) => (s.reducedMotion = v),
-        ),
-        toggle(
-          'hints',
-          t('setup.hints'),
-          () => s.hintsEnabled,
-          (v) => (s.hintsEnabled = v),
-        ),
-        toggle(
-          'support',
-          t('setup.support'),
-          () => s.supportEnabled,
-          (v) => (s.supportEnabled = v),
-        ),
-        toggle(
-          'setback',
-          t('setup.setback'),
-          () => s.setbackEnabled,
-          (v) => (s.setbackEnabled = v),
-        ),
-      ),
-      h('p', { class: 'note', text: t('setup.supportNote') }),
-      h('p', { class: 'note', text: t('setup.setbackNote') }),
-      h(
-        'div',
-        { class: 'seed-row' },
-        h('label', { for: 'seed', class: 'name-label', text: t('setup.seed') }),
-        h('input', {
-          id: 'seed',
-          type: 'text',
-          class: 'text-input',
-          maxlength: 24,
-          autocomplete: 'off',
-          value: s.seed,
-          dataset: { key: 'seed', testid: 'seed' },
-          on: { input: (e) => (s.seed = (e.target as HTMLInputElement).value) },
-        }),
-        h('p', { class: 'note', text: t('setup.seedHint') }),
-      ),
-    );
-
-    // ---- actions, preview, data
-    const errorEl = h('p', {
-      class: 'error',
-      role: 'alert',
-      dataset: { testid: 'setup-error' },
-      text: this.error,
-    });
-    const actions = h(
-      'div',
-      { class: 'actions' },
-      h('button', {
-        type: 'button',
-        class: 'btn btn-large',
-        dataset: { key: 'preview', testid: 'preview' },
-        text: t('setup.preview'),
-        on: { click: () => this.showPreview() },
-      }),
-      h('button', {
-        type: 'submit',
-        class: 'btn btn-primary btn-large',
-        dataset: { key: 'start', testid: 'start' },
-        text: `${t('setup.start')} ▶`,
-      }),
-    );
-
-    const form = h(
-      'form',
-      {
-        id: 'setup-form',
-        on: {
-          submit: (e) => {
-            e.preventDefault();
-            this.submit();
-          },
+        'button',
+        {
+          type: 'button',
+          class: 'summary-tile',
+          dataset: { key, testid: key },
+          on: { click: () => this.go(step) },
         },
-        aria: { label: t('setup.title') },
-      },
-      yearFieldset,
-      topicFieldset,
-      levelFieldset,
-      modeFieldset,
-      lengthFieldset,
-      playerFieldset,
-      optionsFieldset,
-      errorEl,
-      actions,
-    );
-    form.setAttribute('novalidate', '');
-
-    this.previewHtml = h('section', {
-      class: 'preview',
-      id: 'preview-section',
-      dataset: { testid: 'preview-section' },
-      hidden: true,
-    });
-
-    const dataSection = h(
+        h('span', { class: 'summary-label', text: t(label) }),
+        h('span', { class: 'summary-value', text: value }),
+        h('span', { class: 'summary-change', text: t('setup.ready.change') }),
+      );
+    return h(
       'section',
-      { class: 'group data-group' },
-      h('h3', { text: t('setup.data') }),
-      h('p', {
-        dataset: { testid: 'session-count' },
-        text: t('setup.data.count', { n: this.storedSessions }),
-      }),
-      this.deps.storageNote
-        ? h('p', { class: 'note warn', role: 'status', text: this.deps.storageNote })
-        : null,
-      h('button', {
-        type: 'button',
-        class: 'btn btn-danger',
-        disabled: this.storedSessions === 0,
-        dataset: { key: 'delete-all', testid: 'delete-all' },
-        text: t('setup.data.deleteAll'),
-        on: { click: () => void this.deleteAll() },
-      }),
-    );
-
-    const main = h(
-      'main',
-      { id: 'main', tabindex: -1, class: 'setup-main' },
-      h('h2', { text: t('setup.title') }),
-      form,
-      this.previewHtml,
-      dataSection,
-      h('p', { class: 'pbd-note', dataset: { testid: 'pbd-notice' }, text: t('setup.pbdNotice') }),
-    );
-
-    root.appendChild(
+      { class: 'step step-ready' },
+      this.title('setup.ready.title'),
       h(
         'div',
-        { class: 'app-shell' },
-        h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
-        header,
-        main,
+        { class: 'summary-grid' },
+        tile('sum-year', 'setup.year', sum.year, 1),
+        tile('sum-topics', 'setup.topics', sum.topics, 2),
+        tile('sum-level', 'setup.level', sum.level, 2),
+        tile('sum-players', 'setup.players', sum.players, 3),
+      ),
+      h(
+        'div',
+        { class: 'ready-options' },
+        h(
+          'fieldset',
+          { class: 'group' },
+          h('legend', { text: t('setup.mode') }),
+          h(
+            'div',
+            { class: 'mode-row' },
+            ...(['quick', 'practice'] as RaceMode[]).map((m) =>
+              choice({
+                type: 'radio',
+                name: 'mode',
+                key: `mode-${m}`,
+                checked: s.mode === m,
+                title: t(m === 'quick' ? 'setup.mode.quick' : 'setup.mode.practice'),
+                description: t(
+                  m === 'quick' ? 'setup.mode.quick.desc' : 'setup.mode.practice.desc',
+                ),
+                className: 'card mode-card',
+                onChange: () => {
+                  s.mode = m;
+                  this.changed();
+                },
+              }),
+            ),
+          ),
+        ),
+        h(
+          'fieldset',
+          { class: 'group' },
+          h('legend', { text: t('setup.length') }),
+          h(
+            'div',
+            { class: 'length-row' },
+            ...RACE_LENGTHS.map((n) =>
+              choice({
+                type: 'radio',
+                name: 'length',
+                key: `length-${n}`,
+                checked: s.raceLength === n,
+                title: String(n),
+                className: 'card length-card',
+                onChange: () => {
+                  s.raceLength = n;
+                  this.changed();
+                },
+              }),
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  private async deleteAll(): Promise<void> {
-    const ok = await this.deps.confirm(this.t('setup.data.confirmAll'));
-    if (!ok) return;
-    await this.deps.onDeleteAll();
-    this.storedSessions = 0;
-    this.render();
-    const status = this.root?.querySelector<HTMLElement>('[data-testid="session-count"]');
-    if (status)
-      status.textContent = `${this.t('setup.data.deleted')} ${this.t('setup.data.count', { n: 0 })}`;
-  }
-
-  private buildInput(): SetupInput | null {
-    const s = this.state;
-    if (s.topicIds.size === 0) {
-      this.error = this.t('setup.error.topics');
-      return null;
-    }
-    const seed = s.seed.trim().slice(0, 24);
-    return {
-      year: s.year,
-      topicIds: [...s.topicIds],
-      level: s.level,
-      mode: s.mode,
-      raceLength: s.raceLength,
-      playerNames: normalizeNames(s.names, s.playerCount, s.language),
-      language: s.language,
-      sound: s.sound,
-      reducedMotion: s.reducedMotion,
-      hintsEnabled: s.hintsEnabled,
-      supportEnabled: s.supportEnabled,
-      setbackEnabled: s.setbackEnabled,
-      seed: seed === '' ? null : seed,
-    };
-  }
-
-  private submit(): void {
-    const input = this.buildInput();
-    if (!input) {
-      this.refresh();
-      return;
-    }
-    this.persist();
-    this.deps.onStart(input);
   }
 
   private showPreview(): void {
-    const input = this.buildInput();
-    const target = this.previewHtml;
-    if (!target) return;
     const t = this.t;
+    const input = buildSetupInput(this.s);
     if (!input) {
       this.error = t('setup.error.topics');
-      this.refresh();
+      this.render();
       return;
     }
     const pack = this.deps.registry.packForYear(input.year);
-    clear(target);
+    let body: Child[];
     try {
       const questions = previewQuestions(this.deps.registry, {
         seed: input.seed ?? 'PREVIEW',
@@ -700,28 +593,36 @@ export class SetupScreen {
         raceLength: 5,
         language: input.language,
       });
-      const items: Child[] = questions.map((q, i) =>
+      body = [
         h(
-          'li',
-          { class: 'preview-item' },
-          h('span', { class: 'preview-code', text: `${q.topicId} · ${q.templateId}` }),
-          h('span', {
-            class: 'preview-q',
-            text:
-              [q.prompt.text, q.prompt.expression].filter((x) => x && x.length > 0).join('  ') ||
-              `(${q.widget})`,
-          }),
-          h('span', {
-            class: 'preview-a',
-            text: t('setup.preview.answer', { answer: answerText(q) }),
-          }),
-          h('span', { class: 'preview-w', text: `#${i + 1} · ${q.widget} · ${q.difficultyBand}` }),
+          'ol',
+          { class: 'preview-list', dataset: { testid: 'preview-section' } },
+          ...questions.map((q, i) =>
+            h(
+              'li',
+              { class: 'preview-item' },
+              h('span', { class: 'preview-code', text: `${q.topicId} · ${q.templateId}` }),
+              h('span', {
+                class: 'preview-q',
+                text:
+                  [q.prompt.text, q.prompt.expression]
+                    .filter((x) => x && x.length > 0)
+                    .join('  ') || `(${q.widget})`,
+              }),
+              h('span', {
+                class: 'preview-a',
+                text: t('setup.preview.answer', { answer: answerText(q) }),
+              }),
+              h('span', {
+                class: 'preview-w',
+                text: `#${i + 1} · ${q.widget} · ${q.difficultyBand}`,
+              }),
+            ),
+          ),
         ),
-      );
-      target.appendChild(h('h3', { text: t('setup.preview.title') }));
-      target.appendChild(h('ol', { class: 'preview-list' }, ...items));
+      ];
     } catch (error) {
-      target.appendChild(
+      body = [
         h('p', {
           class: 'error',
           role: 'alert',
@@ -729,39 +630,8 @@ export class SetupScreen {
             reason: error instanceof Error ? error.message : String(error),
           }),
         }),
-      );
+      ];
     }
-    target.appendChild(
-      h('button', {
-        type: 'button',
-        class: 'btn',
-        text: t('setup.preview.close'),
-        on: {
-          click: () => {
-            target.hidden = true;
-            clear(target);
-          },
-        },
-      }),
-    );
-    target.hidden = false;
-    target.scrollIntoView?.({ block: 'nearest' });
-  }
-}
-
-function symbolGlyph(symbol: string | undefined): string {
-  switch (symbol) {
-    case 'star':
-      return '★';
-    case 'circle':
-      return '●';
-    case 'triangle':
-      return '▲';
-    case 'square':
-      return '■';
-    case 'diamond':
-      return '◆';
-    default:
-      return '';
+    contentDialog(t, t('setup.preview.title'), body);
   }
 }
