@@ -21,6 +21,7 @@ async function boot(): Promise<void> {
     registry = getDefaultRegistry();
   } catch (error) {
     console.error('Curriculum pack error', error);
+    document.getElementById('splash')?.remove();
     if (import.meta.env.DEV) throw error;
     root.textContent = t('app.packError');
     return;

@@ -8,7 +8,7 @@ import { RaceEngine } from '../game/core/RaceEngine';
 import type { AttemptRecord, RaceConfig, SessionMeta } from '../game/core/RaceState';
 import { DEFAULT_RACE_TIMING, SessionStateMachine } from '../game/core/RaceState';
 import { createSessionSeed } from '../game/core/SeededRng';
-import { styleForSlot } from '../game/core/players';
+import { PLAYER_STYLES, styleForSlot } from '../game/core/players';
 import type { RaceSessionContext } from '../game/session';
 import { SoundService } from '../game/SoundService';
 import { createTranslator } from '../locales';
@@ -18,12 +18,14 @@ import type { SessionRepository } from '../storage/SessionRepository';
 import { InMemorySessionRepository } from '../storage/SessionRepository';
 import type { Settings } from '../storage/settings';
 import { SettingsStore } from '../storage/settings';
+import { vehicleSvg } from './art';
 import { confirmDialog, toast } from './dialogs';
 import { clear, h } from './dom';
 import { showHelp } from './help';
 import { ResultsScreen } from './screens/ResultsScreen';
 import type { SetupInput } from './screens/SetupScreen';
 import { SetupScreen } from './screens/SetupScreen';
+import { runSplash } from './screens/SplashScreen';
 import { StageChrome } from './StageChrome';
 
 export type AppDeps = {
@@ -37,6 +39,8 @@ export type AppDeps = {
   now?: () => number;
   sound?: SoundService;
   devDiagnostics?: boolean;
+  /** Shortest time the launch splash stays on screen (default 1500 ms). */
+  splashMs?: number;
 };
 
 function createSessionId(): string {
@@ -60,6 +64,7 @@ export class AppController {
   private readonly makeGame:
     ((parent: HTMLElement, session: RaceSessionContext) => GameHandle) | undefined;
   private readonly devDiagnostics: boolean;
+  private readonly splashMs: number;
   private storageWarning: string | null;
 
   private readonly machine = new SessionStateMachine('SETUP');
@@ -93,6 +98,7 @@ export class AppController {
     // The Phaser game is loaded on demand: Setup opens without waiting for the 1.5 MB engine bundle.
     this.makeGame = deps.createGame;
     this.devDiagnostics = deps.devDiagnostics ?? false;
+    this.splashMs = deps.splashMs ?? 1500;
     this.storageWarning = deps.storageWarning ?? null;
     this.toasts = h('div', { class: 'toasts', id: 'toasts', aria: { live: 'polite' } });
     document.body.appendChild(this.toasts);
@@ -110,6 +116,22 @@ export class AppController {
   async start(): Promise<void> {
     this.keyHandler = (e) => this.onKey(e);
     document.addEventListener('keydown', this.keyHandler);
+    const t = this.t;
+    // Load the game engine while the splash plays, so the first race starts without a wait.
+    const preload = this.makeGame
+      ? Promise.resolve()
+      : import('../game/createGame').catch((e: unknown) =>
+          console.warn('engine preload failed', e),
+        );
+    await runSplash({
+      minMs: this.splashMs,
+      maxMs: 6000,
+      ready: preload,
+      tagline: t('app.tagline'),
+      status: t('app.loading'),
+      cars: PLAYER_STYLES.slice(0, 3).map(vehicleSvg),
+      still: this.settings.reducedMotion,
+    });
     await this.showSetup();
   }
 
