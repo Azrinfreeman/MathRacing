@@ -10,3 +10,5 @@ output
 tmp
 *.pdf
 *.mp4
+# Generated Capacitor Android project (Gradle, XML, copied web build)
+android

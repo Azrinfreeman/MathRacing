@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same dark navy as the web splash and PWA manifest, so launch shows no Capacitor branding. -->
+    <color name="launch_background">#0B1D3A</color>
+</resources>

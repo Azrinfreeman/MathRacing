@@ -76,6 +76,12 @@ npx playwright install chromium
 
 `npm run build` produces a static site in `dist/` with relative paths. Copy it to any web server or shared folder that serves it over **https or http://localhost** (service workers require a secure context), or serve `dist/` locally with `npm run preview`. Because the base path is relative it works from a sub-folder. After the first successful load, no network is needed; a new build is picked up automatically on the next online load.
 
+### Android APK (tablets and smartboards)
+
+`npm run apk` builds the web app, copies it into the Capacitor Android project in `android/` and writes an installable APK to `output/apk/MathRacing-<version>-<date>-debug.apk`. The whole game is inside the APK, so it runs with no network from the first launch. It opens full screen and landscape only. Needs JDK 17 and the Android SDK (platform 34); the script finds them in the usual Windows locations or through `JAVA_HOME` / `ANDROID_HOME`.
+
+To install: copy the APK to the device (USB, Google Drive or a USB stick), open it, and allow "install unknown apps" for the app you opened it with when Android asks. With a USB cable and developer mode on, `adb install -r <apk>` also works. The APK is **debug-signed**: good for testing and sideloading, not for the Play Store. Installing a newer build over an older one keeps the settings and saved sessions, as long as it was built on the same PC (debug key).
+
 ## Tests
 
 - `npm test`: unit and integration tests for the seeded RNG, answer normalisation, every one of the 77 templates (1,000 generated samples per level for arithmetic templates: valid, tagged, deterministic, exactly one defensible answer, independently recomputed), curriculum registry rejection of malformed or duplicate packs, the race engine (exactly-once movement, per-player debounce, single winner and timestamp tie-break, hints, support, pause timing, practice mode, evidence log), the state machine, pointer ownership and its router, widgets, layout at 1280x720 / 1920x1080 / 3840x2160, storage (IndexedDB via `fake-indexeddb`), CSV formula-injection safety, locales, and the app controller flow with a fake game.

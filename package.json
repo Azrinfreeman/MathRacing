@@ -23,12 +23,16 @@
     "docs:map": "node scripts/gen-repo-map.mjs",
     "docs:agents": "node scripts/check-agents.mjs",
     "check:fast": "node scripts/check-fast.mjs",
+    "apk": "node scripts/build-apk.mjs",
     "check": "npm run docs:agents && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
+    "@capacitor/android": "6.2.2",
+    "@capacitor/core": "6.2.2",
     "phaser": "4.2.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "6.2.2",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.6",

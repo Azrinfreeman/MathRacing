@@ -40,7 +40,13 @@ async function boot(): Promise<void> {
   });
   await app.start();
 
-  if (import.meta.env.PROD) {
+  // Inside the Android app (Capacitor) every file is already bundled, so no service worker: a cached one
+  // could keep serving the previous version after a newer APK is installed.
+  const nativeApp =
+    (
+      window as { Capacitor?: { isNativePlatform?: () => boolean } }
+    ).Capacitor?.isNativePlatform?.() === true;
+  if (import.meta.env.PROD && !nativeApp) {
     const { registerSW } = await import('virtual:pwa-register');
     registerSW({
       immediate: true,

@@ -1,0 +1,9 @@
+{
+  "appId": "my.edu.mathracing",
+  "appName": "MathRacing",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

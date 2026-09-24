@@ -13,3 +13,6 @@ tmp/
 
 # Reference video shows real pupils' faces: keep it on disk only, never in version history.
 example.mp4
+
+# Built APKs (npm run apk); rebuild them from source instead of versioning them.
+output/apk/

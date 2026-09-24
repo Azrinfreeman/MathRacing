@@ -15,6 +15,7 @@ export default tseslint.config(
       'node_modules/**',
       'output/**',
       'tmp/**',
+      'android/**',
     ],
   },
   js.configs.recommended,

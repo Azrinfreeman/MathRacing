@@ -11,6 +11,7 @@
 
 ## scripts/
 
+- `build-apk.mjs` (74)
 - `check-agents.mjs` (30)
 - `check-fast.mjs` (66)
 - `gen-curriculum-doc.mjs` (141)
@@ -124,7 +125,7 @@
 
 ## src/
 
-- `main.ts` (69)
+- `main.ts` (75)
 
 ## src/reporting/
 
