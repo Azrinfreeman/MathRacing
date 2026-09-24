@@ -240,6 +240,48 @@ describe('setup steps', () => {
     expect(q('name-4')).not.toBeNull();
   });
 
+  it('racer sheet: a pupil picks a racer, taken racers are greyed out, the choice is saved per seat and raced with', async () => {
+    const store = memoryStore();
+    harness = await boot(undefined, new SettingsStore(store));
+    await openSetup();
+    await click('step-3');
+    expect(q('racer-0')?.getAttribute('aria-label')).toContain('Roket');
+    await click('racer-0');
+    expect(q('content-dialog')?.textContent).toContain('Haiwan');
+    expect(document.querySelectorAll('.racer-tile')).toHaveLength(10);
+    expect(q<HTMLButtonElement>('racer-tile-rocket')?.getAttribute('aria-pressed')).toBe('true');
+    // player 2 holds the kart: player 1 cannot take it
+    expect(q<HTMLButtonElement>('racer-tile-kart')?.disabled).toBe(true);
+    expect(q('racer-tile-kart')?.getAttribute('aria-label')).toContain('pemain 2');
+    await click('racer-tile-duck');
+    expect(q('content-dialog')).toBeNull();
+    expect(q('racer-0')?.getAttribute('aria-label')).toContain('Itik');
+    await click('racer-1');
+    expect(q<HTMLButtonElement>('racer-tile-duck')?.disabled).toBe(true);
+    await click('racer-tile-goose');
+    const saved = JSON.parse(store.getItem('mathracing.settings.v1') ?? '{}') as {
+      racers: string[];
+    };
+    expect(saved.racers.slice(0, 2)).toEqual(['duck', 'goose']);
+    await click('step-4');
+    expect(q('sum-players')?.querySelectorAll('.summary-racer')).toHaveLength(2);
+    await click('start');
+    expect(harness.session().players.map((p) => p.racer)).toEqual(['duck', 'goose']);
+  });
+
+  it('a new seat never gets a racer another seat already has', async () => {
+    const store = memoryStore();
+    store.setItem(
+      'mathracing.settings.v1',
+      JSON.stringify({ playerCount: 2, racers: ['duck', 'goose', 'duck', 'saucer', 'block'] }),
+    );
+    harness = await boot(undefined, new SettingsStore(store));
+    await openSetup();
+    await click('step-3');
+    await click('count-3');
+    expect(q('racer-2')?.getAttribute('aria-label')).toContain('Kereta laju');
+  });
+
   it('Back and Next keep every choice; Back on the first step returns to the menu', async () => {
     harness = await boot();
     await openSetup();

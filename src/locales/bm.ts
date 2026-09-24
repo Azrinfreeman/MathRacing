@@ -96,6 +96,12 @@ export const bm = {
   'setup.ready.change': 'Tukar',
   'setup.summary.players': '{n} pemain',
   'setup.summary.topics': '{n} topik',
+  'setup.racer.button': 'Pelumba pemain {n}: {racer}. Tekan untuk tukar',
+  'setup.racer.pick': 'Pilih pelumba untuk {name}',
+  'setup.racer.vehicles': 'Kenderaan',
+  'setup.racer.animals': 'Haiwan',
+  'setup.racer.taken': 'Sudah dipilih oleh pemain {n}',
+  'setup.racer.takenShort': 'Pemain {n}',
 
   'menu.title': 'Menu utama',
   'menu.home': 'Menu',

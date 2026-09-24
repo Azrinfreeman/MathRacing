@@ -1,5 +1,6 @@
 import type { GeneratedQuestion, Language, SubmittedAnswer } from '../../curriculum/schema';
 import type { CruiseConfig } from './cruise';
+import type { RacerId } from './racers';
 
 /** The explicit application state machine: every screen the game can be in. */
 export type SessionPhase = 'SETUP' | 'READY' | 'RACING' | 'PAUSED' | 'FINISHED' | 'RESULTS';
@@ -219,6 +220,8 @@ export type SessionMeta = {
   raceLength: number;
   language: Language;
   playerNames: string[];
+  /** Racer per player, parallel to `playerNames` (DECISIONS #39). Missing in sessions saved before it. */
+  playerRacers?: RacerId[];
   winnerName: string | null;
   finishedAtMs: number | null;
   /** Whether the setback rule was on for this session. */

@@ -2,6 +2,8 @@ import type { CurriculumRegistry } from '../curriculum/registry';
 import type { Language, Level, Year } from '../curriculum/schema';
 import type { RaceMode } from '../game/core/RaceState';
 import { MAX_PLAYERS, defaultPlayerName } from '../game/core/players';
+import { resolveRacers } from '../game/core/racers';
+import type { RacerId } from '../game/core/racers';
 import type { Settings } from '../storage/settings';
 
 /** Everything a race needs, built from the setup choices when the teacher presses Start. */
@@ -12,6 +14,8 @@ export type SetupInput = {
   mode: RaceMode;
   raceLength: number;
   playerNames: string[];
+  /** One racer per player, all different. */
+  racers: RacerId[];
   language: Language;
   sound: boolean;
   reducedMotion: boolean;
@@ -27,8 +31,8 @@ export type SetupInput = {
 
 /**
  * The choices shared by the menu, the setup steps and the teacher settings screen. It lives in memory for the
- * whole app session; only the classroom-level fields are saved (as `Settings`). Player names and the seed are
- * never saved.
+ * whole app session; only the classroom-level fields are saved (as `Settings`), including the racer picked for
+ * each seat. Player names and the seed are never saved.
  */
 export type SetupState = {
   year: Year;
@@ -38,6 +42,8 @@ export type SetupState = {
   raceLength: number;
   playerCount: number;
   names: string[];
+  /** Racer per slot (`MAX_PLAYERS` entries); the active ones are always different. */
+  racers: RacerId[];
   language: Language;
   sound: boolean;
   reducedMotion: boolean;
@@ -57,6 +63,7 @@ export function stateFromSettings(s: Settings): SetupState {
     raceLength: s.raceLength,
     playerCount: s.playerCount,
     names: Array.from({ length: MAX_PLAYERS }, () => ''),
+    racers: resolveRacers(s.racers, s.playerCount),
     language: s.language,
     sound: s.sound,
     reducedMotion: s.reducedMotion,
@@ -83,6 +90,7 @@ export function settingsFromState(s: SetupState): Settings {
     raceLength: s.raceLength,
     mode: s.mode,
     playerCount: s.playerCount,
+    racers: [...s.racers],
   };
 }
 
@@ -128,6 +136,7 @@ export function buildSetupInput(s: SetupState): SetupInput | null {
     mode: s.mode,
     raceLength: s.raceLength,
     playerNames: normalizeNames(s.names, s.playerCount, s.language),
+    racers: resolveRacers(s.racers, s.playerCount).slice(0, s.playerCount),
     language: s.language,
     sound: s.sound,
     reducedMotion: s.reducedMotion,

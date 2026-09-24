@@ -328,6 +328,7 @@ export class AppController {
         raceLength: input.raceLength,
         language: input.language,
         playerNames: players.map((p) => p.name),
+        playerRacers: players.map((_, i) => input.racers[i] ?? styleForSlot(i).defaultRacer),
         winnerName: null,
         finishedAtMs: null,
         setbackEnabled: config.setbackEnabled,
@@ -350,7 +351,7 @@ export class AppController {
           id: p.id,
           name: p.name,
           style: styleForSlot(i),
-          racer: styleForSlot(i).defaultRacer,
+          racer: input.racers[i] ?? styleForSlot(i).defaultRacer,
         })),
         language: input.language,
         reducedMotion: input.reducedMotion,
@@ -469,6 +470,7 @@ export class AppController {
       id: p.id,
       name: p.name,
       style: styleForSlot(i),
+      racer: finalMeta.playerRacers?.[i] ?? styleForSlot(i).defaultRacer,
     }));
     const attempts: readonly AttemptRecord[] = engine.attempts;
 

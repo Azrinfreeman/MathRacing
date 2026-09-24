@@ -27,6 +27,7 @@ function meta(id: string, startedAtMs = 1_700_000_000_000): SessionMeta {
     raceLength: 8,
     language: 'bm',
     playerNames: ['Aina', 'Budi'],
+    playerRacers: ['duck', 'kart'],
     winnerName: null,
     finishedAtMs: null,
     setbackEnabled: true,
@@ -210,12 +211,18 @@ describe('CSV export', () => {
     expect(lines[0]).toContain('session_id');
     expect(lines[0]).toContain('sk');
     expect(lines[0]).toContain('hint_used');
-    expect(lines[0]?.split(',').slice(-3)).toEqual([
+    expect(lines[0]?.split(',').slice(-4)).toEqual([
       'progress_after',
       'speed_effect',
+      'racer',
       'parameters_json',
     ]);
-    expect(lines[1]).toContain(',boost,');
+    expect(lines[1]).toContain(',boost,duck,');
+    // sessions saved before racers existed leave the racer cell empty
+    const old = meta('S');
+    delete old.playerRacers;
+    const oldRow = attemptsToCsv([record('S', 1)], old).split('\r\n')[1];
+    expect(oldRow).toContain(',boost,,');
     // parameters_json contains commas and quotes, so it must be quoted and the column count stays right
     expect(lines[1]).toContain('"{""params"":{""a"":3,""b"":4}}"');
     expect(lines[1]).toContain('2023-11-14T22:13:21.000Z');
@@ -303,6 +310,31 @@ describe('settings', () => {
     expect(sanitizeSettings({ setbackEnabled: true }).cruiseEnabled).toBe(true);
     expect(sanitizeSettings({ cruiseEnabled: false }).cruiseEnabled).toBe(false);
     expect(sanitizeSettings({ cruiseEnabled: 'no' }).cruiseEnabled).toBe(true);
+  });
+
+  it('saves one racer per seat, valid and never shared, and no names', () => {
+    expect(DEFAULT_SETTINGS.racers).toEqual(['rocket', 'kart', 'wedge', 'saucer', 'block']);
+    // settings saved before racers existed get the slot defaults
+    expect(sanitizeSettings({ playerCount: 3 }).racers).toEqual(DEFAULT_SETTINGS.racers);
+    expect(sanitizeSettings({ racers: ['duck', 'dragon', 'goose'] }).racers).toEqual([
+      'duck',
+      'kart',
+      'goose',
+      'saucer',
+      'block',
+    ]);
+    // a clash among the active seats is resolved
+    const clash = sanitizeSettings({ playerCount: 3, racers: ['duck', 'duck', 'goose'] }).racers;
+    expect(new Set(clash.slice(0, 3)).size).toBe(3);
+    const store = fakeStore({});
+    const settings = new SettingsStore(store);
+    settings.save({
+      ...DEFAULT_SETTINGS,
+      racers: ['turtle', 'rabbit', 'wedge', 'saucer', 'block'],
+    });
+    expect(settings.load().racers.slice(0, 2)).toEqual(['turtle', 'rabbit']);
+    const saved = store.getItem('mathracing.settings.v1') ?? '';
+    expect(saved).not.toMatch(/name/i);
   });
 
   it('reports corrupt storage instead of crashing, and still returns defaults', () => {

@@ -95,6 +95,12 @@ export const en: Partial<Record<MessageKey, string>> = {
   'setup.ready.change': 'Change',
   'setup.summary.players': '{n} players',
   'setup.summary.topics': '{n} topics',
+  'setup.racer.button': 'Player {n} racer: {racer}. Tap to change',
+  'setup.racer.pick': 'Choose a racer for {name}',
+  'setup.racer.vehicles': 'Vehicles',
+  'setup.racer.animals': 'Animals',
+  'setup.racer.taken': 'Already chosen by player {n}',
+  'setup.racer.takenShort': 'Player {n}',
 
   'menu.title': 'Main menu',
   'menu.home': 'Menu',

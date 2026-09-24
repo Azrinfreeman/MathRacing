@@ -1,8 +1,12 @@
 import type { Language } from '../../curriculum/schema';
 import type { AttemptRecord, RaceResult, SessionMeta } from '../../game/core/RaceState';
 import type { PlayerStyle } from '../../game/core/players';
+import { racerInfo } from '../../game/core/racers';
+import type { RacerId } from '../../game/core/racers';
 import { createTranslator } from '../../locales';
 import { summarizeEvidence } from '../../reporting/evidence';
+import { racerSvg } from '../art';
+import { svgArt } from '../controls';
 import { clear, h } from '../dom';
 import type { Child } from '../dom';
 
@@ -11,7 +15,7 @@ export type ResultsData = {
   result: RaceResult;
   meta: SessionMeta;
   attempts: readonly AttemptRecord[];
-  players: readonly { id: string; name: string; style: PlayerStyle }[];
+  players: readonly { id: string; name: string; style: PlayerStyle; racer: RacerId }[];
   raceLength: number;
   /** Topic id -> display title. */
   topicTitles: Record<string, string>;
@@ -89,6 +93,10 @@ export class ResultsScreen {
 
     const styleOf = (id: string): PlayerStyle | undefined =>
       data.players.find((p) => p.id === id)?.style;
+    const racerOf = (id: string): HTMLElement | null => {
+      const p = data.players.find((q) => q.id === id);
+      return p ? svgArt(racerSvg(p.style, p.racer), 'standing-racer') : null;
+    };
     const standings = h(
       'ol',
       { class: 'standings', dataset: { testid: 'standings' } },
@@ -105,6 +113,7 @@ export class ResultsScreen {
             aria: { hidden: true },
             text: SYMBOLS[style?.symbol ?? ''] ?? '',
           }),
+          racerOf(s.playerId),
           h('span', { class: 'standing-name', text: s.name }),
           h(
             'span',
@@ -223,11 +232,24 @@ export class ResultsScreen {
     const { data } = this;
     const summary = summarizeEvidence(data.attempts, data.players);
     const th = (text: string): HTMLElement => h('th', { scope: 'col' }, text);
+    // The racer picture with its name as text, so the evidence table says which racer each pupil used.
+    const evidenceName = (id: string, name: string): Child[] => {
+      const p = data.players.find((q) => q.id === id);
+      if (!p) return [name];
+      return [
+        svgArt(racerSvg(p.style, p.racer), 'evidence-racer'),
+        name,
+        h('span', {
+          class: 'evidence-racer-name',
+          text: ` (${racerInfo(p.racer).name[data.language]})`,
+        }),
+      ];
+    };
     const playerRows: Child[] = summary.players.map((p) =>
       h(
         'tr',
         {},
-        h('th', { scope: 'row' }, p.name),
+        h('th', { scope: 'row' }, ...evidenceName(p.playerId, p.name)),
         h('td', { text: String(p.correct) }),
         h('td', { text: String(p.attempts) }),
         h('td', { text: String(p.hintsUsed) }),

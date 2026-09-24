@@ -773,6 +773,109 @@ main.wiz-body {
   height: auto;
   display: block;
 }
+/* the racer picture is a button that opens the racer sheet */
+.player-racer {
+  display: grid;
+  justify-items: center;
+  gap: 0.15em;
+  padding: 4px 8px;
+  border: 3px dashed transparent;
+  border-radius: 16px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.player-racer:hover,
+.player-racer:focus-visible {
+  border-color: var(--pc);
+}
+.player-racer-change {
+  font-size: 0.85em;
+  font-weight: 800;
+  color: var(--pcd);
+  text-decoration: underline;
+}
+.racer-row-title {
+  margin: 0.6rem 0 0.3rem;
+}
+.racer-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 1vw, 12px);
+}
+.racer-tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.2em;
+  min-height: 64px;
+  padding: 6px 4px;
+  border: 3px solid #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.racer-tile.is-current {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px #fde68a;
+}
+.racer-tile.is-current::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  font-size: 1.1em;
+}
+.racer-tile:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.racer-tile-art svg {
+  width: clamp(56px, 11vmin, 110px);
+  height: auto;
+  display: block;
+}
+.racer-tile-name {
+  font-size: 0.9em;
+  text-align: center;
+}
+.racer-tile-taken {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.75em;
+}
+.racer-tile-owner svg {
+  width: 1.2em;
+  height: 1.2em;
+  display: block;
+}
+.summary-racers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+.summary-racer svg,
+.standing-racer svg,
+.evidence-racer svg {
+  width: 2.6em;
+  height: auto;
+  display: block;
+}
+.evidence-racer {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.3em;
+}
+.evidence-racer-name {
+  font-weight: 400;
+}
 .player-tag {
   display: flex;
   align-items: center;
@@ -933,7 +1036,7 @@ html.reduce-motion *::after {
 }
 .standing {
   display: grid;
-  grid-template-columns: 7rem 2.6rem minmax(8rem, 14rem) minmax(8rem, 1fr) 11rem;
+  grid-template-columns: 7rem 2.6rem 3.2rem minmax(8rem, 14rem) minmax(8rem, 1fr) 11rem;
   gap: 0.8rem;
   align-items: center;
   padding: 0.6rem 0.9rem;
@@ -1142,7 +1245,7 @@ body:not(:has(.stage)) .toasts {
     grid-column: 1 / -1;
   }
   .standing {
-    grid-template-columns: 6rem 2.4rem 1fr;
+    grid-template-columns: 6rem 2.4rem 3rem 1fr;
   }
   .standing .bar,
   .standing .standing-progress {

@@ -1,9 +1,12 @@
 import type { Language, Level, Year } from '../curriculum/schema';
 import type { RaceMode } from '../game/core/RaceState';
+import { defaultRacers, resolveRacers } from '../game/core/racers';
+import type { RacerId } from '../game/core/racers';
 
 /**
  * Teacher preferences remembered between sessions in localStorage. Deliberately excludes player names and any
- * pupil data: only classroom-level choices are stored here.
+ * pupil data: only classroom-level choices are stored here. The racers are stored per seat (Pemain 1-5), never
+ * linked to a name (DECISIONS #39).
  */
 export type Settings = {
   language: Language;
@@ -20,6 +23,8 @@ export type Settings = {
   raceLength: number;
   mode: RaceMode;
   playerCount: number;
+  /** Racer per seat, `MAX_PLAYERS` entries; the active seats never share one. */
+  racers: RacerId[];
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -36,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   raceLength: 8,
   mode: 'quick',
   playerCount: 2,
+  racers: defaultRacers(),
 };
 
 const KEY = 'mathracing.settings.v1';
@@ -67,7 +73,8 @@ function pickBoolean(v: unknown, fallback: boolean): boolean {
 /** Validate untrusted stored JSON field by field; anything unexpected falls back to the default. */
 export function sanitizeSettings(raw: unknown): Settings {
   const d = DEFAULT_SETTINGS;
-  if (typeof raw !== 'object' || raw === null) return { ...d, topicIds: [...d.topicIds] };
+  if (typeof raw !== 'object' || raw === null)
+    return { ...d, topicIds: [...d.topicIds], racers: [...d.racers] };
   const r = raw as Record<string, unknown>;
   const year: Year = r.year === 2 ? 2 : 1;
   const topicIds = Array.isArray(r.topicIds)
@@ -95,6 +102,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     raceLength,
     mode: r.mode === 'practice' ? 'practice' : 'quick',
     playerCount,
+    racers: resolveRacers(r.racers, playerCount),
   };
 }
 

@@ -51,6 +51,11 @@ export const CSV_COLUMNS: readonly Column[] = [
   { header: 'progress_after', value: (r) => r.progressAfter },
   // Records saved before cruise movement have no speed effect; the cell is then left empty.
   { header: 'speed_effect', value: (r) => r.speedEffect },
+  // The racer the player used (a stable id such as "duck"); empty for sessions saved before racers existed.
+  {
+    header: 'racer',
+    value: (r, s) => (s ? s.playerRacers?.[s.playerNames.indexOf(r.playerName)] : undefined),
+  },
   { header: 'parameters_json', value: (r) => r.parameters },
 ];
 

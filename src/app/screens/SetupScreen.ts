@@ -11,8 +11,11 @@ import {
   PLAYER_STYLES,
   defaultPlayerName,
 } from '../../game/core/players';
+import { RACERS, racerInfo, resolveRacers, takenRacers } from '../../game/core/racers';
+import type { RacerKind } from '../../game/core/racers';
 import { createTranslator } from '../../locales';
 import type { MessageKey, Translator } from '../../locales';
+import type { RacerId } from '../../game/core/racers';
 import { levelStarsSvg, symbolBadgeSvg, topicIconSvg, racerSvg } from '../art';
 import { choice, svgArt } from '../controls';
 import { contentDialog } from '../dialogs';
@@ -438,6 +441,8 @@ export class SetupScreen {
                 className: 'card count-card',
                 onChange: () => {
                   s.playerCount = n;
+                  // a seat that becomes active must not hold a racer another seat already has
+                  s.racers = resolveRacers(s.racers, n);
                   this.changed();
                 },
               }),
@@ -456,7 +461,23 @@ export class SetupScreen {
           return h(
             'div',
             { class: 'player-card', style: `--pc:${style.color};--pcd:${style.dark}` },
-            svgArt(racerSvg(style), 'player-car'),
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'player-racer',
+                dataset: { key: `racer-${i}`, testid: `racer-${i}` },
+                aria: {
+                  label: t('setup.racer.button', {
+                    n: i + 1,
+                    racer: this.racerName(s.racers[i] ?? style.defaultRacer),
+                  }),
+                },
+                on: { click: () => this.openRacerPicker(i) },
+              },
+              svgArt(racerSvg(style, s.racers[i] ?? style.defaultRacer), 'player-car'),
+              h('span', { class: 'player-racer-change', text: t('setup.ready.change') }),
+            ),
             h(
               'span',
               { class: 'player-tag' },
@@ -489,11 +510,83 @@ export class SetupScreen {
     );
   }
 
+  private racerName(id: RacerId): string {
+    return racerInfo(id).name[this.s.language];
+  }
+
+  /** The racer sheet for one seat: vehicles and animals; racers of other active players are greyed out. */
+  private openRacerPicker(slot: number): void {
+    const t = this.t;
+    const s = this.s;
+    const style = PLAYER_STYLES[slot];
+    if (!style) return;
+    const current = s.racers[slot] ?? style.defaultRacer;
+    const taken = takenRacers(s.racers, s.playerCount, slot);
+    const owner = (id: RacerId): number => s.racers.findIndex((r, i) => r === id && i !== slot);
+    const name = s.names[slot]?.trim() || defaultPlayerName(slot, s.language);
+    let dialog: { close: () => void } | null = null;
+    const choose = (id: RacerId): void => {
+      s.racers[slot] = id;
+      dialog?.close();
+      this.changed();
+      this.root?.querySelector<HTMLElement>(`[data-key="racer-${slot}"]`)?.focus();
+    };
+    const tile = (id: RacerId): HTMLElement => {
+      const isTaken = taken.has(id);
+      const by = owner(id);
+      const byStyle = PLAYER_STYLES[by];
+      return h(
+        'button',
+        {
+          type: 'button',
+          class: `racer-tile${id === current ? ' is-current' : ''}`,
+          disabled: isTaken,
+          dataset: { testid: `racer-tile-${id}` },
+          aria: {
+            pressed: id === current ? 'true' : 'false',
+            label: isTaken
+              ? `${this.racerName(id)}. ${t('setup.racer.taken', { n: by + 1 })}`
+              : this.racerName(id),
+          },
+          on: { click: () => choose(id) },
+        },
+        svgArt(racerSvg(style, id), 'racer-tile-art'),
+        h('span', { class: 'racer-tile-name', text: this.racerName(id) }),
+        isTaken && byStyle
+          ? h(
+              'span',
+              { class: 'racer-tile-taken' },
+              svgArt(symbolBadgeSvg(byStyle), 'racer-tile-owner'),
+              t('setup.racer.takenShort', { n: by + 1 }),
+            )
+          : null,
+      );
+    };
+    const row = (kind: RacerKind, label: MessageKey): Child[] => [
+      h('h3', { class: 'racer-row-title', text: t(label) }),
+      h(
+        'div',
+        { class: 'racer-row' },
+        ...RACERS.filter((r) => r.kind === kind).map((r) => tile(r.id)),
+      ),
+    ];
+    dialog = contentDialog(t, t('setup.racer.pick', { name }), [
+      ...row('vehicle', 'setup.racer.vehicles'),
+      ...row('animal', 'setup.racer.animals'),
+    ]);
+  }
+
   private stepReady(): HTMLElement {
     const t = this.t;
     const s = this.s;
     const sum = summarizeSetup(this.deps.registry, s, t);
-    const tile = (key: string, label: MessageKey, value: string, step: SetupStep): HTMLElement =>
+    const tile = (
+      key: string,
+      label: MessageKey,
+      value: string,
+      step: SetupStep,
+      extra?: HTMLElement,
+    ): HTMLElement =>
       h(
         'button',
         {
@@ -504,6 +597,7 @@ export class SetupScreen {
         },
         h('span', { class: 'summary-label', text: t(label) }),
         h('span', { class: 'summary-value', text: value }),
+        extra ?? null,
         h('span', { class: 'summary-change', text: t('setup.ready.change') }),
       );
     return h(
@@ -516,7 +610,22 @@ export class SetupScreen {
         tile('sum-year', 'setup.year', sum.year, 1),
         tile('sum-topics', 'setup.topics', sum.topics, 2),
         tile('sum-level', 'setup.level', sum.level, 2),
-        tile('sum-players', 'setup.players', sum.players, 3),
+        tile(
+          'sum-players',
+          'setup.players',
+          sum.players,
+          3,
+          h(
+            'span',
+            { class: 'summary-racers' },
+            ...Array.from({ length: s.playerCount }, (_, i) => {
+              const style = PLAYER_STYLES[i];
+              return style
+                ? svgArt(racerSvg(style, s.racers[i] ?? style.defaultRacer), 'summary-racer')
+                : null;
+            }),
+          ),
+        ),
       ),
       h(
         'div',
