@@ -17,7 +17,7 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - `npm run apk`: builds `output/apk/MathRacing-<version>-<date>-debug.apk` (git-ignored). Last one:
   `MathRacing-1.0.0-20260924-0857-debug.apk`, sent to the owner. Not yet run on a real Android device here
   (no device or emulator connected to this PC).
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#39).
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#40).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -61,7 +61,8 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Build PC: JDK 17 at `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot`, SDK at
   `C:\Users\azrin\AppData\Local\Android\Sdk` (platform 34, build-tools 34). Traps: `local.properties` needs forward
   slashes; the shell does not search the current folder, so `gradlew.bat` is called by full path.
-- Debug-signed only. A release keystore must be created and kept by the owner (never committed).
+- Release (DECISIONS #40): `npm run apk:release` signs with `android/keystore.properties` (owner-made, git-ignored;
+  README "Release APK"). Signing path verified with a throwaway key. Owner has not created the real key yet.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35, `docs/PLAN-splash-menu-setup.md`)

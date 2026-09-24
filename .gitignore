@@ -16,3 +16,8 @@ example.mp4
 
 # Built APKs (npm run apk); rebuild them from source instead of versioning them.
 output/apk/
+
+# Release signing keys (DECISIONS #40)
+*.jks
+*.keystore
+keystore.properties

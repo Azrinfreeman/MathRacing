@@ -82,6 +82,33 @@ npx playwright install chromium
 
 To install: copy the APK to the device (USB, Google Drive or a USB stick), open it, and allow "install unknown apps" for the app you opened it with when Android asks. With a USB cable and developer mode on, `adb install -r <apk>` also works. The APK is **debug-signed**: good for testing and sideloading, not for the Play Store. Installing a newer build over an older one keeps the settings and saved sessions, as long as it was built on the same PC (debug key).
 
+### Release APK (signed with your own key)
+
+A release APK is signed with a private key that only the owner keeps. **Make the key once and keep it safe**:
+every later update must be signed with the same key, or Android refuses to install it over the old app. Never
+commit the key or its passwords (they are git-ignored), and keep a backup copy somewhere other than this PC.
+
+1. Create the key (keytool comes with the JDK; it asks you to choose the passwords):
+
+   ```
+   "C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\bin\keytool" -genkeypair -v -keystore C:\Users\<you>\mathracing-release.jks -alias mathracing -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. Create `android/keystore.properties` (git-ignored) with your own values:
+
+   ```
+   storeFile=C:/Users/<you>/mathracing-release.jks
+   storePassword=<the keystore password you chose>
+   keyAlias=mathracing
+   keyPassword=<the key password you chose>
+   ```
+
+3. Run `npm run apk:release`. The signed APK is written to `output/apk/MathRacing-<version>-<date>-release.apk`.
+
+A release APK cannot be installed over a debug APK (they are signed with different keys): uninstall the test
+build first. That removes the settings and saved sessions on that device, so export any CSV you need beforehand.
+Before publishing an update, raise `versionCode` in `android/app/build.gradle`.
+
 ## Tests
 
 - `npm test`: unit and integration tests for the seeded RNG, answer normalisation, every one of the 77 templates (1,000 generated samples per level for arithmetic templates: valid, tagged, deterministic, exactly one defensible answer, independently recomputed), curriculum registry rejection of malformed or duplicate packs, the race engine (exactly-once movement, per-player debounce, single winner and timestamp tie-break, hints, support, pause timing, practice mode, evidence log), the state machine, pointer ownership and its router, widgets, layout at 1280x720 / 1920x1080 / 3840x2160, storage (IndexedDB via `fake-indexeddb`), CSV formula-injection safety, locales, and the app controller flow with a fake game.

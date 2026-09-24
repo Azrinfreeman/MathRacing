@@ -1,7 +1,9 @@
-// Build an installable Android APK for testing on tablets and smartboards. Run with: npm run apk
+// Build an installable Android APK for tablets and smartboards.
+//   npm run apk          debug-signed, for testing (DECISIONS #38)
+//   npm run apk:release  signed with the owner's release key from android/keystore.properties (DECISIONS #40)
 //   1. builds the web app (dist/), 2. copies it into the Capacitor Android project (android/),
-//   3. runs Gradle assembleDebug, 4. copies the APK to output/apk/MathRacing-<version>-<date>-debug.apk.
-// The APK is debug-signed: fine for sideloading and testing, not for the Play Store (DECISIONS #38).
+//   3. runs Gradle assembleDebug / assembleRelease, 4. copies the APK to
+//      output/apk/MathRacing-<version>-<date>-<debug|release>.apk.
 // Needs JDK 17 and the Android SDK (platform 34). JAVA_HOME and ANDROID_HOME are used when set; otherwise
 // the usual Windows install locations are tried.
 import { spawnSync } from 'node:child_process';
@@ -47,6 +49,15 @@ function findSdk() {
   return existsSync(guess) ? guess : null;
 }
 
+const release = process.argv.includes('--release');
+if (release && !existsSync('android/keystore.properties')) {
+  console.error(
+    'Release signing is not set up: android/keystore.properties is missing.\n' +
+      'Create your release key and that file first (see "Release APK" in README.md). They are never committed.',
+  );
+  process.exit(1);
+}
+
 const sdk = findSdk();
 if (!sdk) {
   console.error('Android SDK not found: set ANDROID_HOME.');
@@ -62,13 +73,15 @@ const jdk = findJdk17();
 if (jdk) env.JAVA_HOME = jdk;
 // Full path: some Windows shells do not look in the current folder for programs.
 const gradlew = join(process.cwd(), 'android', win ? 'gradlew.bat' : 'gradlew');
-step('gradle assembleDebug', `"${gradlew}" assembleDebug --no-daemon -q`, { cwd: 'android', env });
+const task = release ? 'assembleRelease' : 'assembleDebug';
+step(`gradle ${task}`, `"${gradlew}" ${task} --no-daemon -q`, { cwd: 'android', env });
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 const d = new Date();
 const pad = (n) => String(n).padStart(2, '0');
 const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
 mkdirSync('output/apk', { recursive: true });
-const target = `output/apk/MathRacing-${version}-${stamp}-debug.apk`;
-copyFileSync('android/app/build/outputs/apk/debug/app-debug.apk', target);
+const kind = release ? 'release' : 'debug';
+const target = `output/apk/MathRacing-${version}-${stamp}-${kind}.apk`;
+copyFileSync(`android/app/build/outputs/apk/${kind}/app-${kind}.apk`, target);
 console.log(`APK: ${target}`);
