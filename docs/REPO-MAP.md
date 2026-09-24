@@ -5,9 +5,9 @@
 ## e2e/
 
 - `cruise.spec.ts` (203): cruise: cars drive on their own
-- `mathracing.spec.ts` (587): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
+- `mathracing.spec.ts` (630): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
 - `setback.spec.ts` (169): setback after 3 wrong answers
-- `support.ts` (285): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
+- `support.ts` (249): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
 
 ## scripts/
 
@@ -20,7 +20,7 @@
 
 ## src/app/
 
-- `AppController.ts` (540): AppDeps, AppController
+- `AppController.ts` (541): AppDeps, AppController
 - `StageChrome.ts` (225): StagePhase, StageHandlers, StageChrome
 - `art.ts` (136): symbolBadgeSvg, racerSvg, levelStarsSvg, topicIconSvg, MENU_ICONS
 - `controls.ts` (112): choice, switchRow, languageSwitch, svgArt
@@ -39,33 +39,24 @@
 
 ## src/curriculum/
 
-- `answers.ts` (117): normalizeDecimal, senToRmText, AnswerEvaluation, evaluateAnswer, answerText
+- `answers.ts` (53): normalizeDecimal, senToRmText, AnswerEvaluation, evaluateAnswer, answerText
 - `blueprint.ts` (127): BlueprintConfig, QuestionSource, buildBlueprint, createQuestionSource, previewQuestions
-- `registry.ts` (240): CurriculumError, GenerationError, GenerateRequest, CurriculumRegistry, getDefaultRegistry
-- `schema.ts` (359): Year, Level, Language, WidgetKind, LEVELS, WIDGET_KINDS, JsonPrimitive, JsonValue, JsonObject, LocalText, pickText, PromptModel, QuestionOption, AcceptedAnswer, +11 more
-- `visual.ts` (178): ObjectShape, Shape2D, Shape3D, ObjectGroup, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, describeVisual, visualSignature
+- `registry.ts` (239): CurriculumError, GenerationError, GenerateRequest, CurriculumRegistry, getDefaultRegistry
+- `schema.ts` (234): Year, Level, Language, WidgetKind, LEVELS, WIDGET_KINDS, JsonPrimitive, JsonValue, JsonObject, LocalText, pickText, PromptModel, AcceptedAnswer, SubmittedAnswer, +9 more
+- `visual.ts` (271): ObjectShape, Shape2D, Shape3D, ObjectGroup, BlockSet, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, blockValue, visualTotal, describeVisual, visualSignature
 
 ## src/curriculum/generators/
 
-- `builders.ts` (113): Y1_MAX, bandWithin, numberBuilt, orderBuilt, tapBuilt, clamp
-- `helpers.ts` (157): tr, TemplateDef, defineTemplate, OptionSpec, buildChoices, numericDistractors, isPrime, gcd, fingerprint, MINUS, TIMES, DIVIDE
-- `y1Data.ts` (296): Y1_DATA_TEMPLATES
-- `y1MeasureSpace.ts` (550): SOLIDS, Y1_MEASURE_TEMPLATES, Y1_SPACE_TEMPLATES
-- `y1Money.ts` (383): COINS_SEN, NOTES_SEN, denominationLabel, moneyItem, Y1_MONEY_TEMPLATES
-- `y1Numbers.ts` (463): Y1_NUMBER_TEMPLATES
-- `y1Operations.ts` (330): Y1_OPERATION_TEMPLATES
-- `y1Time.ts` (378): clockLabel, clockGapMinutes, pickClockDistractors, Y1_TIME_TEMPLATES
-- `y2Fractions.ts` (381): sameValue, Y2_FRACTION_TEMPLATES
-- `y2Money.ts` (286): Y2_MONEY_TEMPLATES
-- `y2Numbers.ts` (482): Y2_NUMBER_TEMPLATES
-- `y2Operations.ts` (295): Y2_OPERATION_TEMPLATES
-- `y2SpaceData.ts` (610): Y2_SPACE_TEMPLATES, Y2_DATA_TEMPLATES
-- `y2TimeMeasure.ts` (524): Y2_TIME_TEMPLATES, Y2_MEASURE_TEMPLATES
+- `builders.ts` (47): Y1_MAX, bandWithin, numberBuilt, clamp
+- `easyShared.ts` (101): COUNT_SHAPES, color, countPicture, framesHint, fivesHint, shapeCountTemplate, moneyItems
+- `easyY1.ts` (497): Y1_EASY_TEMPLATES
+- `easyY2.ts` (585): Y2_EASY_TEMPLATES
+- `helpers.ts` (91): tr, TemplateDef, defineTemplate, isPrime, gcd, fingerprint, MINUS, TIMES, DIVIDE
 
 ## src/curriculum/packs/
 
-- `kpm-ms-y1-v1.ts` (105): KPM_MS_Y1_V1
-- `kpm-ms-y2-v1.ts` (111): KPM_MS_Y2_V1
+- `kpm-ms-y1-v1.ts` (93): KPM_MS_Y1_V1
+- `kpm-ms-y2-v1.ts` (98): KPM_MS_Y2_V1
 
 ## src/curriculum/text/
 
@@ -81,8 +72,8 @@
 ## src/game/core/
 
 - `InputOwnership.ts` (90): PanelId, PointerDownResult, PointerUpResult, InputOwnership
-- `RaceEngine.ts` (680): RaceEngineOptions, RaceConfigError, RaceEngine
-- `RaceState.ts` (300): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
+- `RaceEngine.ts` (672): RaceEngineOptions, RaceConfigError, RaceEngine
+- `RaceState.ts` (305): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
 - `SeededRng.ts` (114): Rng, SeededRng, createSessionSeed
 - `cruise.ts` (132): CruiseConfig, DEFAULT_CRUISE, SpeedState, CruiseBody, boostRate, speedAt, speedStateAt, noteAnswer, applyBoost, applySlow, advanceCruise
 - `players.ts` (114): SymbolId, PlayerStyle, MAX_PLAYERS, MIN_PLAYERS, PLAYER_STYLES, styleForSlot, relativeLuminance, contrastRatio, defaultPlayerName
@@ -98,9 +89,10 @@
 ## src/game/ui/
 
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
-- `PanelView.ts` (722): PanelAction, PanelMode, PanelView
+- `PanelView.ts` (726): PanelAction, PanelMode, PanelView
 - `TrackView.ts` (640): TrackPlayer, TrackView
-- `VisualRenderer.ts` (845): drawVisual
+- `VisualRenderer.ts` (992): drawVisual
+- `countLayout.ts` (169): tenFrameCells, BlockKind, PlacedBlock, blockLayout, equalGroupLayout
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (109): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones
 - `motion.ts` (132): Direction, CarMotion
@@ -111,12 +103,8 @@
 
 ## src/game/widgets/
 
-- `BuildValueWidget.ts` (124): BuildValueWidget
-- `ChoiceTilesWidget.ts` (71): tileColumns, ChoiceTilesWidget
-- `NumberPadWidget.ts` (84): NumberPadWidget
-- `OrderStripWidget.ts` (81): OrderStripWidget
-- `TapPictureWidget.ts` (102): TapPictureWidget
-- `index.ts` (26): createWidget, hitControl
+- `NumberPadWidget.ts` (103): NumberPadWidget
+- `index.ts` (14): createWidget, hitControl
 - `types.ts` (56): ControlKind, ControlTone, ControlState, WidgetControl, WidgetEffect, WidgetModel, hitControl
 
 ## src/locales/
@@ -132,7 +120,7 @@
 ## src/reporting/
 
 - `evidence.ts` (96): PlayerEvidence, TopicEvidence, EvidenceSummary, summarizeEvidence
-- `exportCsv.ts` (90): BOM, escapeCell, CSV_COLUMNS, attemptsToCsv, csvFileName, downloadCsv
+- `exportCsv.ts` (92): BOM, escapeCell, CSV_COLUMNS, attemptsToCsv, csvFileName, downloadCsv
 
 ## src/storage/
 
@@ -142,11 +130,12 @@
 
 ## src/tests/
 
-- `answers.test.ts` (169): normalizeDecimal, senToRmText, evaluateAnswer
+- `answers.test.ts` (90): normalizeDecimal, senToRmText, evaluateAnswer
 - `app.test.ts` (589): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
+- `countLayout.test.ts` (94): counting pictures stay countable (DECISIONS #42)
 - `cruise.test.ts` (209): cruise movement
-- `curriculum.test.ts` (334): curriculum registry, number words
-- `helpers.ts` (20): correctSubmission
+- `curriculum.test.ts` (301): curriculum registry, number words
+- `helpers.ts` (6): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
 - `layout.test.ts` (192): geometry helpers, stage layout, player identity palette, menu screen colours (DECISIONS #41)
 - `locales.test.ts` (53): locales
@@ -157,6 +146,6 @@
 - `seededRng.test.ts` (95): SeededRng
 - `splash.test.ts` (90): launch splash
 - `stateMachine.test.ts` (60): SessionStateMachine
-- `storage.test.ts` (399): session repositories, CSV export, settings
+- `storage.test.ts` (402): session repositories, CSV export, settings
 - `trackGeometry.test.ts` (56): track geometry
-- `widgets.test.ts` (295): NumberPadWidget, ChoiceTilesWidget, TapPictureWidget, OrderStripWidget, BuildValueWidget, hitControl, widget layout across every template
+- `widgets.test.ts` (169): NumberPadWidget, hitControl, widget layout across every template

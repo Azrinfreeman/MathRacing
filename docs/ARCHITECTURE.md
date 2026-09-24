@@ -38,7 +38,7 @@ Rules that keep this honest: scenes and views render engine state and send inten
 ## Curriculum
 
 - **Data model** (`curriculum/schema.ts`): `CurriculumPack` (versioned, with basis, status, reviewer, source note) → `CurriculumTopic` (year, code, SK range) → `QuestionTemplate`. A template declares its widget, SK/SP tags, four explicit level ranges, prerequisites, whether a remainder can occur, worked fixtures and (for arithmetic) an independent `recompute`.
-- **Question contract:** `GeneratedQuestion` carries pack/version, year, topic, SK, SP, template, difficulty band and level, language, prompt (text, expression, unit, picture), widget, accepted answer, options, hint, support picture and JSON metadata sufficient to reproduce the item.
+- **Question contract:** `GeneratedQuestion` carries pack/version, year, topic, SK, SP, template, difficulty band and level, language, prompt (text, expression, unit, picture), widget (always the number pad), accepted answer (one whole number 0-999), hint, hint picture (the same things in ten-frames), support picture and JSON metadata sufficient to reproduce the item.
 - **Validation:** `validatePack` runs at registry construction (malformed or duplicate packs throw `CurriculumError`; `main.ts` shows a safe message in production and rethrows in development). `validateGeneratedQuestion` runs on every generated item and the generator retries with a fresh stream if a sample is invalid; templates also throw on duplicate distractors.
 - **Determinism:** all randomness comes from `SeededRng`. A session seed forks into a shared **blueprint** (one template per item index, identical for all players, topics rotated evenly) and per-player, per-item streams (`fork('player:<id>')`, `fork('item:<n>')`), so the same configuration and seed reproduce the same content regardless of timing. A pupil never gets the same item twice in a row.
 - **Answers:** number answers are exact normalised decimal strings (`normalizeDecimal`), money is integer sen. Choice/tap/order/build answers are checked by option id, set, sequence or count.
@@ -66,7 +66,7 @@ Time is passed in (`atMs`), so every rule is deterministic and testable.
 
 ## Widgets
 
-Pure models (`game/widgets`) hold input state and lay out their controls; `PanelView` draws them. Number pad and choice tiles are the primary widgets; tap-picture, order-strip and build-value are implemented with tap-only interaction. Widgets never validate answers.
+Pure models (`game/widgets`) hold input state and lay out their controls; `PanelView` draws them. Since DECISIONS #42 the number pad is the only widget (every question is a picture to count and one whole number); on short panels it switches to 1-5 / 6-0 / wide C and Go. Widgets never validate answers. Counting pictures are laid out by the pure `game/ui/countLayout.ts`.
 
 ## Screens
 
@@ -88,6 +88,6 @@ Pure models (`game/widgets`) hold input state and lay out their controls; `Panel
 
 - **New question type:** add a `defineTemplate` in `curriculum/generators`, list it in a pack, run `npm test` (the property suite picks it up automatically) and `npm run docs:curriculum`.
 - **New pack / curriculum version:** add a `CurriculumPack` file and register it in `registry.ts`; never edit a released pack silently (bump `version`).
-- **New widget:** implement `WidgetModel`, add it to `createWidget`, extend `WidgetKind` and the validator.
+- **New question:** a template in `curriculum/generators/easyY1.ts` or `easyY2.ts` with a countable picture and a whole-number answer (the validator rejects anything else); if it is a "count all" question, add it to `COUNT_ALL` in `curriculum.test.ts`.
 - **New language:** add a locale file next to `bm.ts`/`en.ts` (missing keys fall back to BM).
 - **Cooperative mode:** `RaceMode` and `QuestionSource` are the seams; a team engine can reuse widgets, panels and persistence.

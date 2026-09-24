@@ -19,7 +19,7 @@ Full file list with exports: `docs/REPO-MAP.md` (generated). Rationale for every
   - race rule: `RaceEngine` + `RaceState` + `raceEngine.test.ts`
   - new teacher option: `storage/settings.ts` + `setupState` + `TeacherScreen` + both locales + `storage.test.ts`
   - new attempt field: `RaceState` + `RaceEngine.log` + `reporting/exportCsv` + `storage.test.ts` fixtures
-  - new template: `generators/<group>` + `curriculum.test.ts`, then `npm run docs:curriculum`
+  - new template: `generators/easyY1.ts` / `easyY2.ts` (picture to count + one whole number, DECISIONS #42) + `curriculum.test.ts`, then `npm run docs:curriculum`
   - racer visuals: `ui/racerShapes.ts` (parts drawn by both `TrackView` and `app/art.ts`) + `motion.ts` + `racers.test.ts` / `motion.test.ts`; catalogue in `core/racers.ts`
 
 ## Commands: run the cheapest one that proves your change

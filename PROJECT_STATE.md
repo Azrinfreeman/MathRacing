@@ -6,18 +6,18 @@ Updated 2026-09-24. Working tree clean at the time of writing; latest feature: r
 
 MathRacing: offline-first PWA maths racing game (2-5 pupils, one touchscreen, KSSR Year 1-2), built from
 `Claude_Code_Opus_Super_Prompt_MathRacing_JS.pdf`. Phaser 4.2.1, TS 6.0.3, Vite 8, Vitest 5, Playwright 1.63,
-Capacitor 6.2.2 (Android shell). 77 templates x 4 levels, 5 widgets, IndexedDB evidence + CSV export, PWA offline,
+Capacitor 6.2.2 (Android shell). 22 counting templates x 4 levels (number pad only), IndexedDB evidence + CSV export, PWA offline,
 Android APK. Repo: `D:\UProject\ProjectAIVibeCode\MathRacing`.
 Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (1920x1080 CSS px), landscape.
 
 ## Verified state (last full run, after the latest commits)
 
-- `npm run check`: agents check, lint, typecheck, 1002 unit tests, build all green.
-- `npm run test:e2e`: 37/37 green (about 7 min).
+- `npm run check`: agents check, lint, typecheck, 554 unit tests, build all green.
+- `npm run test:e2e`: 38/38 green (about 7 min).
 - `npm run apk`: builds `output/apk/MathRacing-<version>-<date>-debug.apk` (git-ignored). Last one:
   `MathRacing-1.0.0-20260924-0857-debug.apk`, sent to the owner. Not yet run on a real Android device here
   (no device or emulator connected to this PC).
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#41).
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#42).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -39,6 +39,18 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Evidence: CSV column `speed_effect` (boost/slow/none); `stepDelta` +1 on correct; `progressAfter` = distance
   (2 dp) in cruise; `SessionMeta.movement`.
 - BM pause wording: "Jeda" replaced by "Henti" / "berhenti" / "dihentikan seketika".
+
+## Questions: "Kira & taip" (DECISIONS #42, `docs/PLAN-easy-questions.md`)
+
+- Every question = a picture to count + one whole number (0-999) on the number pad. Templates in
+  `curriculum/generators/easyY1.ts` (10) and `easyY2.ts` (12), shared bits in `easyShared.ts`; packs 2.0.0.
+  Old generators and the tiles/tap/order/build widgets are deleted.
+- New visuals: `ten-frames`, `base-ten`, `equal-groups`, `ObjectGroup.crossed`, clock `fives`; layout in
+  `game/ui/countLayout.ts`; `visualTotal()` in `visual.ts`. `hintVisual` (ten-frames) replaces the picture once the
+  hint shows (PanelView). Number pad goes 1-5 / 6-0 / C+Hantar on short panels.
+- Evidence: `SessionMeta.questionStyle='easy'`, CSV `question_style`.
+- Known tight spot: Year 2 levels 3-4 block pictures on a 5-player small tablet (blocks ~4-5 px). If pupils struggle,
+  lower `ARITH_HUNDREDS` in `easyY2.ts` or the blocks range.
 
 ## Menu look (DECISIONS #41, `docs/PLAN-menu-polish.md`)
 

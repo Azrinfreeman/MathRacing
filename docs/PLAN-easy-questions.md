@@ -1,7 +1,11 @@
 # Implementation plan: easy questions (look, count, type the number, done)
 
-Status: **proposal, not implemented.** Section 8 lists the decisions that are yours; the plan follows the
-recommended answer for each. Say "proceed" to build it with those answers, or give different answers.
+Status: **implemented** (DECISIONS #42). Owner answers: D1 **remove the other mechanics entirely** (no switch; the
+widgets and answer kinds are deleted), D2 number pad for everything, D3 leave uncountable topics out, D4 rows-of-5 help,
+D5 record the style (`question_style`), D6 ranges as proposed. Deviations: no teacher switch (D1); Year 2 adding and
+taking away blocks stop at 299 (level 3) and 599 (level 4) so two sets of blocks stay countable on a 5-player tablet
+("Nombor berapa?" still goes to 999); Year 1 3D faces were dropped (hidden faces cannot be counted on a drawing);
+the number pad gets a compact layout on short panels; a sum with a picture shows the sum without the instruction.
 
 ## 1. What is being asked
 
