@@ -56,6 +56,8 @@ export const CSV_COLUMNS: readonly Column[] = [
     header: 'racer',
     value: (r, s) => (s ? s.playerRacers?.[s.playerNames.indexOf(r.playerName)] : undefined),
   },
+  // "easy" for Kira & taip sessions (DECISIONS #42); empty for sessions saved before it.
+  { header: 'question_style', value: (_r, s) => s?.questionStyle },
   { header: 'parameters_json', value: (r) => r.parameters },
 ];
 

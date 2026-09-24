@@ -193,7 +193,7 @@ export const bm = {
   'help.how.2':
     'Semua pelumba bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut pelumba murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur). Jika murid berhenti menjawab, pelumbanya bergerak sangat perlahan.',
   'help.how.3':
-    'Selepas 2 kali salah, satu petunjuk kecil muncul. Selepas 3 kali salah, sokongan boleh ditawarkan.',
+    'Setiap soalan: kira gambar, taip nombor, tekan Hantar. Selepas 2 kali salah, gambar disusun lima-lima dan satu petunjuk kecil muncul. Selepas 3 kali salah, soalan lebih mudah boleh ditawarkan.',
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',
   'help.teacher.title': 'Untuk guru',
   'help.teacher.1':

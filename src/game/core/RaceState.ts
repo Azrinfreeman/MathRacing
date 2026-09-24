@@ -222,6 +222,11 @@ export type SessionMeta = {
   playerNames: string[];
   /** Racer per player, parallel to `playerNames` (DECISIONS #39). Missing in sessions saved before it. */
   playerRacers?: RacerId[];
+  /**
+   * Which question set was used: 'easy' = "Kira & taip" (DECISIONS #42). Missing in sessions saved before it,
+   * which used the earlier mixed set.
+   */
+  questionStyle?: 'easy';
   winnerName: string | null;
   finishedAtMs: number | null;
   /** Whether the setback rule was on for this session. */

@@ -175,20 +175,32 @@ test.describe('classroom happy path', () => {
     expect(errors).toEqual([]);
   });
 
-  test('every widget type works end to end (mixed Year 1 numbers race)', async ({ page }) => {
+  test('Kira & taip: a race over every Year 1 topic is answered on the number pad alone', async ({
+    page,
+  }) => {
     const errors = await freshPage(page);
     const o: RaceOptions = {
-      seed: 'E2E-WIDGETS',
-      topics: ['y1-numbers'],
+      seed: 'E2E-EASY-Y1',
+      topics: [
+        'y1-numbers',
+        'y1-operations',
+        'y1-money',
+        'y1-time',
+        'y1-measurement',
+        'y1-space',
+        'y1-data',
+      ],
       level: 2,
       players: 2,
       length: 8,
       names: ['Aina', 'Budi'],
     };
-    const kinds = new Set(
-      Array.from({ length: 8 }, (_, i) => questionSource(o).question('p1', i).widget),
-    );
-    expect(kinds.size).toBeGreaterThanOrEqual(4); // several widget kinds in one race
+    // every item is a picture to count and one number (DECISIONS #42)
+    for (let i = 0; i < o.length; i++) {
+      const q = questionSource(o).question('p1', i);
+      expect(q.widget).toBe('number-pad');
+      expect(q.prompt.visual).toBeDefined();
+    }
     await fillSetup(page, o);
     await startRace(page);
     await answerItems(page, o, 0, o.length);
@@ -196,6 +208,38 @@ test.describe('classroom happy path', () => {
     const attempts = await readAttempts(page);
     expect(attempts.filter((a) => a.playerId === 'p1' && a.correct)).toHaveLength(o.length);
     expect(attempts.every((a) => a.correct)).toBe(true); // no stray taps
+    expect(errors).toEqual([]);
+  });
+
+  test('Kira & taip on a small tablet: five Year 2 panels at 1024x600 answer by counting', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 600 });
+    const errors = await freshPage(page);
+    const o: RaceOptions = {
+      seed: 'E2E-EASY-Y2',
+      year: 2,
+      topics: [
+        'y2-numbers',
+        'y2-operations',
+        'y2-fractions',
+        'y2-money',
+        'y2-time',
+        'y2-measurement',
+        'y2-space',
+        'y2-data',
+      ],
+      level: 3,
+      players: 5,
+      length: 5,
+    };
+    await fillSetup(page, o);
+    await startRace(page);
+    await page.screenshot({ path: `${SHOTS}/14-easy-5p-1024x600.png` });
+    await answerItems(page, o, 0, 3);
+    await page.waitForTimeout(600); // the last attempt is saved after its success animation starts
+    const attempts = await readAttempts(page);
+    expect(attempts.filter((a) => a.playerId === 'p1' && a.correct)).toHaveLength(3);
     expect(errors).toEqual([]);
   });
 
@@ -455,7 +499,6 @@ test.describe('multi-touch: pointers stay with the panel they started in', () =>
     const cdp = await page.context().newCDPSession(page);
     const vp = page.viewportSize() ?? { width: 1920, height: 1080 };
     const q = questionSource(o).question('p2', 0);
-    if (q.widget !== 'number-pad') test.skip(true, 'seed produced a non number-pad first item');
     const plan = tapPlan(q, { w: vp.width, h: vp.height }, 2, 1);
     const go = plan.at(-1) as { x: number; y: number };
 

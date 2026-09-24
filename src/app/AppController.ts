@@ -329,6 +329,7 @@ export class AppController {
         language: input.language,
         playerNames: players.map((p) => p.name),
         playerRacers: players.map((_, i) => input.racers[i] ?? styleForSlot(i).defaultRacer),
+        questionStyle: 'easy',
         winnerName: null,
         finishedAtMs: null,
         setbackEnabled: config.setbackEnabled,

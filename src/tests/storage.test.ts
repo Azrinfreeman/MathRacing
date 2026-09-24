@@ -28,6 +28,7 @@ function meta(id: string, startedAtMs = 1_700_000_000_000): SessionMeta {
     language: 'bm',
     playerNames: ['Aina', 'Budi'],
     playerRacers: ['duck', 'kart'],
+    questionStyle: 'easy',
     winnerName: null,
     finishedAtMs: null,
     setbackEnabled: true,
@@ -211,16 +212,18 @@ describe('CSV export', () => {
     expect(lines[0]).toContain('session_id');
     expect(lines[0]).toContain('sk');
     expect(lines[0]).toContain('hint_used');
-    expect(lines[0]?.split(',').slice(-4)).toEqual([
+    expect(lines[0]?.split(',').slice(-5)).toEqual([
       'progress_after',
       'speed_effect',
       'racer',
+      'question_style',
       'parameters_json',
     ]);
-    expect(lines[1]).toContain(',boost,duck,');
+    expect(lines[1]).toContain(',boost,duck,easy,');
     // sessions saved before racers existed leave the racer cell empty
     const old = meta('S');
     delete old.playerRacers;
+    delete old.questionStyle;
     const oldRow = attemptsToCsv([record('S', 1)], old).split('\r\n')[1];
     expect(oldRow).toContain(',boost,,');
     // parameters_json contains commas and quotes, so it must be quoted and the column count stays right
