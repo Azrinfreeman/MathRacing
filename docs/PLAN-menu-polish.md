@@ -1,7 +1,9 @@
 # Implementation plan: a cleaner, more professional menu and setup
 
-Status: **proposal, not implemented.** Section 7 lists the decisions that are yours; the plan follows the
-recommended answer for each. Say "proceed" to build it with those answers, or give different answers.
+Status: **implemented** (DECISIONS #41). Owner answers: D1 menu screens (main menu, setup, teacher); D2 Nunito;
+D3 keep navy; D4 chip; D5 racers drive slowly; D6 **keep the Android navigation bar** (no immersive mode, so
+nothing changed in `MainActivity.java`); D7 unknown tablet size, so 960x540 is the design minimum. Deviations: the
+teacher groups are Permainan / Bantuan murid / Sesi + Data setempat; one variable font file instead of two.
 
 ## 1. What is being asked
 

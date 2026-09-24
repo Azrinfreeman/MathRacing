@@ -12,12 +12,12 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 
 ## Verified state (last full run, after the latest commits)
 
-- `npm run check`: agents check, lint, typecheck, 993 unit tests, build all green.
-- `npm run test:e2e`: 36/36 green (about 7 min).
+- `npm run check`: agents check, lint, typecheck, 1002 unit tests, build all green.
+- `npm run test:e2e`: 37/37 green (about 7 min).
 - `npm run apk`: builds `output/apk/MathRacing-<version>-<date>-debug.apk` (git-ignored). Last one:
   `MathRacing-1.0.0-20260924-0857-debug.apk`, sent to the owner. Not yet run on a real Android device here
   (no device or emulator connected to this PC).
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#40).
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#41).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -39,6 +39,16 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Evidence: CSV column `speed_effect` (boost/slow/none); `stepDelta` +1 on correct; `progressAfter` = distance
   (2 dp) in cruise; `SessionMeta.movement`.
 - BM pause wording: "Jeda" replaced by "Henti" / "berhenti" / "dihentikan seketika".
+
+## Menu look (DECISIONS #41, `docs/PLAN-menu-polish.md`)
+
+- Tokens (`--r-sm/md/lg`, `--shadow-card/raised`, `--line`) at the top of `app.css`; buttons `.btn` (secondary),
+  `.btn-primary`, `.btn-quiet` (dark header/footer), `.btn-text`; selected cards show a corner check badge
+  (`.chip-on::after`). Nunito variable font in `src/app/styles/fonts/` (precached `woff2`).
+- Step 2: pack chip `pack-info` opens the full draft notice; levels are a list. Teacher: `switchRow()` in
+  `controls.ts` (checkbox role switch, still `opt-*` test ids), three columns.
+- Smallest no-scroll size 960x540 (owner keeps the Android nav bar). Tablet model unknown: ask for its size if a
+  screen still scrolls there.
 
 ## Racer choice (DECISIONS #39, `docs/PLAN-racer-choice.md`)
 
