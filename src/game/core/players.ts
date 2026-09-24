@@ -1,9 +1,10 @@
+import type { RacerId } from './racers';
+
 /**
  * Player identities. Colour is never the only cue: every player also has a symbol, a lane marker and a
- * distinct racer silhouette (`vehicle`), all derived from the player's slot.
+ * racer (a default per slot, which the pupil may change), all derived from the player's slot.
  */
 export type SymbolId = 'star' | 'circle' | 'triangle' | 'square' | 'diamond';
-export type VehicleId = 'rocket' | 'kart' | 'wedge' | 'saucer' | 'block';
 
 export type PlayerStyle = {
   /** Stable id used for colour tokens and CSS. */
@@ -15,7 +16,8 @@ export type PlayerStyle = {
   /** Very light tint of the colour for panel backgrounds. */
   tint: string;
   symbol: SymbolId;
-  vehicle: VehicleId;
+  /** The racer this slot uses until the pupil picks another one (see `racers.ts`). */
+  defaultRacer: RacerId;
   symbolName: { bm: string; en: string };
   colorName: { bm: string; en: string };
 };
@@ -30,7 +32,7 @@ export const PLAYER_STYLES: readonly PlayerStyle[] = [
     dark: '#7c2d12',
     tint: '#fff1e8',
     symbol: 'star',
-    vehicle: 'rocket',
+    defaultRacer: 'rocket',
     symbolName: { bm: 'Bintang', en: 'Star' },
     colorName: { bm: 'Jingga', en: 'Orange' },
   },
@@ -40,7 +42,7 @@ export const PLAYER_STYLES: readonly PlayerStyle[] = [
     dark: '#1e3a8a',
     tint: '#e8effe',
     symbol: 'circle',
-    vehicle: 'kart',
+    defaultRacer: 'kart',
     symbolName: { bm: 'Bulatan', en: 'Circle' },
     colorName: { bm: 'Biru', en: 'Blue' },
   },
@@ -50,7 +52,7 @@ export const PLAYER_STYLES: readonly PlayerStyle[] = [
     dark: '#14532d',
     tint: '#e7f7ec',
     symbol: 'triangle',
-    vehicle: 'wedge',
+    defaultRacer: 'wedge',
     symbolName: { bm: 'Segi tiga', en: 'Triangle' },
     colorName: { bm: 'Hijau', en: 'Green' },
   },
@@ -60,7 +62,7 @@ export const PLAYER_STYLES: readonly PlayerStyle[] = [
     dark: '#581c87',
     tint: '#f4eafd',
     symbol: 'square',
-    vehicle: 'saucer',
+    defaultRacer: 'saucer',
     symbolName: { bm: 'Petak', en: 'Square' },
     colorName: { bm: 'Ungu', en: 'Purple' },
   },
@@ -70,7 +72,7 @@ export const PLAYER_STYLES: readonly PlayerStyle[] = [
     dark: '#134e4a',
     tint: '#e3f6f8',
     symbol: 'diamond',
-    vehicle: 'block',
+    defaultRacer: 'block',
     symbolName: { bm: 'Berlian', en: 'Diamond' },
     colorName: { bm: 'Teal', en: 'Teal' },
   },

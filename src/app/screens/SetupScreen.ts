@@ -13,7 +13,7 @@ import {
 } from '../../game/core/players';
 import { createTranslator } from '../../locales';
 import type { MessageKey, Translator } from '../../locales';
-import { levelStarsSvg, symbolBadgeSvg, topicIconSvg, vehicleSvg } from '../art';
+import { levelStarsSvg, symbolBadgeSvg, topicIconSvg, racerSvg } from '../art';
 import { choice, svgArt } from '../controls';
 import { contentDialog } from '../dialogs';
 import { clear, h } from '../dom';
@@ -456,7 +456,7 @@ export class SetupScreen {
           return h(
             'div',
             { class: 'player-card', style: `--pc:${style.color};--pcd:${style.dark}` },
-            svgArt(vehicleSvg(style), 'player-car'),
+            svgArt(racerSvg(style), 'player-car'),
             h(
               'span',
               { class: 'player-tag' },

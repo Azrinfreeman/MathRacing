@@ -2,7 +2,7 @@ import type { Language } from '../../curriculum/schema';
 import type { RaceMode } from '../../game/core/RaceState';
 import { PLAYER_STYLES } from '../../game/core/players';
 import { createTranslator } from '../../locales';
-import { MENU_ICONS, vehicleSvg } from '../art';
+import { MENU_ICONS, racerSvg } from '../art';
 import { languageSwitch, svgArt } from '../controls';
 import { clear, h } from '../dom';
 
@@ -121,7 +121,7 @@ export class MenuScreen {
           'div',
           { class: 'menu-road', aria: { hidden: true } },
           ...PLAYER_STYLES.map((style, i) =>
-            svgArt(vehicleSvg(style), `menu-road-car menu-road-car-${i + 1}`),
+            svgArt(racerSvg(style), `menu-road-car menu-road-car-${i + 1}`),
           ),
         ),
         h(

@@ -134,7 +134,7 @@ describe('player identity palette', () => {
   it('gives every player a distinct colour, symbol and racer silhouette', () => {
     expect(new Set(PLAYER_STYLES.map((s) => s.color)).size).toBe(5);
     expect(new Set(PLAYER_STYLES.map((s) => s.symbol)).size).toBe(5);
-    expect(new Set(PLAYER_STYLES.map((s) => s.vehicle)).size).toBe(5);
+    expect(new Set(PLAYER_STYLES.map((s) => s.defaultRacer)).size).toBe(5);
     expect(new Set(PLAYER_STYLES.map((s) => s.colorId)).size).toBe(5);
   });
 

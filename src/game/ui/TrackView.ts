@@ -1,38 +1,20 @@
 import type * as Phaser from 'phaser';
 import type { Translator } from '../../locales';
 import type { SpeedState } from '../core/cruise';
-import type { PlayerStyle, VehicleId } from '../core/players';
+import type { PlayerStyle } from '../core/players';
+import type { RacerId } from '../core/racers';
 import { TextPool } from './DrawContext';
 import type { Rect } from './geometry';
 import { CarMotion } from './motion';
-import type { Direction } from './motion';
+import { OUTLINE_WIDTH, STILL_POSE, gaitPhase, racerKind, racerParts } from './racerShapes';
+import type { Pose } from './racerShapes';
 import { drawSymbol } from './shapes';
 import { computeTrackGeometry } from './trackGeometry';
 import type { TrackGeometry } from './trackGeometry';
 import { THEME, hexToNumber, lighten } from './theme';
 
-export type TrackPlayer = { id: string; name: string; style: PlayerStyle };
+export type TrackPlayer = { id: string; name: string; style: PlayerStyle; racer: RacerId };
 
-/** How a racer is drawn this frame; derived from its CarMotion. */
-type Pose = {
-  direction: Direction;
-  /** Cruise speed state; 'stopped' in step movement. */
-  speedState: SpeedState;
-  /** Signed speed in race steps per second. */
-  speed: number;
-  /** Body tilt in radians (positive = nose down). */
-  lean: number;
-  /** Wheel rotation in radians (increases when rolling forward). */
-  wheelAngle: number;
-};
-
-const STILL_POSE: Pose = {
-  direction: 'still',
-  speedState: 'stopped',
-  speed: 0,
-  lean: 0,
-  wheelAngle: 0,
-};
 /** Nose-down tilt while slowed, so a slow-down reads as braking. */
 const SLOW_LEAN = 0.05;
 
@@ -228,6 +210,8 @@ export class TrackView {
       speed: m.velocity,
       lean,
       wheelAngle: (m.travelled * stepPx) / wheelRadius,
+      gait: gaitPhase(m.travelled * stepPx, size),
+      clock: this.clock,
     };
   }
 
@@ -264,19 +248,22 @@ export class TrackView {
         : 12 * Math.min(1, speed / 1.5);
     let acc = (this.emitAcc.get(id) ?? 0) + (rate * dtMs) / 1000;
     const { x, baseY, size } = this.racerGeometry(index, m.progress);
+    // Animals kick up dust at their feet; only vehicles leave exhaust.
+    const racer = this.players[index]?.racer;
+    const animal = racer !== undefined && racerKind(racer) === 'animal';
     while (acc >= 1) {
       acc -= 1;
       const jitter = (Math.random() - 0.5) * size * 0.12;
       if (forward) {
         this.spawnPuff({
           x: x - size * 0.5,
-          y: baseY + size * 0.22 + jitter,
+          y: baseY + size * (animal ? 0.3 : 0.22) + jitter,
           vx: -size * 0.0006,
           vy: -size * 0.0002,
           size: size * 0.07,
           grow: size * 0.00018,
           life: 420,
-          color: TRAIL_COLOR,
+          color: animal ? DUST_COLOR : TRAIL_COLOR,
           alpha: 0.55,
         });
       } else {
@@ -439,9 +426,11 @@ export class TrackView {
           g.lineBetween(lx, ly, lx - len, ly);
         }
       }
-      const bob = moving
-        ? Math.sin(this.clock * 0.03) * size * 0.04 * Math.min(1, Math.abs(pose.speed))
-        : 0;
+      // Animals bob with their own steps (racerParts); vehicles bounce gently on the road.
+      const bob =
+        moving && racerKind(p.racer) === 'vehicle'
+          ? Math.sin(this.clock * 0.03) * size * 0.04 * Math.min(1, Math.abs(pose.speed))
+          : 0;
       const shake = m.wobble * size * 0.045;
       const winnerBounce =
         this.banner?.winnerId === p.id && !this.reducedMotion
@@ -454,7 +443,7 @@ export class TrackView {
         g.lineStyle(Math.max(3, size * 0.06), 0xfde68a, Math.min(1, m.highlightMs / 200));
         g.strokeCircle(x, y, size * 0.62);
       }
-      this.drawRacer(p.style, x, y, size, pose);
+      this.drawRacer(p.style, p.racer, x, y, size, pose);
       // the name chip sits just above the vehicle and stays inside its own lane
       this.pool.text(`name:${p.id}`, p.name, x, y - size * 0.36, {
         size: Math.max(11, Math.min(laneH * 0.2, 24)),
@@ -540,201 +529,83 @@ export class TrackView {
     }
   }
 
-  private drawRacer(style: PlayerStyle, x: number, y: number, size: number, pose: Pose): void {
+  private drawRacer(
+    style: PlayerStyle,
+    racer: RacerId,
+    x: number,
+    y: number,
+    size: number,
+    pose: Pose,
+  ): void {
     const { g } = this;
     const u = size / 2;
     const cosL = Math.cos(pose.lean);
     const sinL = Math.sin(pose.lean);
-    const body = hexToNumber(style.color);
-    const dark = hexToNumber(style.dark);
-    const light = lighten(style.color, 0.55);
     // ground shadow
     g.fillStyle(0x000000, 0.25);
     g.fillEllipse(x, y + u * 0.62, u * 1.9, u * 0.28);
-    // Vehicle-space point -> screen, tilted by the lean (nose up while accelerating, nose down when braking).
+    // Racer-space point -> screen, tilted by the lean (nose up while accelerating, nose down when braking).
     const P = (px: number, py: number): { x: number; y: number } => ({
       x: x + (px * cosL - py * sinL) * u,
       y: y + (px * sinL + py * cosL) * u,
     });
-    const poly = (pts: Array<[number, number]>, fill: number, stroke = dark): void => {
-      const first = pts[0];
-      if (!first) return;
-      g.fillStyle(fill, 1);
-      g.beginPath();
-      g.moveTo(P(first[0], first[1]).x, P(first[0], first[1]).y);
-      for (const [px, py] of pts.slice(1)) g.lineTo(P(px, py).x, P(px, py).y);
-      g.closePath();
-      g.fillPath();
-      g.lineStyle(Math.max(1.5, u * 0.07), stroke, 1);
-      g.strokePath();
-    };
-    const wheel = (px: number, py: number, r = 0.26): void => {
-      g.fillStyle(0x111827, 1);
-      g.fillCircle(P(px, py).x, P(px, py).y, u * r);
-      // Spokes turn with the distance rolled, so the wheels visibly roll forward or backward.
-      const c = P(px, py);
-      g.lineStyle(Math.max(1.2, u * r * 0.16), 0xe5e7eb, 1);
-      for (let k = 0; k < 3; k++) {
-        const a = pose.wheelAngle + (k * Math.PI * 2) / 3;
-        g.lineBetween(c.x, c.y, c.x + Math.cos(a) * u * r * 0.86, c.y + Math.sin(a) * u * r * 0.86);
+    const outline = Math.max(1.5, u * OUTLINE_WIDTH);
+    for (const part of racerParts(racer, style, pose)) {
+      switch (part.kind) {
+        case 'poly': {
+          const first = part.pts[0];
+          if (!first) break;
+          g.fillStyle(hexToNumber(part.fill), 1);
+          g.beginPath();
+          const s0 = P(first[0], first[1]);
+          g.moveTo(s0.x, s0.y);
+          for (const [px, py] of part.pts.slice(1)) {
+            const q = P(px, py);
+            g.lineTo(q.x, q.y);
+          }
+          g.closePath();
+          g.fillPath();
+          if (part.stroke) {
+            g.lineStyle(outline, hexToNumber(part.stroke), 1);
+            g.strokePath();
+          }
+          break;
+        }
+        case 'circle': {
+          const c = P(part.x, part.y);
+          g.fillStyle(hexToNumber(part.fill), 1);
+          g.fillCircle(c.x, c.y, u * part.r);
+          if (part.stroke) {
+            g.lineStyle(outline, hexToNumber(part.stroke), 1);
+            g.strokeCircle(c.x, c.y, u * part.r);
+          }
+          break;
+        }
+        case 'ellipse': {
+          const c = P(part.x, part.y);
+          g.fillStyle(hexToNumber(part.fill), 1);
+          g.fillEllipse(c.x, c.y, u * part.rx * 2, u * part.ry * 2);
+          if (part.stroke) {
+            g.lineStyle(outline, hexToNumber(part.stroke), 1);
+            g.strokeEllipse(c.x, c.y, u * part.rx * 2, u * part.ry * 2);
+          }
+          break;
+        }
+        case 'line': {
+          const a = P(part.x1, part.y1);
+          const b = P(part.x2, part.y2);
+          g.lineStyle(Math.max(1.2, u * part.width), hexToNumber(part.color), 1);
+          g.lineBetween(a.x, a.y, b.x, b.y);
+          break;
+        }
+        case 'badge': {
+          const c = P(part.x, part.y);
+          g.fillStyle(0xffffff, 1);
+          g.fillCircle(c.x, c.y, u * part.r);
+          drawSymbol(g, style.symbol, c.x, c.y, u * part.r * 0.7, style.color);
+          break;
+        }
       }
-      g.fillStyle(0xe5e7eb, 1);
-      g.fillCircle(c.x, c.y, u * r * 0.42);
-    };
-    const drawBadge = (px: number, py: number): void => {
-      g.fillStyle(0xffffff, 1);
-      g.fillCircle(P(px, py).x, P(px, py).y, u * 0.27);
-      drawSymbol(g, style.symbol, P(px, py).x, P(px, py).y, u * 0.19, style.color);
-    };
-    const vehicle: VehicleId = style.vehicle;
-    switch (vehicle) {
-      case 'rocket':
-        if (
-          pose.direction === 'forward' &&
-          pose.speedState !== 'slow' &&
-          pose.speedState !== 'crawl'
-        ) {
-          // The flame grows with speed (and is long while boosting), so a correct answer is visible.
-          const boost = pose.speedState === 'boost' ? 0.3 : 0;
-          const f =
-            0.2 + Math.min(0.4, pose.speed * 0.1 + boost) + 0.1 * Math.sin(this.clock * 0.04);
-          poly(
-            [
-              [-0.9, -0.16],
-              [-0.9 - f * 1.6, 0],
-              [-0.9, 0.16],
-            ],
-            0xfb923c,
-            0xea580c,
-          );
-        }
-        poly(
-          [
-            [-0.55, -0.4],
-            [-1.0, -0.9],
-            [-0.85, -0.38],
-          ],
-          dark,
-        );
-        poly(
-          [
-            [-0.55, 0.4],
-            [-1.0, 0.9],
-            [-0.85, 0.38],
-          ],
-          dark,
-        );
-        poly(
-          [
-            [1.05, 0],
-            [0.55, -0.44],
-            [-0.7, -0.44],
-            [-0.92, -0.2],
-            [-0.92, 0.2],
-            [-0.7, 0.44],
-            [0.55, 0.44],
-          ],
-          body,
-        );
-        g.fillStyle(0xbae6fd, 1);
-        g.fillCircle(P(0.5, 0).x, P(0.5, 0).y, u * 0.2);
-        drawBadge(-0.15, 0);
-        break;
-      case 'kart':
-        poly(
-          [
-            [-0.9, 0.05],
-            [-0.75, -0.22],
-            [0.75, -0.22],
-            [0.95, 0.05],
-            [0.95, 0.42],
-            [-0.9, 0.42],
-          ],
-          body,
-        );
-        g.fillStyle(0xfde68a, 1);
-        g.fillCircle(P(0.05, -0.32).x, P(0.05, -0.32).y, u * 0.24);
-        poly(
-          [
-            [0.55, -0.12],
-            [0.85, 0.02],
-            [0.55, 0.02],
-          ],
-          light,
-        );
-        wheel(-0.5, 0.42);
-        wheel(0.55, 0.42);
-        drawBadge(-0.3, 0.14);
-        break;
-      case 'wedge':
-        poly(
-          [
-            [1.0, 0.42],
-            [-0.95, 0.42],
-            [-0.95, -0.28],
-            [0.1, -0.28],
-          ],
-          body,
-        );
-        poly(
-          [
-            [0.15, -0.2],
-            [0.75, 0.16],
-            [0.15, 0.16],
-          ],
-          light,
-        );
-        wheel(-0.55, 0.44);
-        wheel(0.55, 0.44);
-        drawBadge(-0.5, 0.08);
-        break;
-      case 'saucer':
-        g.fillStyle(0xbae6fd, 1);
-        g.fillCircle(P(0.05, -0.18).x, P(0.05, -0.18).y, u * 0.46);
-        g.lineStyle(Math.max(1.5, u * 0.07), dark, 1);
-        g.strokeCircle(P(0.05, -0.18).x, P(0.05, -0.18).y, u * 0.46);
-        g.fillStyle(body, 1);
-        g.fillEllipse(P(0, 0.12).x, P(0, 0.12).y, u * 2.0, u * 0.62);
-        g.strokeEllipse(P(0, 0.12).x, P(0, 0.12).y, u * 2.0, u * 0.62);
-        for (const lx of [-0.65, 0, 0.65]) {
-          g.fillStyle(0xfde68a, 1);
-          g.fillCircle(P(lx, 0.16).x, P(lx, 0.16).y, u * 0.09);
-        }
-        drawBadge(0.05, -0.18);
-        break;
-      case 'block':
-        poly(
-          [
-            [-0.95, -0.4],
-            [0.25, -0.4],
-            [0.25, 0.42],
-            [-0.95, 0.42],
-          ],
-          body,
-        );
-        poly(
-          [
-            [0.25, -0.12],
-            [0.75, -0.12],
-            [1.0, 0.12],
-            [1.0, 0.42],
-            [0.25, 0.42],
-          ],
-          lighten(style.color, 0.25) as number,
-        );
-        poly(
-          [
-            [0.42, -0.02],
-            [0.72, -0.02],
-            [0.86, 0.14],
-            [0.42, 0.14],
-          ],
-          0xbae6fd,
-        );
-        wheel(-0.55, 0.44);
-        wheel(0.62, 0.44);
-        drawBadge(-0.35, 0);
-        break;
     }
   }
 

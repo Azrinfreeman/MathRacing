@@ -18,7 +18,7 @@ import type { SessionRepository } from '../storage/SessionRepository';
 import { InMemorySessionRepository } from '../storage/SessionRepository';
 import type { Settings } from '../storage/settings';
 import { SettingsStore } from '../storage/settings';
-import { vehicleSvg } from './art';
+import { racerSvg } from './art';
 import { confirmDialog, toast } from './dialogs';
 import { clear, h } from './dom';
 import { showHelp } from './help';
@@ -141,7 +141,7 @@ export class AppController {
       ready: preload,
       tagline: t('app.tagline'),
       status: t('app.loading'),
-      cars: PLAYER_STYLES.slice(0, 3).map(vehicleSvg),
+      cars: PLAYER_STYLES.slice(0, 3).map((s) => racerSvg(s)),
       still: this.settings.reducedMotion,
     });
     await this.showMenu();
@@ -346,7 +346,12 @@ export class AppController {
       const session: RaceSessionContext = {
         engine,
         config,
-        players: players.map((p, i) => ({ id: p.id, name: p.name, style: styleForSlot(i) })),
+        players: players.map((p, i) => ({
+          id: p.id,
+          name: p.name,
+          style: styleForSlot(i),
+          racer: styleForSlot(i).defaultRacer,
+        })),
         language: input.language,
         reducedMotion: input.reducedMotion,
         sound: this.sound,
