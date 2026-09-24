@@ -1,8 +1,7 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
 Updated 2026-09-25. Latest feature: simplified menus (DECISIONS #43), approved and implemented from
-`docs/PLAN-simple-menus.md`. Version remains 1.2.0 (Android versionCode 3); the new menu UI has not been packaged
-into a new APK. The latest release APK below predates this UI change.
+`docs/PLAN-simple-menus.md`. Version 1.3.0 (Android versionCode 4), packaged as a release APK with the new menus.
 
 ## What exists
 
@@ -25,7 +24,8 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   One 960x540 question-screen screenshot was visually inspected; actual Android keyboard/navigation-bar testing
   and five-finger hardware validation remain outstanding.
 - `npm run apk:release`: signed release APK in `output/apk/` (git-ignored). Latest sent to the owner:
-  `MathRacing-1.2.0-20260925-0613-release.apk` (versionCode 3; installs over 1.0/1.1 release builds). Not run on a
+  `MathRacing-1.3.0-20260925-0748-release.apk` (versionCode 4; installs over 1.0-1.2 release builds; built after
+  `npm run check` (559 unit) and `npm run test:e2e` 43/43 green on 2026-09-25). Not run on a
   real Android device here (no device or emulator on this PC). `npm run apk` still builds a debug APK.
 - Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#43).
 
@@ -104,7 +104,7 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   `C:/Users/azrin/mathracing-release.jks` (alias `mathracing`, CN=MathRacing, SHA-256 `a26b10a3...63d`); the password
   is only in `android/keystore.properties`. Owner must back up both files off this PC.
 - Every release: raise `version` in `package.json` and `versionCode`/`versionName` in `android/app/build.gradle`
-  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip), then `npm run apk:release`.
+  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip, 1.3.0/4 simple menus), then `npm run apk:release`.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35/#43)
