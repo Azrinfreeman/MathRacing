@@ -62,7 +62,10 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   `C:\Users\azrin\AppData\Local\Android\Sdk` (platform 34, build-tools 34). Traps: `local.properties` needs forward
   slashes; the shell does not search the current folder, so `gradlew.bat` is called by full path.
 - Release (DECISIONS #40): `npm run apk:release` signs with `android/keystore.properties` (owner-made, git-ignored;
-  README "Release APK"). Signing path verified with a throwaway key. Owner has not created the real key yet.
+  README "Release APK"). Release key created 2026-09-24 at
+  `C:/Users/azrin/mathracing-release.jks` (alias `mathracing`, CN=MathRacing, SHA-256 `a26b10a3...63d`); the password
+  is only in `android/keystore.properties`. First release APK: `MathRacing-1.0.0-20260924-2053-release.apk`.
+  Owner must back up both files off this PC.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35, `docs/PLAN-splash-menu-setup.md`)
