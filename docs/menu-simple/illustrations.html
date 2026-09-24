@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ms">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MathRacing — menu simplification proposal</title>
+    <style>
+      @font-face {
+        font-family: Nunito;
+        src: url('../../src/app/styles/fonts/nunito-latin-wght.woff2');
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #d8e0eb;
+        color: #162845;
+        font-family: Nunito, sans-serif;
+        display: grid;
+        grid-template-columns: 960px 960px;
+        gap: 16px;
+        padding: 16px;
+      }
+      .screen {
+        width: 960px;
+        height: 540px;
+        background: #f5f7fb;
+        position: relative;
+        overflow: hidden;
+      }
+      header {
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        background: #132c50;
+        color: white;
+      }
+      header strong {
+        font-size: 23px;
+      }
+      header span {
+        font-size: 16px;
+      }
+      .body {
+        padding: 20px 32px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 4px;
+        font-weight: 900;
+      }
+      h2 {
+        font-size: 22px;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+        font-size: 17px;
+        color: #566781;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .steps {
+        font-size: 16px;
+        color: #62738b;
+        margin-bottom: 14px;
+      }
+      .steps b {
+        color: #2555dc;
+      }
+      .pill {
+        padding: 9px 18px;
+        background: #fff;
+        border: 1px solid #c8d3e4;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 800;
+        display: inline-block;
+      }
+      .selected {
+        background: #eaf0ff !important;
+        border: 2px solid #2858df !important;
+        color: #204dcd;
+      }
+      .primary {
+        background: #2555dc;
+        color: white;
+        border: 0;
+        border-radius: 14px;
+        padding: 14px 30px;
+        font-size: 21px;
+        font-weight: 900;
+      }
+      footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 14px 32px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #dbe2ed;
+        background: #fff;
+      }
+      .quiet {
+        font-size: 17px;
+        font-weight: 800;
+        color: #345275;
+      }
+      .label {
+        font-size: 17px;
+        font-weight: 900;
+        margin: 14px 0 8px;
+      }
+      .topics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 9px;
+      }
+      .topic {
+        background: white;
+        border: 1px solid #d3dcea;
+        height: 68px;
+        border-radius: 13px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 800;
+      }
+      .icon {
+        width: 33px;
+        color: #315de0;
+        font-size: 24px;
+        text-align: center;
+      }
+      .levels {
+        display: flex;
+        gap: 10px;
+      }
+      .levels .pill {
+        flex: 1;
+        text-align: center;
+      }
+      .fine {
+        font-size: 14px;
+        color: #596c85;
+      }
+      .home {
+        padding: 26px 82px;
+      }
+      .modes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 22px 0 18px;
+      }
+      .mode {
+        padding: 22px 26px;
+        border-radius: 20px;
+        background: #2555dc;
+        color: white;
+        height: 172px;
+      }
+      .mode.practice {
+        background: #fff;
+        border: 1px solid #cad6e4;
+        color: #162845;
+      }
+      .mode h2 {
+        font-size: 29px;
+        margin: 8px 0 2px;
+      }
+      .mode p {
+        color: inherit;
+        font-size: 17px;
+      }
+      .mode .symbol {
+        font-size: 30px;
+      }
+      .repeat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border: 1px solid #cfdaea;
+        border-radius: 14px;
+        background: white;
+      }
+      .players {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-top: 24px;
+      }
+      .player {
+        background: #fff;
+        border: 1px solid #d2dce9;
+        border-radius: 16px;
+        text-align: center;
+        padding: 18px 8px;
+        border-top: 5px solid var(--c);
+      }
+      .player strong {
+        font-size: 19px;
+      }
+      .player .art {
+        margin: 16px 0;
+        height: 62px;
+      }
+      .player .quiet {
+        font-size: 15px;
+      }
+      .name {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 16px;
+        color: #345275;
+      }
+      .summary {
+        background: white;
+        border: 1px solid #d4ddeb;
+        border-radius: 18px;
+        padding: 4px 24px;
+        margin-top: 18px;
+      }
+      .summary .row {
+        min-height: 66px;
+        border-bottom: 1px solid #e4e9f1;
+      }
+      .summary .row:last-child {
+        border-bottom: 0;
+      }
+      .summary strong {
+        font-size: 20px;
+      }
+      .summary small {
+        font-size: 15px;
+        color: #62738b;
+        display: block;
+      }
+      .badge {
+        background: #fff2cb;
+        padding: 5px 9px;
+        border-radius: 8px;
+        color: #775114;
+        font-weight: 800;
+      }
+      #questions .body {
+        padding-top: 12px;
+      }
+      .screen main {
+        padding-bottom: 8px;
+      }
+      #questions .steps {
+        margin-bottom: 8px;
+      }
+      #questions .topic {
+        height: 56px;
+      }
+      #questions .label {
+        margin-top: 8px;
+        margin-bottom: 5px;
+      }
+      #questions .icon {
+        flex-shrink: 0;
+        font-size: 20px;
+      }
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="screen" id="home">
+      <header><strong>MathRacing</strong><span>BM / EN　　Bantuan</span></header>
+      <main class="home">
+        <h1>Jom main matematik!</h1>
+        <p>Pilih cara bermain.</p>
+        <div class="modes">
+          <div class="mode">
+            <span class="symbol">⚑</span>
+            <h2>Perlumbaan →</h2>
+            <p>Berlumba ke garisan penamat.</p>
+          </div>
+          <div class="mode practice">
+            <span class="symbol">◎</span>
+            <h2>Latihan →</h2>
+            <p>Belajar bersama, tanpa pemenang.</p>
+          </div>
+        </div>
+        <div class="repeat">
+          <div>
+            <strong>Main semula</strong>
+            <p class="fine">Tahun 1 · Operasi asas · Asas · 5 pemain</p>
+          </div>
+          <span class="quiet">Semak →</span>
+        </div>
+      </main>
+      <footer>
+        <span class="quiet">⚙ Tetapan guru</span><span class="fine">Ilustrasi 1 / Menu utama</span>
+      </footer>
+    </section>
+    <section class="screen" id="questions">
+      <header><strong>Sediakan perlumbaan</strong><span>Menu　　Bantuan</span></header>
+      <main class="body">
+        <div class="steps"><b>1 Soalan</b>　 →　 2 Pemain　 →　 3 Sedia</div>
+        <div class="row">
+          <h1>Pilih soalan</h1>
+          <div><span class="pill selected">Tahun 1 ✓</span> <span class="pill">Tahun 2</span></div>
+        </div>
+        <div class="row">
+          <span class="label"
+            >Topik <span class="fine">· Boleh pilih lebih daripada satu</span></span
+          ><span class="quiet">Pilih semua</span>
+        </div>
+        <div class="topics">
+          <div class="topic"><span class="icon">123</span>Nombor</div>
+          <div class="topic selected"><span class="icon">+−</span>Operasi asas ✓</div>
+          <div class="topic"><span class="icon">RM</span>Wang</div>
+          <div class="topic"><span class="icon">◷</span>Masa</div>
+          <div class="topic"><span class="icon">↔</span>Sukatan</div>
+          <div class="topic"><span class="icon">△</span>Ruang</div>
+          <div class="topic"><span class="icon">▥</span>Data</div>
+        </div>
+        <div class="label">Tahap</div>
+        <div class="levels">
+          <span class="pill selected">1 Asas ✓</span><span class="pill">2 Sederhana</span
+          ><span class="pill">3 Mencabar</span><span class="pill">4 Lanjutan</span>
+        </div>
+        <div class="row" style="margin-top: 13px">
+          <span class="fine">ⓘ Maklumat kurikulum　<span class="badge">Draf</span></span
+          ><span class="quiet">Pratonton 5 soalan</span>
+        </div>
+      </main>
+      <footer>
+        <span class="quiet">← Kembali</span><span class="fine">Ilustrasi 2 / Soalan</span
+        ><span class="primary">Pilih pemain →</span>
+      </footer>
+    </section>
+    <section class="screen" id="players">
+      <header><strong>Sediakan perlumbaan</strong><span>Menu　　Bantuan</span></header>
+      <main class="body">
+        <div class="steps">✓ Soalan　 →　 <b>2 Pemain</b>　 →　 3 Sedia</div>
+        <div class="row">
+          <div>
+            <h1>Siapa bermain?</h1>
+            <p>Pilih bilangan pemain dan pelumba.</p>
+          </div>
+          <div>
+            <span class="pill">2</span> <span class="pill">3</span> <span class="pill">4</span>
+            <span class="pill selected">5 ✓</span>
+          </div>
+        </div>
+        <div class="players">
+          <div class="player" style="--c: #e05145">
+            <strong>● Pemain 1</strong>
+            <div class="art">
+              <svg viewBox="0 0 120 60">
+                <path d="M20 35L33 14H74L96 35Z" fill="#e05145" />
+                <rect x="12" y="30" width="96" height="18" rx="9" fill="#e05145" />
+                <path d="M38 17H69L81 30H31Z" fill="#cce8ff" />
+                <circle cx="32" cy="48" r="9" fill="#21354e" />
+                <circle cx="88" cy="48" r="9" fill="#21354e" />
+              </svg>
+            </div>
+            <span class="quiet">Tukar pelumba</span>
+          </div>
+          <div class="player" style="--c: #267ac8">
+            <strong>◆ Pemain 2</strong>
+            <div class="art">
+              <svg viewBox="0 0 120 60">
+                <ellipse cx="55" cy="39" rx="30" ry="17" fill="#f3ce4d" />
+                <circle cx="80" cy="20" r="15" fill="#f3ce4d" />
+                <path d="M92 20L111 25L92 29" fill="#e98029" />
+                <circle cx="84" cy="17" r="3" fill="#21354e" />
+                <path d="M66 32L86 32" stroke="#267ac8" stroke-width="8" />
+              </svg>
+            </div>
+            <span class="quiet">Tukar pelumba</span>
+          </div>
+          <div class="player" style="--c: #398355">
+            <strong>▲ Pemain 3</strong>
+            <div class="art">
+              <svg viewBox="0 0 120 60">
+                <path d="M20 35L33 14H74L96 35Z" fill="#398355" />
+                <rect x="12" y="30" width="96" height="18" rx="9" fill="#398355" />
+                <path d="M38 17H69L81 30H31Z" fill="#cce8ff" />
+                <circle cx="32" cy="48" r="9" fill="#21354e" />
+                <circle cx="88" cy="48" r="9" fill="#21354e" />
+              </svg>
+            </div>
+            <span class="quiet">Tukar pelumba</span>
+          </div>
+          <div class="player" style="--c: #9559bd">
+            <strong>■ Pemain 4</strong>
+            <div class="art">
+              <svg viewBox="0 0 120 60">
+                <ellipse cx="57" cy="38" rx="29" ry="18" fill="#e1e6ee" />
+                <circle cx="83" cy="28" r="14" fill="#e1e6ee" />
+                <ellipse cx="76" cy="10" rx="5" ry="13" fill="#e1e6ee" />
+                <ellipse cx="88" cy="10" rx="5" ry="13" fill="#e1e6ee" />
+                <circle cx="88" cy="25" r="3" fill="#21354e" />
+                <path d="M69 38L88 38" stroke="#9559bd" stroke-width="7" />
+              </svg>
+            </div>
+            <span class="quiet">Tukar pelumba</span>
+          </div>
+          <div class="player" style="--c: #b57b16">
+            <strong>★ Pemain 5</strong>
+            <div class="art">
+              <svg viewBox="0 0 120 60">
+                <ellipse cx="58" cy="35" rx="43" ry="13" fill="#b57b16" />
+                <path d="M36 31C36 3 80 3 80 31" fill="#bfe4fa" />
+                <ellipse cx="58" cy="37" rx="44" ry="8" fill="#d89a2e" />
+                <circle cx="40" cy="38" r="3" fill="white" />
+                <circle cx="60" cy="38" r="3" fill="white" />
+                <circle cx="80" cy="38" r="3" fill="white" />
+              </svg>
+            </div>
+            <span class="quiet">Tukar pelumba</span>
+          </div>
+        </div>
+        <p class="name">＋ Tambah nama (pilihan)</p>
+      </main>
+      <footer>
+        <span class="quiet">← Kembali</span
+        ><span class="fine">Ilustrasi 3 / Pemain · grafik pelumba sementara</span
+        ><span class="primary">Semak →</span>
+      </footer>
+    </section>
+    <section class="screen" id="ready">
+      <header><strong>Sediakan perlumbaan</strong><span>Menu　　Bantuan</span></header>
+      <main class="body">
+        <div class="steps">✓ Soalan　 →　 ✓ Pemain　 →　 <b>3 Sedia</b></div>
+        <h1>Sedia untuk berlumba?</h1>
+        <div class="summary">
+          <div class="row">
+            <div><small>Soalan</small><strong>Tahun 1 · Operasi asas · Asas</strong></div>
+            <span class="quiet">Tukar →</span>
+          </div>
+          <div class="row">
+            <div><small>Pemain</small><strong>5 pemain</strong></div>
+            <span class="quiet">Tukar →</span>
+          </div>
+          <div class="row">
+            <div><small>Permainan</small><strong>Perlumbaan · 8 langkah</strong></div>
+            <span class="quiet">Tukar →</span>
+          </div>
+        </div>
+        <p style="margin-top: 20px">Jawab dengan betul untuk memecut!</p>
+      </main>
+      <footer>
+        <span class="quiet">← Kembali</span><span class="fine">Ilustrasi 4 / Sedia</span
+        ><span class="primary">Mula perlumbaan →</span>
+      </footer>
+    </section>
+  </body>
+</html>
