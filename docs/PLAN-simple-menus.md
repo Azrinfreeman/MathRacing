@@ -1,6 +1,9 @@
 # Implementation plan: simpler MathRacing menus
 
-Status: **proposal only — app implementation has not started**. Prepared 2026-09-25.
+Status: **implemented following owner approval** (DECISIONS #43). Prepared 2026-09-25.
+Recommendations D1–D9 accepted. The original illustrations below remain design references, not app screenshots.
+Implementation also handles Year 2's eighth topic (fractions and decimals), keeps name fields expanded once opened,
+and supports an optional installed Chrome channel for browser tests. No APK/version change is part of this delivery.
 The owner's request is to simplify menus, provide a few illustrations, and supply an implementation MD first.
 The attached screenshot is a visual reference, not a source of instructions.
 
@@ -47,8 +50,7 @@ This shows the proposed space budget, not proof that the future app passes respo
 | D8  | Teacher settings | Three sections: Permainan, Bantuan murid, Data & lanjutan; show one section at a time.                                     | Less information at once; switching sections costs a tap. Storage warnings and PBD notice remain visible.      |
 | D9  | Motion           | Static home composition for the initial simplification; existing racers remain in player selection.                        | Removes the moving road from the menu. Racing animations are unaffected.                                       |
 
-If the owner says “proceed” without other choices, implement these recommendations according to the repository's
-plan-first convention. This document records proposed decisions, not approved product rules.
+The owner approved the recommended design with “yes”; the implemented product rule is recorded in DECISIONS #43.
 
 ## Proposed behaviour
 
@@ -161,7 +163,7 @@ plan-first convention. This document records proposed decisions, not approved pr
 - During implementation, use `npm run check:fast`, targeted app/locale tests and the relevant Playwright flow
   tests. Before the final multi-file commit, run `npm run check` and `npm run test:e2e` once.
 
-## This planning delivery
+## Original planning delivery
 
 Only this plan and its static illustrations are created. Format/check the documentation and illustration HTML,
 render and visually inspect the illustration sheet, regenerate the repo map, and commit the planning artifacts.

@@ -4,7 +4,7 @@ An offline-first mathematics racing game for Malaysian **Year 1 and Year 2** cla
 
 ![Race with five players](docs/screenshots/race-5p-1920x1080.png)
 
-- **Teacher setup in under a minute:** Year 1 or 2, one topic or a mixed race, difficulty level 1-4, 2-5 named players, Lumba Pantas (winner) or Latihan (no winner), 5/8/10/12 correct answers, Bahasa Melayu or English, sound, reduced motion, hints, support and cruise movement (or the step race with its setback rule).
+- **Simple teacher setup:** Year 1 or 2, one topic or a mixed race, difficulty level 1-4, 2-5 players with optional names, Perlumbaan (winner) or Latihan (no winner), a 5/8/10/12-step track, Bahasa Melayu or English, sound, reduced motion, hints, support and cruise movement (or the step race with its setback rule).
 - **Fair and calm:** every car cruises at the same pace and every correct answer adds the same boost (one step), same questions blueprint and level for everyone, private feedback on a wrong answer, no public accuracy. **Cruise (on by default, switchable on the teacher screen):** a wrong answer slows the car for a moment and never moves it back; a car whose pupil sends no answer for 10 s only crawls (a fifth of the pace) until the next answer, so waiting is never worth it. **Step race (cruise off):** a car moves one step per correct answer, and the optional setback rolls it back one step on the 3rd wrong answer to the same question (Quick Race, once per question, never below the start line).
 - **Curriculum-tagged evidence:** every attempt is stored locally with pack, year, topic, SK, template, level, answer, time, hint and support use. **MathRacing records evidence; it never assigns a Tahap Penguasaan (TP).** The teacher makes the professional judgement.
 - **Private:** no accounts, server, analytics or tracking. Data stays on the device and can be exported (CSV) or deleted at any time.
@@ -29,6 +29,10 @@ Everything (Phaser, Vite, Vitest, Playwright, ESLint, Prettier) is a local depen
 npx playwright install chromium
 ```
 
+If the Playwright browser is unavailable but Chrome is installed, PowerShell can use it without downloading
+another browser: `$env:PLAYWRIGHT_CHANNEL='chrome'; npm run test:e2e`. Omit the variable for the default bundled
+Chromium. Dependency versions are unchanged.
+
 ## Everyday commands
 
 | Command                           | What it does                                                                                                                                     |
@@ -48,8 +52,8 @@ npx playwright install chromium
 ## Using it in a classroom
 
 1. Open the app once with internet (Chrome/Edge). After "Sedia digunakan tanpa internet." appears it works offline. To install it as an app, use the browser's **Install** button in the address bar (or menu → Cast, save and share → Install page as app).
-2. **Splash and menu:** the app opens with a short splash, then the main menu: **Main** (Lumba Pantas), **Latihan** (practice, no winner), **Main semula** (repeat the last setup) and, in the corner, **Tetapan guru** (sound, reduce motion, hints, support, cruise or step race with setback, session seed, local data).
-3. **Setup in four steps** (every step fits a 960x540 screen without scrolling; font: Nunito, SIL OFL 1.1, bundled for offline use): **Tahun** (tap a year), **Topik & Tahap** (topic cards and 1-4 star levels; **Pratonton 5 soalan** shows five sample questions with answers), **Pemain** (2-5 players; each pupil taps their racer to choose one of five vehicles or five animals (itik, angsa, ayam, penyu, arnab), and a racer another pupil has is greyed out; names are optional, use nicknames or initials only) and **Sedia?** (summary, mode, race length and **Mula**). Tap any step at the top to jump back to it.
+2. **Splash and menu:** the app opens with a short splash, then a static main menu: **Perlumbaan** (race), **Latihan** (practice, no winner), **Main semula** (review the last setup), and **Tetapan guru**. Teacher settings have three sections: **Permainan**, **Bantuan murid**, and **Data & lanjutan** (session count, deletion and seed). Storage warnings and the PBD notice remain visible.
+3. **Setup in three steps** (core choices fit a 960x540 landscape screen with the keyboard closed; Nunito is bundled offline): **Soalan** combines year, short topic labels and four levels. Multiple topics remain supported; **Maklumat kurikulum** opens the formal titles, SK ranges and full draft notice, and **Pratonton 5 soalan** keeps its sample questions and answers. **Pemain** offers 2-5 players and the existing vehicle/animal racer selector; **Tambah nama (pilihan)** reveals optional nickname/initial fields. **Sedia** shows question, player and game summaries. **Tukar** edits a row; game mode and track length are applied with **Selesai**, or discarded with **Batal**/Esc. **Mula perlumbaan** / **Mula latihan** proceeds to the existing pupil ready check. Selecting a year stays on Soalan; an empty topic selection cannot advance. Long detail panels and name entry with the keyboard open may scroll.
 4. **Mula:** each pupil stands at the panel with their colour, symbol and name and touches their button to confirm (this doubles as a touch check), then a 3-2-1 countdown runs. **Mulakan sekarang** skips waiting.
 5. **Racing:** each pupil counts the picture, types the number and presses **Hantar**. After 2 wrong answers loose objects rearrange into rows of 5 (ten-frames) with a short hint. The small **Henti** button above the track needs a press-and-hold (or press **Esc**) to pause; **Sambung** resumes. The race also pauses if the tab is hidden.
 6. **Results:** the class sees finishing order and progress. **Main Lagi** starts a fresh race with the same setup and new questions; **Persediaan Baharu** returns to the setup summary; **Eksport CSV** downloads the evidence; **Papar bukti guru** shows teacher-only counts per pupil and per SK.

@@ -16,7 +16,7 @@ import type { RacerKind } from '../../game/core/racers';
 import { createTranslator } from '../../locales';
 import type { MessageKey, Translator } from '../../locales';
 import type { RacerId } from '../../game/core/racers';
-import { levelStarsSvg, symbolBadgeSvg, topicIconSvg, racerSvg } from '../art';
+import { symbolBadgeSvg, topicIconSvg, racerSvg } from '../art';
 import { choice, svgArt } from '../controls';
 import { contentDialog } from '../dialogs';
 import { clear, h } from '../dom';
@@ -24,7 +24,25 @@ import type { Child } from '../dom';
 import type { SetupInput, SetupState } from '../setupState';
 import { buildSetupInput, defaultTopicForYear, keepYearTopics } from '../setupState';
 
-export type SetupStep = 1 | 2 | 3 | 4;
+export type SetupStep = 1 | 2 | 3;
+
+const TOPIC_LABELS: Record<string, MessageKey> = {
+  'y1-numbers': 'setup.short.numbers',
+  'y2-numbers': 'setup.short.numbers',
+  'y1-operations': 'setup.short.operations',
+  'y2-operations': 'setup.short.operations',
+  'y1-money': 'setup.short.money',
+  'y2-money': 'setup.short.money',
+  'y1-time': 'setup.short.time',
+  'y2-time': 'setup.short.time',
+  'y1-measurement': 'setup.short.measurement',
+  'y2-measurement': 'setup.short.measurement',
+  'y1-space': 'setup.short.space',
+  'y2-space': 'setup.short.space',
+  'y1-data': 'setup.short.data',
+  'y2-data': 'setup.short.data',
+  'y2-fractions': 'setup.short.fractions',
+};
 
 export type SetupDeps = {
   registry: CurriculumRegistry;
@@ -40,10 +58,9 @@ export type SetupDeps = {
 
 const LEVELS: Level[] = [1, 2, 3, 4];
 const STEPS: ReadonlyArray<{ step: SetupStep; key: MessageKey }> = [
-  { step: 1, key: 'setup.step.year' },
-  { step: 2, key: 'setup.step.topics' },
-  { step: 3, key: 'setup.step.players' },
-  { step: 4, key: 'setup.step.ready' },
+  { step: 1, key: 'setup.step.topics' },
+  { step: 2, key: 'setup.step.players' },
+  { step: 3, key: 'setup.step.ready' },
 ];
 
 /** One line describing a setup, e.g. "Tahun 1 · 2.0 Operasi Asas · 1 Asas · 2 pemain". */
@@ -57,7 +74,9 @@ export function summarizeSetup(
   const first = chosen[0];
   const topics =
     chosen.length === 1 && first
-      ? `${first.code} ${pickText(s.language, first.title)}`
+      ? TOPIC_LABELS[first.id]
+        ? t(TOPIC_LABELS[first.id]!)
+        : pickText(s.language, first.title)
       : chosen.length === 0
         ? '-'
         : t('setup.summary.topics', { n: chosen.length });
@@ -68,7 +87,7 @@ export function summarizeSetup(
 }
 
 /**
- * Race setup as four touch-first steps (Year, Topics & level, Players, Ready?), each one screen with large
+ * Race setup as three touch-first steps (Questions, Players, Ready), each one screen with large
  * cards. A stepper at the top jumps to any step; Back and Next sit at the bottom. Teacher-only options live
  * on the separate teacher settings screen.
  */
@@ -76,12 +95,15 @@ export class SetupScreen {
   private root: HTMLElement | null = null;
   private step: SetupStep;
   private error = '';
+  private namesOpen = false;
+  private returnToReview = false;
   private t: Translator;
 
   constructor(private readonly deps: SetupDeps) {
     this.step = deps.step;
     this.t = createTranslator(deps.state.language);
     keepYearTopics(deps.registry, deps.state);
+    if (deps.state.topicIds.size === 0) this.step = 1;
   }
 
   get currentStep(): SetupStep {
@@ -104,6 +126,13 @@ export class SetupScreen {
   }
 
   private go(step: SetupStep): void {
+    if (step !== 1 && this.s.topicIds.size === 0) {
+      this.step = 1;
+      this.error = this.t('setup.error.topics');
+      this.render();
+      this.focusStep();
+      return;
+    }
     this.step = step;
     this.error = '';
     this.render();
@@ -123,15 +152,23 @@ export class SetupScreen {
   }
 
   private next(): void {
-    if (this.step === 2 && this.s.topicIds.size === 0) {
+    if (this.s.topicIds.size === 0) {
       this.error = this.t('setup.error.topics');
       this.render();
       return;
     }
-    if (this.step < 4) this.go((this.step + 1) as SetupStep);
+    if (this.returnToReview) {
+      this.returnToReview = false;
+      this.go(3);
+    } else if (this.step < 3) this.go((this.step + 1) as SetupStep);
   }
 
   private back(): void {
+    if (this.returnToReview) {
+      this.returnToReview = false;
+      this.go(3);
+      return;
+    }
     if (this.step === 1) this.deps.onHome();
     else this.go((this.step - 1) as SetupStep);
   }
@@ -152,6 +189,7 @@ export class SetupScreen {
     if (s.year === y) return;
     s.year = y;
     s.topicIds = new Set([defaultTopicForYear(this.deps.registry, y)]);
+    this.error = '';
   }
 
   // ---------------------------------------------------------------------------------------- rendering
@@ -200,7 +238,12 @@ export class SetupScreen {
                 class: `step-btn${step === this.step ? ' step-on' : ''}${step < this.step ? ' step-done' : ''}`,
                 aria: step === this.step ? { current: 'step' } : {},
                 dataset: { key: `step-${step}`, testid: `step-${step}` },
-                on: { click: () => this.go(step) },
+                on: {
+                  click: () => {
+                    this.returnToReview = false;
+                    this.go(step);
+                  },
+                },
               },
               h('span', { class: 'step-num', text: step < this.step ? '✓' : String(step) }),
               h('span', { class: 'step-name', text: t(key) }),
@@ -211,13 +254,7 @@ export class SetupScreen {
     );
 
     const body =
-      this.step === 1
-        ? this.stepYear()
-        : this.step === 2
-          ? this.stepTopics()
-          : this.step === 3
-            ? this.stepPlayers()
-            : this.stepReady();
+      this.step === 1 ? this.stepTopics() : this.step === 2 ? this.stepPlayers() : this.stepReady();
 
     const footer = h(
       'footer',
@@ -230,24 +267,27 @@ export class SetupScreen {
         on: { click: () => this.back() },
       }),
       h('p', {
+        id: 'setup-error',
         class: 'error',
         role: 'alert',
         dataset: { testid: 'setup-error' },
-        text: this.error,
+        text: this.error || (this.s.topicIds.size === 0 ? t('setup.error.topics') : ''),
       }),
-      this.step < 4
+      this.step < 3
         ? h('button', {
             type: 'button',
             class: 'btn btn-primary btn-large',
             dataset: { key: 'setup-next', testid: 'setup-next' },
-            text: `${t('setup.next')} ▶`,
+            disabled: this.s.topicIds.size === 0,
+            text: `${t(this.returnToReview || this.step === 2 ? 'setup.review' : 'setup.nextPlayers')} →`,
             on: { click: () => this.next() },
           })
         : h('button', {
             type: 'button',
             class: 'btn btn-primary btn-large btn-start',
             dataset: { key: 'start', testid: 'start' },
-            text: `${t('setup.start')} ▶`,
+            disabled: this.s.topicIds.size === 0,
+            text: `${t(this.s.mode === 'quick' ? 'setup.startRace' : 'setup.startPractice')} →`,
             on: { click: () => this.start() },
           }),
     );
@@ -255,7 +295,7 @@ export class SetupScreen {
     root.appendChild(
       h(
         'div',
-        { class: 'wizard' },
+        { class: 'wizard simple-menus' },
         h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
         header,
         stepper,
@@ -280,9 +320,8 @@ export class SetupScreen {
   private stepYear(): HTMLElement {
     const t = this.t;
     return h(
-      'section',
-      { class: 'step step-year' },
-      this.title('setup.year.pick'),
+      'div',
+      { class: 'year-picker' },
       h(
         'div',
         { class: 'year-cards', role: 'radiogroup', aria: { label: t('setup.year') } },
@@ -293,18 +332,10 @@ export class SetupScreen {
             key: `year-${y}`,
             checked: this.s.year === y,
             title: t(`setup.year.${y}` as MessageKey),
-            description: t(`setup.year.${y}.example` as MessageKey),
-            art: h('span', { class: 'year-num', aria: { hidden: true }, text: String(y) }),
             className: 'card year-card',
             onChange: () => {
               this.setYear(y);
               this.changed();
-            },
-            // a tap on a year card (even the one already chosen) moves straight on
-            onTap: () => {
-              this.setYear(y);
-              this.deps.onChange();
-              this.go(2);
             },
           }),
         ),
@@ -323,7 +354,8 @@ export class SetupScreen {
       h(
         'div',
         { class: 'panel-head' },
-        this.title('setup.topics'),
+        h('h3', { class: 'panel-title', text: t('setup.topics') }),
+        h('span', { class: 'topic-hint', text: t('setup.topics.hint') }),
         h(
           'div',
           { class: 'inline-actions' },
@@ -340,31 +372,24 @@ export class SetupScreen {
               },
             },
           }),
-          h('button', {
-            type: 'button',
-            class: 'btn btn-text',
-            text: t('setup.topics.none'),
-            dataset: { key: 'topics-none', testid: 'topics-none' },
-            on: {
-              click: () => {
-                s.topicIds = new Set();
-                this.changed();
-              },
-            },
-          }),
         ),
       ),
       h(
         'div',
-        { class: 'topic-grid' },
+        {
+          class: 'topic-grid',
+          role: 'group',
+          aria: { label: t('setup.topics'), describedby: 'setup-error' },
+        },
         ...pack.topics.map((topic) =>
           choice({
             type: 'checkbox',
             name: 'topic',
             key: `topic-${topic.id}`,
             checked: s.topicIds.has(topic.id),
-            title: `${topic.code} ${pickText(lang, topic.title)}`,
-            description: t('setup.topic.sk', { sk: topic.standardKandungan }),
+            title: TOPIC_LABELS[topic.id]
+              ? t(TOPIC_LABELS[topic.id]!)
+              : pickText(lang, topic.title),
             art: svgArt(topicIconSvg(topic.id), 'topic-icon'),
             className: 'card topic-card',
             onChange: (on) => {
@@ -376,29 +401,39 @@ export class SetupScreen {
           }),
         ),
       ),
-      // The draft status stays on screen as a small chip; the full notice opens in a dialog (DECISIONS #41).
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'pack-chip',
-          dataset: { key: 'pack-info', testid: 'pack-info' },
-          aria: { label: `${t('setup.pack')}: ${pickText(lang, pack.title)}` },
-          on: {
-            click: () =>
-              contentDialog(t, t('setup.pack'), [
-                h('p', { class: 'dialog-message', text: pickText(lang, pack.title) }),
-                h('p', { text: t('setup.packStatus', { version: pack.version }) }),
-              ]),
-          },
+    );
+    const packInfo = h(
+      'button',
+      {
+        type: 'button',
+        class: 'pack-chip',
+        dataset: { key: 'pack-info', testid: 'pack-info' },
+        aria: { label: `${t('setup.pack')}: ${pickText(lang, pack.title)}. ${t('setup.draft')}` },
+        on: {
+          click: () =>
+            contentDialog(t, t('setup.pack'), [
+              h('p', { class: 'dialog-message', text: pickText(lang, pack.title) }),
+              h('p', { text: t('setup.packStatus', { version: pack.version }) }),
+              h(
+                'ul',
+                {},
+                ...pack.topics.map((topic) =>
+                  h(
+                    'li',
+                    {},
+                    `${topic.code} ${pickText(lang, topic.title)} · ${t('setup.topic.sk', { sk: topic.standardKandungan })}`,
+                  ),
+                ),
+              ),
+            ]),
         },
-        h('span', { class: 'pack-chip-icon', aria: { hidden: true }, text: 'i' }),
-        h('span', { class: 'pack-chip-text', text: pickText(lang, pack.title) }),
-        h('span', {
-          class: 'pack-chip-draft',
-          text: t('setup.packDraft', { version: pack.version }),
-        }),
-      ),
+      },
+      h('span', { class: 'pack-chip-icon', aria: { hidden: true }, text: 'i' }),
+      h('span', { class: 'pack-chip-text', text: t('setup.pack') }),
+      h('span', {
+        class: 'pack-chip-draft',
+        text: t('setup.draft'),
+      }),
     );
     const levelPanel = h(
       'div',
@@ -406,7 +441,11 @@ export class SetupScreen {
       h('h3', { class: 'panel-title', text: t('setup.level') }),
       h(
         'div',
-        { class: 'level-grid', role: 'radiogroup', aria: { label: t('setup.level') } },
+        {
+          class: 'level-grid',
+          role: 'radiogroup',
+          aria: { label: t('setup.level'), describedby: 'level-hint' },
+        },
         ...LEVELS.map((lv) =>
           choice({
             type: 'radio',
@@ -414,7 +453,6 @@ export class SetupScreen {
             key: `level-${lv}`,
             checked: s.level === lv,
             title: t(`setup.level.${lv}` as MessageKey),
-            art: svgArt(levelStarsSvg(lv), 'level-stars'),
             className: 'card level-card',
             onChange: () => {
               s.level = lv;
@@ -423,21 +461,33 @@ export class SetupScreen {
           }),
         ),
       ),
-      h('p', { class: 'note note-small', text: t('setup.level.hint') }),
-      h('button', {
-        type: 'button',
-        class: 'btn',
-        dataset: { key: 'preview', testid: 'preview' },
-        text: t('setup.preview'),
-        on: { click: () => this.showPreview() },
-      }),
+      h('p', { id: 'level-hint', class: 'visually-hidden', text: t('setup.level.hint') }),
     );
-    return h('section', { class: 'step step-topics' }, topicPanel, levelPanel);
+    return h(
+      'section',
+      { class: 'step step-topics' },
+      h('div', { class: 'question-heading' }, this.title('setup.questions.pick'), this.stepYear()),
+      topicPanel,
+      levelPanel,
+      h(
+        'div',
+        { class: 'question-tools' },
+        packInfo,
+        h('button', {
+          type: 'button',
+          class: 'btn btn-text',
+          dataset: { key: 'preview', testid: 'preview' },
+          text: t('setup.preview'),
+          on: { click: () => this.showPreview() },
+        }),
+      ),
+    );
   }
 
   private stepPlayers(): HTMLElement {
     const t = this.t;
     const s = this.s;
+    this.namesOpen ||= s.names.slice(0, s.playerCount).some((name) => name.trim() !== '');
     return h(
       'section',
       { class: 'step step-players' },
@@ -467,7 +517,6 @@ export class SetupScreen {
           ),
         ),
       ),
-      h('p', { class: 'note note-small', text: t('setup.privacyHint') }),
       h(
         'div',
         { class: 'player-cards', style: `--players:${s.playerCount}` },
@@ -502,29 +551,50 @@ export class SetupScreen {
               svgArt(symbolBadgeSvg(style), 'player-badge'),
               h('span', { text: fallback }),
             ),
-            h('label', {
-              for: id,
-              class: 'visually-hidden',
-              text: t('setup.playerName', { n: i + 1 }),
-            }),
-            h('input', {
-              id,
-              type: 'text',
-              class: 'text-input',
-              maxlength: 20,
-              autocomplete: 'off',
-              placeholder: t('setup.nameOptional'),
-              value: s.names[i] ?? '',
-              dataset: { key: id, testid: id },
-              on: {
-                input: (e) => {
-                  s.names[i] = (e.target as HTMLInputElement).value;
-                },
-              },
-            }),
+            this.namesOpen
+              ? h('label', {
+                  for: id,
+                  class: 'visually-hidden',
+                  text: t('setup.playerName', { n: i + 1 }),
+                })
+              : null,
+            this.namesOpen
+              ? h('input', {
+                  id,
+                  type: 'text',
+                  class: 'text-input',
+                  maxlength: 20,
+                  autocomplete: 'off',
+                  placeholder: t('setup.nameOptional'),
+                  value: s.names[i] ?? '',
+                  dataset: { key: id, testid: id },
+                  on: {
+                    input: (e) => {
+                      s.names[i] = (e.target as HTMLInputElement).value;
+                    },
+                  },
+                })
+              : null,
           );
         }),
       ),
+      this.namesOpen
+        ? null
+        : h('button', {
+            type: 'button',
+            class: 'btn btn-text names-toggle',
+            dataset: { testid: 'names-toggle', key: 'names-toggle' },
+            aria: { expanded: String(this.namesOpen) },
+            text: t('setup.names.add'),
+            on: {
+              click: () => {
+                this.namesOpen = !this.namesOpen;
+                this.changed();
+                if (this.namesOpen) this.root?.querySelector<HTMLInputElement>('#name-0')?.focus();
+              },
+            },
+          }),
+      this.namesOpen ? h('p', { class: 'note note-small', text: t('setup.privacyHint') }) : null,
     );
   }
 
@@ -602,7 +672,7 @@ export class SetupScreen {
       key: string,
       label: MessageKey,
       value: string,
-      step: SetupStep,
+      action: () => void,
       extra?: HTMLElement,
     ): HTMLElement =>
       h(
@@ -611,7 +681,7 @@ export class SetupScreen {
           type: 'button',
           class: 'summary-tile',
           dataset: { key, testid: key },
-          on: { click: () => this.go(step) },
+          on: { click: action },
         },
         h('span', { class: 'summary-label', text: t(label) }),
         h('span', { class: 'summary-value', text: value }),
@@ -621,18 +691,27 @@ export class SetupScreen {
     return h(
       'section',
       { class: 'step step-ready' },
-      this.title('setup.ready.title'),
+      this.title(s.mode === 'quick' ? 'setup.ready.title' : 'setup.ready.practice'),
       h(
         'div',
         { class: 'summary-grid' },
-        tile('sum-year', 'setup.year', sum.year, 1),
-        tile('sum-topics', 'setup.topics', sum.topics, 2),
-        tile('sum-level', 'setup.level', sum.level, 2),
+        tile(
+          'sum-questions',
+          'setup.step.topics',
+          [sum.year, sum.topics, sum.level].join(' · '),
+          () => {
+            this.returnToReview = true;
+            this.go(1);
+          },
+        ),
         tile(
           'sum-players',
           'setup.players',
           sum.players,
-          3,
+          () => {
+            this.returnToReview = true;
+            this.go(2);
+          },
           h(
             'span',
             { class: 'summary-racers' },
@@ -644,10 +723,28 @@ export class SetupScreen {
             }),
           ),
         ),
+        tile(
+          'sum-game',
+          'teacher.group.game',
+          `${t(s.mode === 'quick' ? 'menu.race' : 'menu.practice')} · ${t('setup.length.steps', { n: s.raceLength })}`,
+          () => this.editGame(),
+        ),
       ),
-      h(
-        'div',
-        { class: 'ready-options' },
+      h('p', {
+        class: 'note ready-hint',
+        text: t(s.cruiseEnabled ? 'setup.ready.boost' : 'setup.ready.steps'),
+      }),
+    );
+  }
+
+  private editGame(): void {
+    const t = this.t;
+    let mode = this.s.mode;
+    let length = this.s.raceLength;
+    const options = h('div', { class: 'ready-options' });
+    const render = (): void => {
+      clear(options);
+      options.append(
         h(
           'fieldset',
           { class: 'group' },
@@ -660,15 +757,16 @@ export class SetupScreen {
                 type: 'radio',
                 name: 'mode',
                 key: `mode-${m}`,
-                checked: s.mode === m,
+                checked: mode === m,
                 title: t(m === 'quick' ? 'setup.mode.quick' : 'setup.mode.practice'),
                 description: t(
                   m === 'quick' ? 'setup.mode.quick.desc' : 'setup.mode.practice.desc',
                 ),
                 className: 'card mode-card',
                 onChange: () => {
-                  s.mode = m;
-                  this.changed();
+                  mode = m;
+                  render();
+                  options.querySelector<HTMLElement>(`[data-key="mode-${m}"]`)?.focus();
                 },
               }),
             ),
@@ -686,18 +784,44 @@ export class SetupScreen {
                 type: 'radio',
                 name: 'length',
                 key: `length-${n}`,
-                checked: s.raceLength === n,
+                checked: length === n,
                 title: String(n),
                 className: 'card length-card',
                 onChange: () => {
-                  s.raceLength = n;
-                  this.changed();
+                  length = n;
+                  render();
+                  options.querySelector<HTMLElement>(`[data-key="length-${n}"]`)?.focus();
                 },
               }),
             ),
           ),
         ),
-      ),
+      );
+    };
+    render();
+    const dialog = contentDialog(
+      t,
+      t('teacher.group.game'),
+      [
+        options,
+        h('button', {
+          type: 'button',
+          class: 'btn btn-primary',
+          dataset: { testid: 'game-save' },
+          text: t('setup.done'),
+          on: {
+            click: () => {
+              this.s.mode = mode;
+              this.s.raceLength = length;
+              dialog.close();
+              this.changed();
+              this.root?.querySelector<HTMLElement>('[data-testid="sum-game"]')?.focus();
+            },
+          },
+        }),
+      ],
+      document.body,
+      t('dialog.cancel'),
     );
   }
 

@@ -211,7 +211,7 @@ export class AppController {
         this.saveState();
         this.showSetup(1);
       },
-      onAgain: () => this.showSetup(4),
+      onAgain: () => this.showSetup(3),
       onTeacher: () => void this.showTeacher(),
     });
     this.screen = menu;
@@ -388,7 +388,7 @@ export class AppController {
       const reason = error instanceof Error ? error.message : String(error);
       if (this.machine.phase === 'READY') this.machine.transition('SETUP');
       this.destroyStage();
-      if (!this.screen) this.showSetup(4);
+      if (!this.screen) this.showSetup(3);
       toast(this.toasts, t('app.raceError', { reason }), 'warn', 12000);
     }
   }
@@ -422,19 +422,19 @@ export class AppController {
     if (this.machine.phase === 'RACING') this.engine?.pause(this.now());
     if (this.machine.phase === 'PAUSED' || this.machine.phase === 'READY')
       this.machine.transition('SETUP');
-    this.showSetup(4);
+    this.showSetup(3);
     toast(this.toasts, this.t('app.raceError', { reason }), 'warn', 15000);
   }
 
   private cancelReady(): void {
     if (this.machine.phase === 'READY') this.machine.transition('SETUP');
-    this.showSetup(4);
+    this.showSetup(3);
   }
 
   private exitToSetup(): void {
     if (this.machine.phase === 'PAUSED') this.machine.transition('SETUP');
     else if (this.machine.phase === 'READY') this.machine.transition('SETUP');
-    this.showSetup(4);
+    this.showSetup(3);
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -491,7 +491,7 @@ export class AppController {
         },
         onNewSetup: () => {
           if (this.machine.phase === 'RESULTS') this.machine.transition('SETUP');
-          this.showSetup(4);
+          this.showSetup(3);
         },
         onExport: () => this.exportCsv(screen),
         onDelete: async () => {

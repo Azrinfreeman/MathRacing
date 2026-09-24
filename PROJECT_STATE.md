@@ -1,7 +1,8 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
-Updated 2026-09-25. Working tree clean at the time of writing; latest feature: "Kira & taip" questions (DECISIONS #42);
-version 1.2.0 (Android versionCode 3).
+Updated 2026-09-25. Latest feature: simplified menus (DECISIONS #43), approved and implemented from
+`docs/PLAN-simple-menus.md`. Version remains 1.2.0 (Android versionCode 3); the new menu UI has not been packaged
+into a new APK. The latest release APK below predates this UI change.
 
 ## What exists
 
@@ -11,14 +12,22 @@ Capacitor 6.2.2 (Android shell). 22 counting templates x 4 levels (number pad on
 Android APK. Repo: `D:\UProject\ProjectAIVibeCode\MathRacing`.
 Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (1920x1080 CSS px), landscape.
 
-## Verified state (last full run, after the latest commits)
+## Verified state (menu simplification, 2026-09-25)
 
-- `npm run check`: agents check, lint, typecheck, 554 unit tests, build all green.
-- `npm run test:e2e`: 38/38 green (about 7 min).
+- `npm run check`: agents check, lint, typecheck, 559 unit tests and production/PWA build green. The final small
+  validation-message correction also passed `check:fast` and the rebuilt production browser checks.
+- Browser coverage: all 43 tests passed across the full run and focused rerun. The full run passed 41/43;
+  two mixed-topic tests exposed a helper topic-order mismatch (not a generator change). After restoring requested
+  selection order, all 12 affected menu/mixed-topic tests passed on rerun. Installed Chrome was used via
+  `PLAYWRIGHT_CHANNEL=chrome`; the pinned Playwright Chromium binary is not installed here. Run outside the
+  restricted sandbox for clean preview-server teardown on this PC.
+- Both languages fit at 960x540, 1024x600, 1280x800 and 1920x1080, including Year 2's eight topics and five players.
+  One 960x540 question-screen screenshot was visually inspected; actual Android keyboard/navigation-bar testing
+  and five-finger hardware validation remain outstanding.
 - `npm run apk:release`: signed release APK in `output/apk/` (git-ignored). Latest sent to the owner:
   `MathRacing-1.2.0-20260925-0613-release.apk` (versionCode 3; installs over 1.0/1.1 release builds). Not run on a
   real Android device here (no device or emulator on this PC). `npm run apk` still builds a debug APK.
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#42).
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#43).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -53,13 +62,19 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Known tight spot: Year 2 levels 3-4 block pictures on a 5-player small tablet (blocks ~4-5 px). If pupils struggle,
   lower `ARITH_HUNDREDS` in `easyY2.ts` or the blocks range.
 
-## Menu look (DECISIONS #41, `docs/PLAN-menu-polish.md`)
+## Menu look (DECISIONS #43, `docs/PLAN-simple-menus.md`)
 
 - Tokens (`--r-sm/md/lg`, `--shadow-card/raised`, `--line`) at the top of `app.css`; buttons `.btn` (secondary),
   `.btn-primary`, `.btn-quiet` (dark header/footer), `.btn-text`; selected cards show a corner check badge
   (`.chip-on::after`). Nunito variable font in `src/app/styles/fonts/` (precached `woff2`).
-- Step 2: pack chip `pack-info` opens the full draft notice; levels are a list. Teacher: `switchRow()` in
-  `controls.ts` (checkbox role switch, still `opt-*` test ids), three columns.
+- Compact navy headers, light content, static home menu, one primary next action. Setup: Soalan / Pemain / Sedia.
+  Soalan combines year, short topic labels and a horizontal four-level selector. `pack-info` opens formal topic
+  titles/codes/SK ranges and the full draft/version notice; Draf stays visible. Year 2 retains all eight topics.
+- Pemain: `names-toggle` reveals optional name fields; entered names remain in memory only. Sedia has
+  `sum-questions`, `sum-players`, `sum-game`; row edits return directly to review. `sum-game` opens a mode/length
+  dialog; `game-save` applies, Batal/Esc discards changes. Existing racer selection and race behaviour remain.
+- Teacher: `teacher-game`, `teacher-pupils`, `teacher-data` select one section at a time. Existing `opt-*` controls
+  persist immediately; seed and local data are under Data & lanjutan. Storage warnings/PBD stay visible.
 - Smallest no-scroll size 960x540 (owner keeps the Android nav bar). Tablet model unknown: ask for its size if a
   screen still scrolls there.
 
@@ -92,18 +107,20 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip), then `npm run apk:release`.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
-## App flow (DECISIONS #35, `docs/PLAN-splash-menu-setup.md`)
+## App flow (DECISIONS #35/#43)
 
-Splash -> Main menu (Main / Latihan, "Main semula", "Tetapan guru", BM/EN, Bantuan) -> Setup in 4 steps (Tahun,
-Topik & Tahap, Pemain, Sedia?) or Teacher settings (sound, reduce motion, hints, support, cruise, setback when cruise
+Splash -> Main menu (Perlumbaan / Latihan, "Main semula", "Tetapan guru", BM/EN, Bantuan) -> Setup in 3 steps
+(Soalan, Pemain, Sedia) or Teacher settings (sound, reduce motion, hints, support, cruise, setback when cruise
 off, seed, local data, PBD notice). Shared in-memory `SetupState`; only `Settings` saved, never names or seed.
-E2E helper `fillSetup` applies `options` in order: pass `cruise: false` **before** `setback` (the setback option only
+E2E helper `fillSetup` opens the required teacher section and the game edit dialog, and reveals names when needed.
+It applies `options` in order: pass `cruise: false` **before** `setback` (the setback option only
 appears when cruise is off). Step-race e2e tests pin `options: { cruise: false }`; `rocketNoseX` in `e2e/support.ts`
 finds player 1's car nose for position checks. New spec: `e2e/cruise.spec.ts`.
 
 ## Not running / not done
 
-- **Dev server is not running.** Start with `npm run dev`. Claude's in-app browser cannot animate: check animation
+- No dev server was started for this menu update; browser tests use a temporary preview server. Start development
+  with `npm run dev`. Claude's in-app browser cannot animate: check animation
   in real Chrome or via Playwright.
 - Owner has tested on a small Android tablet (photo of setup step 2, which led to #41) but has not reported on races
   with the new questions yet. Tablet model/size unknown; the owner keeps the Android navigation bar visible (no
@@ -125,6 +142,6 @@ finds player 1's car nose for position checks. New spec: `e2e/cruise.spec.ts`.
 ## Likely next requests (none started)
 
 - Feedback from races on the tablet and smartboard: question difficulty and ranges, keypad size, pace, colours.
-- Restyling the race and results screens to match the menu look (#41 covered menu screens only).
+- Restyling the race and results screens to match the simpler menus (#43 covered menu screens only).
 - Play Store or managed install; Capacitor 8 upgrade.
 - Manual touch protocol; curriculum review.

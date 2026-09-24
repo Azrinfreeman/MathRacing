@@ -87,8 +87,13 @@ export function contentDialog(
   title: string,
   body: Child[],
   host: HTMLElement = document.body,
+  closeLabel?: string,
 ): { close: () => void } {
-  const close = (): void => closeDialog(dialog);
+  const trigger = document.activeElement as HTMLElement | null;
+  const close = (): void => {
+    closeDialog(dialog);
+    if (trigger?.isConnected) trigger.focus();
+  };
   const dialog = h(
     'dialog',
     {
@@ -103,9 +108,9 @@ export function contentDialog(
       { class: 'dialog-actions' },
       h('button', {
         type: 'button',
-        class: 'btn btn-primary',
+        class: closeLabel ? 'btn' : 'btn btn-primary',
         dataset: { testid: 'content-close' },
-        text: t('app.close'),
+        text: closeLabel ?? t('app.close'),
         on: { click: close },
       }),
     ),

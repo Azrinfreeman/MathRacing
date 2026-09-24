@@ -5,9 +5,9 @@
 ## e2e/
 
 - `cruise.spec.ts` (203): cruise: cars drive on their own
-- `mathracing.spec.ts` (630): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
+- `mathracing.spec.ts` (687): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
 - `setback.spec.ts` (169): setback after 3 wrong answers
-- `support.ts` (249): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
+- `support.ts` (262): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
 
 ## scripts/
 
@@ -24,18 +24,18 @@
 - `StageChrome.ts` (225): StagePhase, StageHandlers, StageChrome
 - `art.ts` (136): symbolBadgeSvg, racerSvg, levelStarsSvg, topicIconSvg, MENU_ICONS
 - `controls.ts` (112): choice, switchRow, languageSwitch, svgArt
-- `dialogs.ts` (130): confirmDialog, contentDialog, toast
+- `dialogs.ts` (135): confirmDialog, contentDialog, toast
 - `dom.ts` (89): Child, Attrs, h, append, clear
-- `help.ts` (56): showHelp
+- `help.ts` (57): showHelp
 - `setupState.ts` (149): SetupInput, SetupState, stateFromSettings, settingsFromState, defaultTopicForYear, keepYearTopics, normalizeNames, buildSetupInput
 
 ## src/app/screens/
 
-- `MenuScreen.ts` (165): MenuDeps, MenuScreen
+- `MenuScreen.ts` (145): MenuDeps, MenuScreen
 - `ResultsScreen.ts` (333): ResultsData, ResultsCallbacks, ResultsScreen
-- `SetupScreen.ts` (764): SetupStep, SetupDeps, summarizeSetup, SetupScreen
+- `SetupScreen.ts` (888): SetupStep, SetupDeps, summarizeSetup, SetupScreen
 - `SplashScreen.ts` (83): SplashOptions, runSplash
-- `TeacherScreen.ts` (251): TeacherDeps, TeacherScreen
+- `TeacherScreen.ts` (278): TeacherDeps, TeacherScreen
 
 ## src/curriculum/
 
@@ -109,8 +109,8 @@
 
 ## src/locales/
 
-- `bm.ts` (216): bm, MessageKey
-- `en.ts` (213): en
+- `bm.ts` (241): bm, MessageKey
+- `en.ts` (238): en
 - `index.ts` (33): Params, Translator, translate, createTranslator, ALL_MESSAGE_KEYS
 
 ## src/
@@ -131,13 +131,13 @@
 ## src/tests/
 
 - `answers.test.ts` (90): normalizeDecimal, senToRmText, evaluateAnswer
-- `app.test.ts` (589): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
+- `app.test.ts` (680): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `countLayout.test.ts` (94): counting pictures stay countable (DECISIONS #42)
 - `cruise.test.ts` (209): cruise movement
 - `curriculum.test.ts` (301): curriculum registry, number words
 - `helpers.ts` (6): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
-- `layout.test.ts` (192): geometry helpers, stage layout, player identity palette, menu screen colours (DECISIONS #41)
+- `layout.test.ts` (194): geometry helpers, stage layout, player identity palette, menu screen colours (DECISIONS #43)
 - `locales.test.ts` (53): locales
 - `motion.test.ts` (255): CarMotion, CarMotion follow mode (cruise)
 - `pointerRouter.test.ts` (150): PointerRouter

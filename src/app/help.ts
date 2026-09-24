@@ -24,6 +24,7 @@ export function showHelp(t: Translator, host: HTMLElement = document.body): { cl
         'section',
         {},
         h('h3', { text: t('help.teacher.title') }),
+        h('p', { text: t('help.setup') }),
         h(
           'ul',
           {},

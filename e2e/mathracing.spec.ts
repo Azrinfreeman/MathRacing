@@ -53,6 +53,45 @@ const TWO: RaceOptions = {
 };
 
 test.describe('splash, menu and setup steps', () => {
+  test('review edits, optional names and keyboard cancellation preserve choices', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 960, height: 540 });
+    const errors = await freshPage(page);
+    await page.getByTestId('menu-race').click();
+    await page.getByTestId('step-3').click();
+    await page.getByTestId('sum-players').click();
+    await page.getByTestId('count-5').click();
+    await page.getByTestId('names-toggle').click();
+    await expect(page.getByTestId('name-0')).toBeFocused();
+    await page.getByTestId('name-0').fill('Aina');
+    await page.getByTestId('setup-next').click();
+    await expect(page.getByTestId('start')).toBeVisible();
+    await page.getByTestId('sum-game').click();
+    await page.getByTestId('mode-practice').click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('sum-game')).toBeFocused();
+    await expect(page.getByTestId('sum-game')).toContainText('Perlumbaan');
+    await page.getByTestId('sum-game').click();
+    await page.getByTestId('mode-practice').click();
+    await page.getByTestId('length-5').click();
+    await page.getByTestId('game-save').click();
+    await expect(page.getByTestId('sum-game')).toBeFocused();
+    await expect(page.getByTestId('start')).toContainText('Mula latihan');
+    await page.getByTestId('sum-players').click();
+    await expect(page.getByTestId('name-0')).toHaveValue('Aina');
+    await page.getByTestId('setup-next').click();
+    await page.getByTestId('sum-questions').click();
+    await page.getByTestId('topic-y1-operations').uncheck();
+    await expect(page.getByTestId('setup-next')).toBeDisabled();
+    await page.getByTestId('step-3').click();
+    await expect(page.getByTestId('step-1')).toHaveAttribute('aria-current', 'step');
+    await page.getByTestId('topic-y1-money').check();
+    await page.getByTestId('level-3').check();
+    await page.getByTestId('step-3').click();
+    await expect(page.getByTestId('sum-questions')).toContainText('Wang');
+    expect(errors).toEqual([]);
+  });
   test('the splash shows at once, then moves on to the menu by itself', async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto('/');
@@ -65,60 +104,78 @@ test.describe('splash, menu and setup steps', () => {
   });
 
   // 960x540: the smallest size with no scrolling (a 1024x600 tablet minus its navigation bar, DECISIONS #41)
-  for (const [w, h] of [
-    [960, 540],
-    [1024, 600],
-    [1280, 800],
-    [1920, 1080],
-  ] as const) {
-    test(`${w}x${h}: menu and every setup step fit without scrolling`, async ({ page }) => {
-      await page.setViewportSize({ width: w, height: h });
-      const errors = await freshPage(page);
-      const shot = async (name: string): Promise<void> => {
-        if (w === 1920) await page.screenshot({ path: `${SHOTS}/${name}.png` });
-      };
-      const fits = async (): Promise<void> => {
-        const overflow = await page.evaluate(() => {
-          const body = document.querySelector('.wiz-body');
+  for (const lang of ['bm', 'en'] as const)
+    for (const [w, h] of [
+      [960, 540],
+      [1024, 600],
+      [1280, 800],
+      [1920, 1080],
+    ] as const) {
+      test(`${lang} ${w}x${h}: menu and every setup step fit without scrolling`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: w, height: h });
+        const errors = await freshPage(page);
+        if (lang === 'en') await page.getByTestId('lang-en').click();
+        const shot = async (name: string): Promise<void> => {
+          if (w === 960 && lang === 'bm' && name === '01b-step-topics')
+            await page.screenshot({ path: `${SHOTS}/${name}.png` });
+        };
+        const fits = async (): Promise<void> => {
+          const overflow = await page.evaluate(() => {
+            const body = document.querySelector('.wiz-body');
+            return {
+              page: document.documentElement.scrollHeight > window.innerHeight + 1,
+              wide: document.documentElement.scrollWidth > window.innerWidth + 1,
+              step: body ? body.scrollHeight > body.clientHeight + 1 : false,
+            };
+          });
+          expect(overflow).toEqual({ page: false, wide: false, step: false });
+        };
+        await fits();
+        await shot('01-menu');
+        await page.getByTestId('menu-race').click();
+        await fits();
+        await shot('01a-step-year');
+        await page.getByTestId('year-1').click();
+        await page.getByTestId('topic-y1-money').click();
+        await fits();
+        await shot('01b-step-topics');
+        await page.getByTestId('year-2').click();
+        await expect(page.locator('input[name="topic"]')).toHaveCount(8);
+        await fits();
+        for (const item of await page.locator('.topic-card, .level-card, .year-card').all()) {
+          const box = await item.boundingBox();
+          expect(box!.height).toBeGreaterThanOrEqual(48);
+          const readable = await item.evaluate((el) =>
+            [...el.querySelectorAll('.chip-title')].every(
+              (title) => title.scrollWidth <= title.clientWidth + 1,
+            ),
+          );
+          expect(readable).toBe(true);
+        }
+        await page.getByTestId('setup-next').click();
+        await page.getByTestId('count-5').click();
+        await fits();
+        await shot('01c-step-players');
+        await page.getByTestId('setup-next').click();
+        await fits();
+        await shot('01d-step-ready');
+        await page.getByTestId('setup-home').click();
+        await page.getByTestId('menu-teacher').click();
+        await expect(page.getByTestId('teacher-back')).toBeVisible();
+        const teacher = await page.evaluate(() => {
+          const main = document.querySelector('main');
           return {
             page: document.documentElement.scrollHeight > window.innerHeight + 1,
-            wide: document.documentElement.scrollWidth > window.innerWidth + 1,
-            step: body ? body.scrollHeight > body.clientHeight + 1 : false,
+            main: main ? main.scrollHeight > main.clientHeight + 1 : false,
           };
         });
-        expect(overflow).toEqual({ page: false, wide: false, step: false });
-      };
-      await fits();
-      await shot('01-menu');
-      await page.getByTestId('menu-race').click();
-      await fits();
-      await shot('01a-step-year');
-      await page.getByTestId('year-1').click();
-      await page.getByTestId('topic-y1-money').click();
-      await fits();
-      await shot('01b-step-topics');
-      await page.getByTestId('setup-next').click();
-      await page.getByTestId('count-5').click();
-      await fits();
-      await shot('01c-step-players');
-      await page.getByTestId('setup-next').click();
-      await fits();
-      await shot('01d-step-ready');
-      await page.getByTestId('setup-home').click();
-      await page.getByTestId('menu-teacher').click();
-      await expect(page.getByTestId('teacher-back')).toBeVisible();
-      const teacher = await page.evaluate(() => {
-        const main = document.querySelector('main');
-        return {
-          page: document.documentElement.scrollHeight > window.innerHeight + 1,
-          main: main ? main.scrollHeight > main.clientHeight + 1 : false,
-        };
+        expect(teacher).toEqual({ page: false, main: false });
+        await shot('01e-teacher');
+        expect(errors).toEqual([]);
       });
-      expect(teacher).toEqual({ page: false, main: false });
-      await shot('01e-teacher');
-      expect(errors).toEqual([]);
-    });
-  }
+    }
 });
 
 test.describe('classroom happy path', () => {
@@ -571,8 +628,8 @@ test.describe('evidence, export and deletion', () => {
     await expect(page.getByTestId('winner-banner')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('new-setup').click();
     await page.getByTestId('setup-home').click();
-    await expect(page.getByTestId('menu-sessions')).toContainText('1 sesi');
     await page.getByTestId('menu-teacher').click();
+    await page.getByTestId('teacher-data').click();
     await expect(page.getByTestId('session-count')).toContainText('1 sesi');
     await page.getByTestId('delete-all').click();
     await page.getByTestId('confirm-ok').click();

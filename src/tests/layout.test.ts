@@ -173,7 +173,7 @@ describe('player identity palette', () => {
   });
 });
 
-describe('menu screen colours (DECISIONS #41)', () => {
+describe('menu screen colours (DECISIONS #43)', () => {
   // text colour, background colour, where it is used
   const PAIRS: ReadonlyArray<readonly [string, string, string]> = [
     ['#0f172a', '#ffffff', 'card and button text'],
@@ -183,8 +183,10 @@ describe('menu screen colours (DECISIONS #41)', () => {
     ['#ffffff', '#1d4ed8', 'primary button, check badge'],
     ['#92400e', '#fef3c7', 'draft pack label'],
     ['#475569', '#f8fafc', 'pack chip text'],
-    ['#ffffff', '#10284f', 'stepper step'],
-    ['#ffffff', '#15803d', 'Mula button'],
+    ['#475569', '#f5f7fb', 'inactive step and notes'],
+    ['#1d4ed8', '#f5f7fb', 'active step'],
+    ['#ffffff', '#132c50', 'compact header'],
+    ['#b91c1c', '#ffffff', 'topic validation'],
   ];
   it.each(PAIRS)('%s on %s (%s) meets WCAG AA', (fg, bg) => {
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);

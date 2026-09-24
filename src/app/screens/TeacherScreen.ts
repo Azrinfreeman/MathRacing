@@ -25,6 +25,7 @@ export class TeacherScreen {
   private root: HTMLElement | null = null;
   private sessions: number;
   private status = '';
+  private section: 'game' | 'pupils' | 'data' = 'game';
 
   constructor(private readonly deps: TeacherDeps) {
     this.sessions = deps.sessionCount;
@@ -173,9 +174,6 @@ export class TeacherScreen {
         role: 'status',
         text: this.status || t('setup.data.count', { n: this.sessions }),
       }),
-      this.deps.storageNote
-        ? h('p', { class: 'note warn', role: 'status', text: this.deps.storageNote })
-        : null,
       h('button', {
         type: 'button',
         class: 'btn btn-danger',
@@ -189,7 +187,7 @@ export class TeacherScreen {
     root.appendChild(
       h(
         'div',
-        { class: 'teacher-shell' },
+        { class: 'teacher-shell simple-menus' },
         h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
         h(
           'header',
@@ -219,21 +217,50 @@ export class TeacherScreen {
           { id: 'main', tabindex: -1, class: 'teacher-main' },
           h('h2', { class: 'visually-hidden', text: t('teacher.title') }),
           h(
-            'div',
-            { class: 'teacher-grid' },
-            h('div', { class: 'teacher-col' }, game),
-            h('div', { class: 'teacher-col' }, pupils, data),
-            h(
-              'div',
-              { class: 'teacher-col' },
-              session,
-              h(
-                'p',
-                { class: 'pbd-note', dataset: { testid: 'pbd-notice' } },
-                h('span', { class: 'pbd-icon', aria: { hidden: true }, text: 'i' }),
-                h('span', { text: t('setup.pbdNotice') }),
-              ),
+            'nav',
+            { class: 'teacher-sections', aria: { label: t('teacher.title') } },
+            ...(['game', 'pupils', 'data'] as const).map((section) =>
+              h('button', {
+                type: 'button',
+                class: `btn${this.section === section ? ' section-on' : ''}`,
+                dataset: { testid: `teacher-${section}`, key: `teacher-${section}` },
+                aria: { pressed: String(this.section === section) },
+                text: t(
+                  section === 'data'
+                    ? 'teacher.group.data'
+                    : section === 'game'
+                      ? 'teacher.group.game'
+                      : 'teacher.group.pupils',
+                ),
+                on: {
+                  click: () => {
+                    this.section = section;
+                    this.render();
+                    this.root
+                      ?.querySelector<HTMLElement>(`[data-key="teacher-${section}"]`)
+                      ?.focus();
+                  },
+                },
+              }),
             ),
+          ),
+          h(
+            'div',
+            { class: 'teacher-section' },
+            ...(this.section === 'game'
+              ? [game]
+              : this.section === 'pupils'
+                ? [pupils]
+                : [data, session]),
+          ),
+          this.deps.storageNote
+            ? h('p', { class: 'note warn', role: 'status', text: this.deps.storageNote })
+            : null,
+          h(
+            'p',
+            { class: 'pbd-note', dataset: { testid: 'pbd-notice' } },
+            h('span', { class: 'pbd-icon', aria: { hidden: true }, text: 'i' }),
+            h('span', { text: t('setup.pbdNotice') }),
           ),
         ),
       ),

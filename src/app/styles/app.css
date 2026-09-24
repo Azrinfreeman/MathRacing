@@ -1432,6 +1432,465 @@ main.teacher-main {
   }
 }
 
+/* Simpler menus (DECISIONS #43). Scoped so race chrome and results retain their layout. */
+.simple-menus {
+  background: #f5f7fb;
+  color: var(--ink);
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  height: 100dvh;
+  min-height: 0;
+}
+.simple-menus > .topbar,
+.simple-menus > .wiz-top {
+  background: #132c50;
+  padding: 4px clamp(16px, 3vw, 48px);
+  min-height: 56px;
+  flex-wrap: nowrap;
+}
+.simple-menus .btn {
+  min-height: 48px;
+}
+.simple-menus .btn-large {
+  min-height: 56px;
+}
+.simple-menus .card {
+  box-shadow: none;
+}
+.simple-menus .chip-on {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.simple-menus .chip-on::after {
+  top: 50%;
+  transform: translateY(-50%);
+  right: 6px;
+}
+.simple-menus .chip {
+  padding-right: 30px;
+}
+.simple-menus .step-title {
+  font-size: clamp(24px, 3vmin, 36px);
+  margin: 0;
+}
+.simple-menus.menu-shell {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.simple-menus.menu-shell::before,
+.simple-menus .menu-card::before {
+  display: none;
+}
+.simple-menus .logo {
+  width: 40px;
+  height: 40px;
+  box-shadow: none;
+}
+.simple-menus .brand h1 {
+  font-size: 1.4rem;
+}
+.simple-menus .menu-main {
+  padding: 16px 8vw;
+  gap: 16px;
+  overflow: auto;
+}
+.menu-intro {
+  width: min(100%, 1150px);
+}
+.menu-intro h2 {
+  margin: 0;
+  font-size: clamp(26px, 4vmin, 42px);
+}
+.menu-intro p {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+.simple-menus .menu-cards {
+  gap: 20px;
+}
+.simple-menus .menu-card {
+  justify-items: start;
+  padding: 20px 28px;
+  min-height: clamp(160px, 28vmin, 300px);
+  border-radius: 20px;
+  box-shadow: none;
+  border: 1px solid var(--line-strong);
+}
+.simple-menus .menu-card-quick {
+  background: var(--accent);
+}
+.simple-menus .menu-card-practice {
+  background: white;
+  color: var(--ink);
+}
+.simple-menus .menu-icon-circle {
+  background: none;
+  box-shadow: none;
+  width: 40px;
+  height: 40px;
+}
+.simple-menus .menu-icon svg {
+  width: 36px;
+  height: 36px;
+}
+.simple-menus .menu-card-title {
+  font-size: clamp(26px, 4vmin, 48px);
+  text-transform: none;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.simple-menus .menu-card-desc {
+  font-size: 1rem;
+  text-align: left;
+}
+.simple-menus .menu-again {
+  width: min(100%, 1150px);
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+}
+.simple-menus .menu-again-text {
+  flex-direction: column;
+  gap: 0;
+}
+.simple-menus .menu-again-text > span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.simple-menus .menu-footer,
+.simple-menus .wiz-nav {
+  padding: 4px clamp(16px, 3vw, 48px);
+  background: white;
+  border-top: 1px solid var(--line);
+  min-height: 64px;
+}
+.simple-menus .menu-teacher {
+  color: var(--muted);
+  border-color: transparent;
+}
+.simple-menus .menu-warn {
+  color: #92400e;
+  font-size: 0.85rem;
+  flex: 1;
+}
+.simple-menus .stepper {
+  padding: 0 clamp(16px, 3vw, 48px);
+}
+.simple-menus .stepper ol {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+}
+.simple-menus .stepper ol::before {
+  display: none;
+}
+.simple-menus .stepper li {
+  flex: none;
+}
+.simple-menus .step-btn {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  min-height: 48px;
+  padding: 4px 8px;
+  font-size: 1rem;
+  gap: 8px;
+}
+.simple-menus .step-on {
+  color: var(--accent);
+  box-shadow: inset 0 -3px var(--accent);
+}
+.simple-menus .step-num {
+  width: auto;
+  height: auto;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+}
+.simple-menus .step-name {
+  display: inline;
+}
+.simple-menus .wiz-body {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1500px;
+  padding: 8px clamp(16px, 3vw, 48px);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  min-height: 0;
+  overflow: auto;
+}
+.simple-menus .step-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.simple-menus .year-cards {
+  display: flex;
+  gap: 8px;
+}
+.simple-menus .year-card {
+  min-height: 48px;
+  min-width: 110px;
+  padding: 8px 30px 8px 14px;
+  flex-direction: row;
+}
+.simple-menus .year-card .chip-title {
+  font-size: 1rem;
+}
+.simple-menus .topics-panel {
+  display: block;
+}
+.simple-menus .panel-head {
+  margin: 0;
+  gap: 10px;
+  min-height: 48px;
+}
+.simple-menus .panel-title {
+  margin: 0;
+  font-size: 1rem;
+}
+.simple-menus .topic-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.simple-menus .inline-actions {
+  margin-left: auto;
+}
+.simple-menus .topic-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.simple-menus .topic-card {
+  min-height: 56px;
+  padding: 6px 28px 6px 10px;
+  gap: 8px;
+}
+.simple-menus .topic-card .chip-title {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.simple-menus .topic-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  background: none;
+  padding: 0;
+}
+.simple-menus .topic-icon svg {
+  width: 30px;
+  height: 30px;
+}
+.simple-menus .level-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+.simple-menus .level-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.simple-menus .level-card {
+  min-height: 48px;
+  padding: 6px 28px 6px 10px;
+}
+.simple-menus .level-card .chip-title {
+  font-size: 1rem;
+}
+.question-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.simple-menus .pack-chip {
+  margin: 0;
+  min-height: 48px;
+  padding: 4px 8px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+.simple-menus .pack-chip-text {
+  font-size: 0.85rem;
+}
+.simple-menus .pack-chip-draft {
+  font-size: 0.8rem;
+}
+.simple-menus .btn-start {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.simple-menus .btn-start:hover:not(:disabled) {
+  background: #1e40af;
+}
+.simple-menus .wiz-nav .error {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+.simple-menus .step-players {
+  gap: 12px;
+}
+.simple-menus .count-card {
+  min-height: 48px;
+  min-width: 56px;
+}
+.simple-menus .player-cards {
+  gap: 12px;
+}
+.simple-menus .player-card {
+  padding: 10px;
+  background: white;
+  border: 1px solid var(--line-strong);
+  border-top: 5px solid var(--pcd);
+  box-shadow: none;
+}
+.simple-menus .player-racer {
+  min-height: 100px;
+}
+.simple-menus .player-car svg {
+  height: clamp(60px, 12vmin, 115px);
+}
+.simple-menus .player-tag {
+  font-size: 1rem;
+}
+.simple-menus .names-toggle {
+  align-self: center;
+}
+.simple-menus .step-ready {
+  gap: 12px;
+}
+.simple-menus .summary-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: white;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.simple-menus .summary-tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 10px 20px;
+  min-height: 68px;
+  gap: 0 16px;
+  box-shadow: none;
+}
+.simple-menus .summary-tile:last-child {
+  border-bottom: 0;
+}
+.simple-menus .summary-label {
+  grid-column: 1;
+  font-size: 0.8rem;
+}
+.simple-menus .summary-value {
+  grid-column: 1;
+  font-size: 1.15rem;
+}
+.simple-menus .summary-change {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  align-self: center;
+}
+.simple-menus .summary-racers {
+  grid-column: 1;
+}
+.simple-menus .summary-racer svg {
+  height: 26px;
+}
+.simple-menus .ready-hint {
+  margin: 0;
+}
+.simple-menus.teacher-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.simple-menus .teacher-main {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 12px clamp(16px, 3vw, 48px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  gap: 8px;
+}
+.teacher-sections {
+  display: flex;
+  gap: 12px;
+}
+.teacher-sections .section-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 -3px var(--accent);
+}
+.teacher-section {
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+}
+.simple-menus .teacher-section .group {
+  background: white;
+  border: 1px solid var(--line);
+  margin: 0 0 12px;
+}
+.simple-menus .teacher-section .option-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.simple-menus .teacher-section .switch-row {
+  padding: 8px;
+}
+.simple-menus .teacher-section .switch-desc {
+  font-size: 0.85rem;
+}
+.simple-menus .pbd-note {
+  margin: 0;
+  font-size: 0.8rem;
+  padding: 8px;
+}
+.simple-menus .teacher-main > .note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+@media (max-width: 820px) {
+  .simple-menus .topic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .simple-menus .level-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .simple-menus .topic-hint {
+    display: none;
+  }
+  .question-heading {
+    flex-wrap: wrap;
+  }
+  .simple-menus .teacher-section .option-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* The teacher's "reduce motion" setting is the only switch; the OS flag is not inherited (DECISIONS #33, #35). */
 html.reduce-motion *,
 html.reduce-motion *::before,

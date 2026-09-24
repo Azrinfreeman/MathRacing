@@ -70,7 +70,7 @@ Pure models (`game/widgets`) hold input state and lay out their controls; `Panel
 
 ## Screens
 
-`index.html` holds the launch splash inline (it shows before any script); `screens/SplashScreen` takes it over while the game engine preloads, then `AppController` shows `MenuScreen`. From the menu: `SetupScreen` (four steps: Tahun, Topik & Tahap, Pemain, Sedia?) or `TeacherScreen` (options, seed, local data, PBD notice). All three share one in-memory `SetupState` (`app/setupState.ts`); only classroom-level fields are saved as `Settings`, never names or the seed. These screens live inside the `SETUP` phase; the race state machine is unchanged. Inline SVG art (vehicles, topic icons, stars) comes from `app/art.ts`, drawn with the same vehicle coordinates as `TrackView`.
+`index.html` holds the launch splash inline (it shows before any script); `screens/SplashScreen` takes it over while the game engine preloads, then `AppController` shows `MenuScreen`. From the menu: `SetupScreen` (three steps: Soalan, Pemain, Sedia) or `TeacherScreen` (Game, Pupil support, Data & advanced sections, with visible storage/PBD notices). Soalan combines year/topics/level; names are disclosed on demand; Sedia edits mode/length in a cancellable dialog. Review-row edits use a transient return-to-review flag. All three share one in-memory `SetupState` (`app/setupState.ts`); only classroom-level fields are saved as `Settings`, never names or the seed. These screens live inside the `SETUP` phase; the race state machine is unchanged. Inline SVG racers and topic icons come from `app/art.ts`, drawn with the same racer parts as `TrackView`.
 
 ## Rendering
 

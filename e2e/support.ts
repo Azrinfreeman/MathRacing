@@ -42,34 +42,47 @@ export function watchErrors(page: Page): string[] {
 
 /**
  * From the main menu, set everything up the way a teacher would: language on the menu, seed and options on
- * the teacher screen, then the four setup steps. Ends on the "Ready?" step with Start visible (does not start).
+ * the teacher screen, then the three setup steps. Ends on the review step with Start visible (does not start).
  */
 export async function fillSetup(page: Page, o: RaceOptions): Promise<void> {
   if (o.language === 'en') await page.getByTestId('lang-en').click();
   await page.getByTestId('menu-teacher').click();
+  await page.getByTestId('teacher-data').click();
   await page.getByTestId('seed').fill(o.seed);
-  for (const [key, on] of Object.entries(o.options ?? {}))
+  for (const [key, on] of Object.entries(o.options ?? {})) {
+    await page
+      .getByTestId(key === 'hints' || key === 'support' ? 'teacher-pupils' : 'teacher-game')
+      .click();
     await page.getByTestId(`opt-${key}`).setChecked(on);
+  }
   await page.getByTestId('teacher-back').click();
   await page.getByTestId(o.mode === 'practice' ? 'menu-practice' : 'menu-race').click();
-  // step 1: tapping a year moves straight on to step 2
+  // step 1: year, topics and level share a page
   await page.getByTestId(`year-${o.year ?? 1}`).click();
-  await expect(page.getByTestId('step-2')).toHaveAttribute('aria-current', 'step');
-  await page.getByTestId('topics-none').click();
-  for (const topic of o.topics) await page.getByTestId(`topic-${topic}`).click();
+  await expect(page.getByTestId('step-1')).toHaveAttribute('aria-current', 'step');
+  // The seeded blueprint depends on topic insertion order, so re-select in the requested order.
+  const topics = await page
+    .locator('input[name="topic"]:checked')
+    .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).dataset.testid!));
+  for (const id of topics) await page.getByTestId(id).uncheck();
+  for (const topic of o.topics) await page.getByTestId(`topic-${topic}`).check();
   await page.getByTestId(`level-${o.level}`).click();
   await page.getByTestId('setup-next').click();
-  // step 3: players
+  // step 2: players
   await page.getByTestId(`count-${o.players}`).click();
+  if (o.names?.length && !(await page.getByTestId('name-0').isVisible()))
+    await page.getByTestId('names-toggle').click();
   for (const [i, name] of (o.names ?? []).entries()) await page.getByTestId(`name-${i}`).fill(name);
   for (const [i, racer] of (o.racers ?? []).entries()) {
     await page.getByTestId(`racer-${i}`).click();
     await page.getByTestId(`racer-tile-${racer}`).click();
   }
   await page.getByTestId('setup-next').click();
-  // step 4: mode and race length
+  // step 3: mode and race length are edited from the review
+  await page.getByTestId('sum-game').click();
   await page.getByTestId(`mode-${o.mode ?? 'quick'}`).click();
   await page.getByTestId(`length-${o.length}`).click();
+  await page.getByTestId('game-save').click();
 }
 
 /** Start the race and get past the Ready screen (teacher "start now"), ending with the race live. */

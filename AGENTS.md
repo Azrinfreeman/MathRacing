@@ -11,7 +11,7 @@ Full file list with exports: `docs/REPO-MAP.md` (generated). Rationale for every
 - `src/game/ui/` drawing: `TrackView` (track, cars, particles), `PanelView` (pupil panel), `motion.ts` (car spring), layout (pure).
 - `src/game/scenes/` Phaser scenes (`ReadyScene`, `RaceScene`, `StageScene`). Frames run inside `guardedFrame`.
 - `src/curriculum/` schema, answers, blueprint, registry; `generators/` one file per topic group; `packs/`.
-- `src/app/` `AppController` (flow, persistence), `setupState` (shared choices), `screens/` Splash, Menu, Setup (4 steps), Teacher, Results; dialogs, help, `art.ts` (inline SVG).
+- `src/app/` `AppController` (flow, persistence), `setupState` (shared choices), `screens/` Splash, Menu, Setup (3 steps: Soalan, Pemain, Sedia), Teacher, Results; dialogs, help, `art.ts` (inline SVG).
 - `src/storage/` settings (localStorage) and evidence (IndexedDB). `src/reporting/` CSV and teacher evidence summary.
 - `src/locales/` `bm.ts` (complete: write here first), `en.ts` (falls back to BM per key).
 - `docs/` ARCHITECTURE, DECISIONS (append-only, numbered), CURRICULUM-MAPPING and REPO-MAP (both generated: never hand-edit), PLAN-\* (past plans).
@@ -47,6 +47,7 @@ sources (`E2E_REBUILD=1` forces it). Format only what you changed: `npx prettier
 - The next question index is `itemsDealt`, not progress (progress drops after a setback).
 - Use `0 - n`, not `-n`, when the value may be 0 (avoids `-0`).
 - E2E computes questions and tap positions from the app's own pure modules (blueprint, layout, widgets). Keep them pure; do not add test hooks to the app.
+- E2E `fillSetup` must clear selected topics and re-select in the requested order: the seeded blueprint depends on topic insertion order, not just membership.
 - Claude's in-app browser pane cannot animate (no rAF). Use Playwright for anything timed or visual.
 - Windows + Git Bash: use `/d/...` paths, never `cd` into `node_modules`, create files with the Write tool (nested-quote heredocs break).
 - Dev port 5173 may be taken: `vite.config.ts` reads `PORT` and `.claude/launch.json` has `autoPort`.

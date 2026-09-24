@@ -1,14 +1,9 @@
 import type { Language } from '../../curriculum/schema';
 import type { RaceMode } from '../../game/core/RaceState';
-import { PLAYER_STYLES } from '../../game/core/players';
-import type { RacerId } from '../../game/core/racers';
 import { createTranslator } from '../../locales';
-import { MENU_ICONS, racerSvg } from '../art';
+import { MENU_ICONS } from '../art';
 import { languageSwitch, svgArt } from '../controls';
 import { clear, h } from '../dom';
-
-/** The racers that drive across the menu road: vehicles and animals, so pupils see both kinds (DECISIONS #41). */
-const ROAD_RACERS: readonly RacerId[] = ['rocket', 'duck', 'kart', 'goose', 'rabbit'];
 
 export type MenuDeps = {
   language: Language;
@@ -76,18 +71,13 @@ export class MenuScreen {
     root.appendChild(
       h(
         'div',
-        { class: 'menu-shell' },
+        { class: 'menu-shell simple-menus' },
         h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
         h(
           'header',
           { class: 'topbar' },
           h('img', { class: 'logo', src: './icons/icon.svg', alt: '' }),
-          h(
-            'div',
-            { class: 'brand' },
-            h('h1', { text: t('app.name') }),
-            h('p', { text: t('app.tagline') }),
-          ),
+          h('div', { class: 'brand' }, h('h1', { text: t('app.name') })),
           h(
             'div',
             { class: 'top-actions' },
@@ -105,6 +95,12 @@ export class MenuScreen {
           'main',
           { id: 'main', tabindex: -1, class: 'menu-main' },
           h('h2', { class: 'visually-hidden', text: t('menu.title') }),
+          h(
+            'div',
+            { class: 'menu-intro' },
+            h('h2', { text: t('menu.welcome') }),
+            h('p', { text: t('menu.choose') }),
+          ),
           h('div', { class: 'menu-cards' }, card('quick'), card('practice')),
           d.lastSummary
             ? h(
@@ -126,17 +122,6 @@ export class MenuScreen {
             : null,
         ),
         h(
-          'div',
-          { class: 'menu-road', aria: { hidden: true } },
-          ...ROAD_RACERS.map((racer, i) => {
-            const style = PLAYER_STYLES[i] ?? PLAYER_STYLES[0];
-            if (!style) return null;
-            const car = svgArt(racerSvg(style, racer), `menu-road-car menu-road-car-${i + 1}`);
-            car.style.setProperty('--i', String(i));
-            return car;
-          }),
-        ),
-        h(
           'footer',
           { class: 'menu-footer' },
           h(
@@ -150,11 +135,6 @@ export class MenuScreen {
             svgArt(MENU_ICONS.teacher, 'btn-icon'),
             t('menu.teacher'),
           ),
-          h('span', {
-            class: 'menu-sessions',
-            dataset: { testid: 'menu-sessions' },
-            text: t('setup.data.count', { n: d.sessionCount }),
-          }),
           d.storageNote
             ? h('p', { class: 'note warn menu-warn', role: 'status', text: d.storageNote })
             : null,

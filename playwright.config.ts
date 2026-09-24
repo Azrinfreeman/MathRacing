@@ -45,6 +45,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     acceptDownloads: true,
     serviceWorkers: 'allow',
+    // Optional installed browser when the pinned Playwright browser is unavailable locally.
+    channel: process.env.PLAYWRIGHT_CHANNEL,
   },
   projects: [
     {
