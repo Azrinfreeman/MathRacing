@@ -30,6 +30,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'setup.year.2': 'Year 2',
   'setup.pack': 'Active curriculum pack',
   'setup.packStatus': 'Draft: not yet signed off by an academic reviewer. Version {version}.',
+  'setup.packDraft': 'Draft v{version}',
   'setup.topics': 'Topics',
   'setup.topics.hint': 'Choose one topic, or several for a mixed race.',
   'setup.topics.all': 'Select all',
@@ -114,6 +115,10 @@ export const en: Partial<Record<MessageKey, string>> = {
   'teacher.title': 'Teacher settings',
   'teacher.back': 'Menu',
   'teacher.session': 'Session',
+  'teacher.group.game': 'Game',
+  'teacher.group.pupils': 'Help for pupils',
+  'teacher.on': 'On',
+  'teacher.off': 'Off',
 
   'setup.pbdNotice':
     'MathRacing provides evidence for classroom-based assessment (PBD). It does not assign a Tahap Penguasaan (TP); the teacher makes the professional judgement.',

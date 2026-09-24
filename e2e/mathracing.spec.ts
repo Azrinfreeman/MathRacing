@@ -64,7 +64,9 @@ test.describe('splash, menu and setup steps', () => {
     expect(errors).toEqual([]);
   });
 
+  // 960x540: the smallest size with no scrolling (a 1024x600 tablet minus its navigation bar, DECISIONS #41)
   for (const [w, h] of [
+    [960, 540],
     [1024, 600],
     [1280, 800],
     [1920, 1080],
@@ -104,6 +106,15 @@ test.describe('splash, menu and setup steps', () => {
       await shot('01d-step-ready');
       await page.getByTestId('setup-home').click();
       await page.getByTestId('menu-teacher').click();
+      await expect(page.getByTestId('teacher-back')).toBeVisible();
+      const teacher = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        return {
+          page: document.documentElement.scrollHeight > window.innerHeight + 1,
+          main: main ? main.scrollHeight > main.clientHeight + 1 : false,
+        };
+      });
+      expect(teacher).toEqual({ page: false, main: false });
       await shot('01e-teacher');
       expect(errors).toEqual([]);
     });

@@ -1,4 +1,15 @@
 /* MathRacing teacher screens and stage chrome. High contrast, large touch targets, visible focus. */
+
+/* Nunito (SIL OFL 1.1, licence in public/fonts/Nunito-OFL.txt): one rounded font on every device, bundled so it
+   works offline (DECISIONS #41). Variable weight 200-1000, Latin only (BM and EN). */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('./fonts/nunito-latin-wght.woff2') format('woff2');
+}
+
 :root {
   --bg: #0b1d3a;
   --bg2: #12305f;
@@ -12,7 +23,16 @@
   --danger: #b91c1c;
   --focus: #f59e0b;
   --radius: 14px;
-  --font: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* design tokens (DECISIONS #41): three radii, two elevations, one line colour */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --surface: #f8fafc;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 3px 10px rgba(15, 23, 42, 0.07);
+  --shadow-raised: 0 18px 48px rgba(2, 6, 23, 0.38);
+  --font: 'Nunito', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(16px, 0.9vw + 8px, 22px);
   color-scheme: light;
 }
@@ -25,7 +45,10 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: linear-gradient(160deg, var(--bg), var(--bg2));
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(59, 130, 246, 0.28), transparent 70%),
+    linear-gradient(160deg, var(--bg), var(--bg2));
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font);
   line-height: 1.4;
@@ -104,8 +127,8 @@ main h2 {
 }
 
 .group {
-  border: 2px solid #dbe3ef;
-  border-radius: var(--radius);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
   padding: 0.9rem 1.1rem 1.1rem;
   margin: 0 0 1rem;
 }
@@ -139,11 +162,12 @@ main h2 {
   align-items: center;
   min-height: 3.2rem;
   padding: 0.5rem 1rem;
-  border: 3px solid var(--border);
-  border-radius: 12px;
-  background: #f8fafc;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: #fff;
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .chip input {
   position: absolute;
@@ -154,26 +178,40 @@ main h2 {
   opacity: 0;
   cursor: pointer;
 }
-.chip:focus-within {
+/* keyboard focus only: a tap on a touch screen must not leave an orange ring that looks like a second choice */
+.chip:has(input:focus-visible) {
   outline: 4px solid var(--focus);
   outline-offset: 2px;
 }
 .chip-on {
   border-color: var(--accent);
   background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
-/* a check mark, so the selected state never relies on colour alone */
-.chip-on .chip-title::before {
-  content: '\2713\00a0';
+/* A check badge in the corner, so the selected state never relies on colour alone and the title never moves. */
+.chip-on::after {
+  content: '\2713';
+  position: absolute;
+  top: 0.35em;
+  right: 0.35em;
+  display: grid;
+  place-items: center;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
   font-weight: 900;
-  color: var(--accent);
+  line-height: 1;
+  pointer-events: none;
 }
 .chip-label {
   display: flex;
   flex-direction: column;
 }
 .chip-title {
-  font-weight: 700;
+  font-weight: 800;
 }
 .chip-desc {
   font-size: 0.85rem;
@@ -182,9 +220,11 @@ main h2 {
 
 .segmented {
   display: inline-flex;
-  border-radius: 12px;
+  border-radius: 999px;
   overflow: hidden;
-  border: 3px solid #fff;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  padding: 3px;
+  gap: 2px;
 }
 .seg {
   font: inherit;
@@ -196,6 +236,10 @@ main h2 {
   color: #fff;
   cursor: pointer;
 }
+.seg {
+  border-radius: 999px;
+  min-height: 2.5rem;
+}
 .seg-on {
   background: #fff;
   color: var(--bg);
@@ -203,17 +247,52 @@ main h2 {
 
 .btn {
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   min-height: 3rem;
   padding: 0.5rem 1.2rem;
   border-radius: 12px;
-  border: 3px solid var(--ink);
+  border: 2px solid var(--line-strong);
   background: #fff;
   color: var(--ink);
+  box-shadow: var(--shadow-card);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
 }
 .btn:hover:not(:disabled) {
   background: #eef2f7;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+/* quiet: on the dark header and footer (Menu, Bantuan, Tetapan guru) */
+.btn-quiet {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  box-shadow: none;
+}
+.btn-quiet:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+/* text: small secondary actions inside a panel (Pilih semua, Kosongkan) */
+.btn-text {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  min-height: 2.75rem;
+  padding: 0.3rem 0.6rem;
+}
+.btn-text:hover:not(:disabled) {
+  background: var(--accent-soft);
 }
 .btn:disabled {
   opacity: 0.5;
@@ -223,6 +302,7 @@ main h2 {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.35);
 }
 .btn-primary:hover:not(:disabled) {
   background: #1e40af;
@@ -280,8 +360,9 @@ main h2 {
   font: inherit;
   min-height: 3rem;
   padding: 0.4rem 0.8rem;
-  border: 3px solid var(--border);
-  border-radius: 10px;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: #fff;
   width: 100%;
   max-width: 24rem;
 }
@@ -354,35 +435,61 @@ main h2 {
 
 /* Big touch cards (setup steps, teacher options): a chip with a raised, pressable look. */
 .card {
-  border-radius: 18px;
+  border-radius: var(--r-md);
+  border-color: var(--line);
   min-height: clamp(56px, 8vmin, 96px);
   padding: 0.6em 1em;
   gap: 0.8em;
   background: #fff;
-  box-shadow: 0 4px 0 #cbd5e1;
+  box-shadow: var(--shadow-card);
   transition:
     transform 120ms ease,
-    box-shadow 120ms ease;
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+.card:hover {
+  border-color: var(--line-strong);
 }
 .card:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #cbd5e1;
+  transform: scale(0.98);
 }
 .card.chip-on {
-  box-shadow: 0 4px 0 var(--accent);
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    var(--shadow-card);
 }
 
 /* ---------- main menu ---------- */
 .menu-shell {
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   gap: clamp(8px, 2vmin, 24px);
   padding: clamp(10px, 2vmin, 28px) clamp(12px, 3vw, 48px);
+  isolation: isolate;
+}
+/* a faint pattern of maths symbols behind everything (pure CSS, no image file) */
+.menu-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160' fill='none' stroke='white' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M30 18v24M18 30h24'/%3E%3Cpath d='M98 30h24'/%3E%3Cpath d='M22 102l16 16M38 102l-16 16'/%3E%3Cpath d='M98 104h24M98 116h24'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  pointer-events: none;
 }
 .menu-shell .topbar {
   padding: 0;
+}
+.menu-shell .logo {
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.35);
+}
+.menu-shell .brand h1 {
+  font-weight: 900;
 }
 main.menu-main {
   background: none;
@@ -400,6 +507,8 @@ main.menu-main {
   width: min(100%, 1150px);
 }
 .menu-card {
+  position: relative;
+  overflow: hidden;
   font: inherit;
   border: 0;
   border-radius: 28px;
@@ -408,64 +517,99 @@ main.menu-main {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 0.35em;
+  gap: 0.4em;
   color: #fff;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   box-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.3),
-    0 18px 40px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 20px 44px rgba(2, 6, 23, 0.45);
   transition:
     transform 150ms ease,
     box-shadow 150ms ease;
 }
+/* a soft light in the top corner of each card */
+.menu-card::before {
+  content: '';
+  position: absolute;
+  inset: -40% 40% 40% -40%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 65%);
+  pointer-events: none;
+}
+.menu-card:hover {
+  transform: translateY(-3px);
+}
 .menu-card:active {
-  transform: translateY(7px);
+  transform: scale(0.98);
   box-shadow:
-    0 3px 0 rgba(0, 0, 0, 0.3),
-    0 8px 20px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 20px rgba(2, 6, 23, 0.4);
 }
 .menu-card-quick {
-  background: linear-gradient(160deg, #f97316, #c2410c);
+  background: linear-gradient(150deg, #fb923c, #ea580c 45%, #c2410c);
 }
 .menu-card-practice {
-  background: linear-gradient(160deg, #22c55e, #15803d);
+  background: linear-gradient(150deg, #4ade80, #16a34a 45%, #15803d);
+}
+.menu-icon-circle {
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 14vmin, 150px);
+  height: clamp(64px, 14vmin, 150px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 .menu-icon svg {
-  width: clamp(56px, 12vmin, 140px);
-  height: clamp(56px, 12vmin, 140px);
+  width: clamp(36px, 8vmin, 88px);
+  height: clamp(36px, 8vmin, 88px);
   display: block;
 }
 .menu-card-title {
-  font-size: clamp(34px, 8vmin, 96px);
+  font-size: clamp(30px, 7vmin, 84px);
   font-weight: 900;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1;
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 .menu-card-desc {
-  font-size: clamp(15px, 2.4vmin, 26px);
+  font-size: clamp(14px, 2.3vmin, 24px);
   font-weight: 700;
   text-align: center;
   max-width: 22em;
+  opacity: 0.95;
 }
 .menu-again {
   font: inherit;
   display: flex;
   align-items: center;
   gap: 0.8em;
-  border: 3px solid #fff;
-  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-radius: 999px;
-  padding: 0.5em 1.4em;
-  min-height: 3.6rem;
+  padding: 0.45em 1.4em 0.45em 0.6em;
+  min-height: 3.4rem;
   cursor: pointer;
   max-width: min(100%, 1150px);
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-again:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.menu-again-icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--bg);
 }
 .menu-again-icon svg {
-  width: 2rem;
-  height: 2rem;
+  width: 1.4rem;
+  height: 1.4rem;
   display: block;
 }
 .menu-again-text {
@@ -474,41 +618,40 @@ main.menu-main {
   gap: 0.2em 0.6em;
   text-align: left;
 }
+/* the road: asphalt with a dashed centre line; racers drive slowly across it */
 .menu-road {
   position: relative;
   height: clamp(56px, 12vmin, 130px);
-  background: #334155;
-  border-top: 4px solid #e2e8f0;
-  border-bottom: 4px solid #e2e8f0;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 28px, transparent 28px 56px)
+      center / 100% 3px no-repeat,
+    #334155;
+  border-top: 3px solid rgba(226, 232, 240, 0.85);
+  border-bottom: 3px solid rgba(226, 232, 240, 0.85);
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.menu-road-car {
+  position: absolute;
+  top: 50%;
+  /* spread evenly when standing still ("Kurangkan gerakan") */
+  left: calc(var(--i, 0) * 20% + 4%);
+  transform: translateY(-50%);
+  animation: menu-drive 40s linear infinite;
+  animation-delay: calc(var(--i, 0) * -8s);
 }
 .menu-road-car svg {
   height: clamp(44px, 10vmin, 112px);
   width: auto;
   display: block;
 }
-.menu-road-car {
-  animation: menu-bob 1.6s ease-in-out infinite;
-}
-.menu-road-car-2 {
-  animation-delay: -0.3s;
-}
-.menu-road-car-3 {
-  animation-delay: -0.6s;
-}
-.menu-road-car-4 {
-  animation-delay: -0.9s;
-}
-.menu-road-car-5 {
-  animation-delay: -1.2s;
-}
-@keyframes menu-bob {
-  50% {
-    transform: translateY(-8%);
+@keyframes menu-drive {
+  from {
+    left: -12%;
+  }
+  to {
+    left: 102%;
   }
 }
 .menu-footer {
@@ -516,7 +659,7 @@ main.menu-main {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  color: #e2e8f0;
+  color: #cbd5e1;
 }
 .menu-teacher {
   display: inline-flex;
@@ -548,7 +691,12 @@ main.menu-main {
 .wiz-title {
   margin: 0;
   flex: 1;
-  font-size: clamp(20px, 3.4vmin, 36px);
+  font-size: clamp(19px, 3.2vmin, 34px);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+.wiz-top .btn {
+  min-height: 2.75rem;
 }
 .stepper ol {
   list-style: none;
@@ -558,37 +706,67 @@ main.menu-main {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(6px, 1vw, 14px);
 }
+.stepper ol {
+  position: relative;
+}
+/* a thin progress line behind the steps */
+.stepper ol::before {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.stepper li {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
 .step-btn {
   font: inherit;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6em;
-  min-height: clamp(44px, 7vmin, 72px);
+  gap: 0.55em;
+  max-width: 100%;
+  min-height: clamp(40px, 6.4vmin, 60px);
+  padding: 0 1em 0 0.35em;
   border-radius: 999px;
-  border: 3px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: #10284f;
+  color: rgba(255, 255, 255, 0.88);
   font-weight: 800;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.step-btn:hover {
+  border-color: rgba(255, 255, 255, 0.55);
 }
 .step-on {
   background: #fff;
   color: var(--bg);
   border-color: #fff;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.35);
 }
 .step-done {
-  border-color: #86efac;
+  border-color: rgba(134, 239, 172, 0.7);
 }
 .step-num {
   display: grid;
   place-items: center;
   flex: none;
-  width: 1.8em;
-  height: 1.8em;
+  width: 1.9em;
+  height: 1.9em;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: 900;
+}
+.step-done .step-num {
+  background: #16a34a;
+  color: #fff;
 }
 .step-on .step-num {
   background: var(--accent);
@@ -602,7 +780,8 @@ main.menu-main {
 main.wiz-body {
   overflow: auto;
   padding: clamp(12px, 2.4vmin, 32px);
-  border-radius: 24px;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-raised);
 }
 .wiz-nav {
   display: flex;
@@ -616,7 +795,8 @@ main.wiz-body {
   color: #fecaca;
 }
 .wiz-nav .btn-large {
-  min-height: clamp(52px, 8vmin, 84px);
+  min-height: clamp(50px, 7.6vmin, 80px);
+  min-width: 8.5em;
 }
 .btn-start {
   min-width: 10em;
@@ -692,46 +872,136 @@ main.wiz-body {
 /* step 2: topics and level */
 .step-topics {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
   gap: clamp(12px, 2vw, 32px);
+}
+.topics-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  gap: clamp(6px, 1vmin, 12px);
+}
+.topics-panel .panel-head .step-title {
+  margin: 0;
 }
 .topic-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(6px, 1vmin, 12px);
+  align-content: start;
 }
 .topic-card {
-  min-height: clamp(52px, 8vmin, 90px);
-  padding: 0.4em 0.7em;
+  min-height: clamp(48px, 7.4vmin, 84px);
+  padding: 0.35em 2.1em 0.35em 0.45em;
+  gap: 0.6em;
 }
 .topic-card .chip-title {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.2;
 }
 .topic-card .chip-desc {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+}
+/* the topic pictogram sits in a soft tile */
+.topic-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(34px, 6vmin, 60px);
+  height: clamp(34px, 6vmin, 60px);
+  border-radius: 12px;
+  background: var(--accent-soft);
 }
 .topic-icon svg {
-  width: clamp(28px, 5vmin, 52px);
-  height: clamp(28px, 5vmin, 52px);
+  width: 68%;
+  height: 68%;
   color: var(--accent);
   display: block;
 }
-.level-grid {
+.pack-chip {
+  font: inherit;
+  justify-self: start;
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  max-width: 100%;
+  min-height: 2.5rem;
+  padding: 0.25em 0.8em 0.25em 0.3em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.pack-chip:hover {
+  border-color: var(--line-strong);
+}
+.pack-chip-icon {
+  flex: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.pack-chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pack-chip-draft {
+  flex: none;
+  padding: 0.1em 0.6em;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 800;
+}
+.level-panel {
+  display: grid;
+  align-content: start;
   gap: clamp(6px, 1vmin, 12px);
 }
+.level-panel .panel-title {
+  margin: 0;
+}
+/* levels as a list: stars on the left, number and name on the right, so no label ever wraps */
+.level-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(5px, 0.9vmin, 10px);
+}
 .level-card {
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  gap: 0.3em;
-  min-height: clamp(70px, 12vmin, 130px);
+  justify-content: flex-start;
+  gap: 0.8em;
+  min-height: clamp(44px, 7vmin, 76px);
+  padding: 0.3em 2.1em 0.3em 0.8em;
+}
+.level-card .chip-title {
+  white-space: nowrap;
+}
+.topic-card.chip-on::after,
+.level-card.chip-on::after {
+  top: 50%;
+  transform: translateY(-50%);
 }
 .level-stars svg {
-  width: clamp(64px, 12vmin, 130px);
+  width: clamp(64px, 10vmin, 120px);
   height: auto;
   display: block;
+}
+.level-panel .note-small {
+  margin: 0;
+}
+.level-panel .btn {
+  justify-self: start;
 }
 
 /* step 3: players */
@@ -763,10 +1033,12 @@ main.wiz-body {
   align-content: center;
   gap: 0.5em;
   padding: clamp(8px, 1.6vmin, 20px);
-  border-radius: 20px;
-  border: 4px solid var(--pc);
-  background: #f8fafc;
-  box-shadow: inset 0 clamp(6px, 1vmin, 12px) 0 var(--pc);
+  border-radius: var(--r-md);
+  border: 3px solid var(--pc);
+  background: #fff;
+  box-shadow:
+    inset 0 clamp(6px, 1vmin, 10px) 0 var(--pc),
+    var(--shadow-card);
 }
 .player-car svg {
   width: clamp(80px, 16vmin, 180px);
@@ -967,23 +1239,184 @@ main.wiz-body {
 .length-card {
   justify-content: center;
 }
+.count-card.chip-on::after,
+.length-card.chip-on::after {
+  top: 3px;
+  right: 3px;
+  width: 1.25em;
+  height: 1.25em;
+  font-size: 0.7rem;
+}
 .length-card .chip-title {
   font-size: clamp(20px, 4vmin, 40px);
   font-weight: 900;
 }
 
 /* ---------- teacher settings ---------- */
+.teacher-shell {
+  height: 100vh;
+  height: 100dvh;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(6px, 1.5vmin, 16px);
+  padding: clamp(8px, 1.6vmin, 20px) clamp(10px, 2.5vw, 40px);
+}
+.teacher-shell .topbar {
+  padding: 0;
+}
 .teacher-shell .topbar .brand h1 {
-  font-size: 1.6rem;
+  font-size: clamp(19px, 3.2vmin, 34px);
+  font-weight: 900;
+}
+main.teacher-main {
+  overflow: auto;
+  padding: clamp(12px, 2.2vmin, 28px);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-raised);
 }
 .teacher-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 1.6vw, 24px);
+  align-items: start;
+}
+.teacher-col {
+  display: grid;
+  gap: clamp(10px, 1.6vmin, 18px);
+}
+.teacher-col .group {
+  margin: 0;
+}
+.teacher-shell .group {
+  padding: 0.5rem 0.9rem 0.9rem;
+}
+.teacher-shell .group legend {
+  font-size: 1rem;
+}
+.teacher-shell .text-input {
+  max-width: 100%;
+}
+.teacher-shell .data-group p {
+  margin: 0.2rem 0 0.6rem;
+}
+.teacher-shell .pbd-note {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 0.85rem;
+  border-left: 0;
+  border-radius: var(--r-md);
+}
+.pbd-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  font-family: Georgia, serif;
 }
 .option-grid {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.5rem;
+}
+/* on/off rows with a switch on the right */
+.switch-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title control'
+    'desc desc';
+  align-items: center;
+  gap: 0.2em 0.8em;
+  min-height: 3rem;
+  padding: 0.45em 0.7em;
+  border: 2px solid var(--line);
+  border-radius: var(--r-sm);
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.switch-row:hover {
+  border-color: var(--line-strong);
+}
+.switch-row input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.switch-row:has(input:focus-visible) {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+.switch-label {
+  display: contents;
+}
+.switch-title {
+  grid-area: title;
+  font-weight: 800;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+.switch-desc {
+  grid-area: desc;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.switch-control {
+  grid-area: control;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.switch-state {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+  min-width: 2.4em;
+  text-align: right;
+}
+.switch-on .switch-state {
+  color: var(--accent);
+}
+.switch-track {
+  position: relative;
+  width: 2.9em;
+  height: 1.65em;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background-color 150ms ease;
+}
+.switch-knob {
+  position: absolute;
+  top: 0.2em;
+  left: 0.2em;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+  transition: transform 150ms ease;
+}
+.switch-on .switch-track {
+  background: var(--accent);
+}
+.switch-on .switch-knob {
+  transform: translateX(1.25em);
 }
 
 /* short tablet screens (1024x600): tighter spacing so every setup step fits without scrolling */

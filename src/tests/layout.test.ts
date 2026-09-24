@@ -172,3 +172,21 @@ describe('player identity palette', () => {
     expect(contrastRatio('#ffffff', '#ffffff')).toBeCloseTo(1, 5);
   });
 });
+
+describe('menu screen colours (DECISIONS #41)', () => {
+  // text colour, background colour, where it is used
+  const PAIRS: ReadonlyArray<readonly [string, string, string]> = [
+    ['#0f172a', '#ffffff', 'card and button text'],
+    ['#475569', '#ffffff', 'grey notes, switch Off'],
+    ['#1d4ed8', '#ffffff', 'text buttons, switch On'],
+    ['#1d4ed8', '#e8effe', 'selected card'],
+    ['#ffffff', '#1d4ed8', 'primary button, check badge'],
+    ['#92400e', '#fef3c7', 'draft pack label'],
+    ['#475569', '#f8fafc', 'pack chip text'],
+    ['#ffffff', '#10284f', 'stepper step'],
+    ['#ffffff', '#15803d', 'Mula button'],
+  ];
+  it.each(PAIRS)('%s on %s (%s) meets WCAG AA', (fg, bg) => {
+    expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+});

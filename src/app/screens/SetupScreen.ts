@@ -168,7 +168,7 @@ export class SetupScreen {
       { class: 'wiz-top' },
       h('button', {
         type: 'button',
-        class: 'btn',
+        class: 'btn btn-quiet',
         dataset: { key: 'setup-home', testid: 'setup-home' },
         text: `⌂ ${t('menu.home')}`,
         on: { click: () => this.deps.onHome() },
@@ -176,7 +176,7 @@ export class SetupScreen {
       h('h2', { class: 'wiz-title', text: t('setup.title') }),
       h('button', {
         type: 'button',
-        class: 'btn',
+        class: 'btn btn-quiet',
         dataset: { key: 'help', testid: 'help' },
         text: t('setup.help'),
         on: { click: () => this.deps.onHelp() },
@@ -329,7 +329,7 @@ export class SetupScreen {
           { class: 'inline-actions' },
           h('button', {
             type: 'button',
-            class: 'btn btn-small',
+            class: 'btn btn-text',
             text: t('setup.topics.all'),
             dataset: { key: 'topics-all', testid: 'topics-all' },
             on: {
@@ -342,7 +342,7 @@ export class SetupScreen {
           }),
           h('button', {
             type: 'button',
-            class: 'btn btn-small',
+            class: 'btn btn-text',
             text: t('setup.topics.none'),
             dataset: { key: 'topics-none', testid: 'topics-none' },
             on: {
@@ -354,11 +354,6 @@ export class SetupScreen {
           }),
         ),
       ),
-      h('p', {
-        class: 'note note-small',
-        dataset: { testid: 'pack-info' },
-        text: `${t('setup.pack')}: ${pickText(lang, pack.title)}. ${t('setup.packStatus', { version: pack.version })}`,
-      }),
       h(
         'div',
         { class: 'topic-grid' },
@@ -380,6 +375,29 @@ export class SetupScreen {
             },
           }),
         ),
+      ),
+      // The draft status stays on screen as a small chip; the full notice opens in a dialog (DECISIONS #41).
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'pack-chip',
+          dataset: { key: 'pack-info', testid: 'pack-info' },
+          aria: { label: `${t('setup.pack')}: ${pickText(lang, pack.title)}` },
+          on: {
+            click: () =>
+              contentDialog(t, t('setup.pack'), [
+                h('p', { class: 'dialog-message', text: pickText(lang, pack.title) }),
+                h('p', { text: t('setup.packStatus', { version: pack.version }) }),
+              ]),
+          },
+        },
+        h('span', { class: 'pack-chip-icon', aria: { hidden: true }, text: 'i' }),
+        h('span', { class: 'pack-chip-text', text: pickText(lang, pack.title) }),
+        h('span', {
+          class: 'pack-chip-draft',
+          text: t('setup.packDraft', { version: pack.version }),
+        }),
       ),
     );
     const levelPanel = h(

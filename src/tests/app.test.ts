@@ -201,6 +201,11 @@ describe('setup steps', () => {
     await click('year-2');
     expect(q('step-2')?.getAttribute('aria-current')).toBe('step');
     expect(q('pack-info')?.textContent).toContain('Matematik Tahun 2');
+    expect(q('pack-info')?.textContent).toContain('Draf v');
+    // the chip opens the full draft notice
+    await click('pack-info');
+    expect(q('content-dialog')?.textContent).toContain('belum disahkan');
+    await click('content-close');
     expect(q('topic-y2-fractions')).not.toBeNull();
     expect(q('topic-y1-money')).toBeNull();
   });

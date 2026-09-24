@@ -1,6 +1,6 @@
 import { createTranslator } from '../../locales';
 import type { Translator } from '../../locales';
-import { choice } from '../controls';
+import { switchRow } from '../controls';
 import { clear, h } from '../dom';
 import type { SetupState } from '../setupState';
 
@@ -54,14 +54,15 @@ export class TeacherScreen {
     label: Parameters<Translator>[0],
     get: () => boolean,
     set: (v: boolean) => void,
+    note?: Parameters<Translator>[0],
   ): HTMLElement {
-    return choice({
-      type: 'checkbox',
-      name: key,
+    return switchRow({
       key: `opt-${key}`,
       checked: get(),
       title: t(label),
-      className: 'card option-card',
+      description: note ? t(note) : undefined,
+      onText: t('teacher.on'),
+      offText: t('teacher.off'),
       onChange: (v) => {
         set(v);
         this.changed();
@@ -76,10 +77,11 @@ export class TeacherScreen {
     const t = createTranslator(s.language);
     clear(root);
 
-    const rules = h(
+    // Three groups (DECISIONS #41): how the game runs, help for pupils, and the session and its data.
+    const game = h(
       'fieldset',
       { class: 'group' },
-      h('legend', { text: t('setup.options') }),
+      h('legend', { text: t('teacher.group.game') }),
       h(
         'div',
         { class: 'option-grid' },
@@ -99,6 +101,35 @@ export class TeacherScreen {
         ),
         this.toggle(
           t,
+          'cruise',
+          'setup.cruise',
+          () => s.cruiseEnabled,
+          (v) => (s.cruiseEnabled = v),
+          s.cruiseEnabled ? 'setup.cruiseNote' : undefined,
+        ),
+        // The setback is part of the step race only, so it is offered only when cruise is off.
+        s.cruiseEnabled
+          ? null
+          : this.toggle(
+              t,
+              'setback',
+              'setup.setback',
+              () => s.setbackEnabled,
+              (v) => (s.setbackEnabled = v),
+              'setup.setbackNote',
+            ),
+      ),
+    );
+
+    const pupils = h(
+      'fieldset',
+      { class: 'group' },
+      h('legend', { text: t('teacher.group.pupils') }),
+      h(
+        'div',
+        { class: 'option-grid' },
+        this.toggle(
+          t,
           'hints',
           'setup.hints',
           () => s.hintsEnabled,
@@ -110,30 +141,9 @@ export class TeacherScreen {
           'setup.support',
           () => s.supportEnabled,
           (v) => (s.supportEnabled = v),
+          'setup.supportNote',
         ),
-        this.toggle(
-          t,
-          'cruise',
-          'setup.cruise',
-          () => s.cruiseEnabled,
-          (v) => (s.cruiseEnabled = v),
-        ),
-        // The setback is part of the step race only, so it is offered only when cruise is off.
-        s.cruiseEnabled
-          ? null
-          : this.toggle(
-              t,
-              'setback',
-              'setup.setback',
-              () => s.setbackEnabled,
-              (v) => (s.setbackEnabled = v),
-            ),
       ),
-      h('p', { class: 'note note-small', text: t('setup.supportNote') }),
-      h('p', {
-        class: 'note note-small',
-        text: t(s.cruiseEnabled ? 'setup.cruiseNote' : 'setup.setbackNote'),
-      }),
     );
 
     const session = h(
@@ -179,14 +189,14 @@ export class TeacherScreen {
     root.appendChild(
       h(
         'div',
-        { class: 'app-shell teacher-shell' },
+        { class: 'teacher-shell' },
         h('a', { class: 'skip-link', href: '#main', text: t('app.skipToMain') }),
         h(
           'header',
           { class: 'topbar' },
           h('button', {
             type: 'button',
-            class: 'btn',
+            class: 'btn btn-quiet',
             dataset: { key: 'teacher-back', testid: 'teacher-back' },
             text: `◀ ${t('teacher.back')}`,
             on: { click: () => this.deps.onBack() },
@@ -197,7 +207,7 @@ export class TeacherScreen {
             { class: 'top-actions' },
             h('button', {
               type: 'button',
-              class: 'btn',
+              class: 'btn btn-quiet',
               dataset: { key: 'help', testid: 'help' },
               text: t('setup.help'),
               on: { click: () => this.deps.onHelp() },
@@ -208,12 +218,23 @@ export class TeacherScreen {
           'main',
           { id: 'main', tabindex: -1, class: 'teacher-main' },
           h('h2', { class: 'visually-hidden', text: t('teacher.title') }),
-          h('div', { class: 'teacher-grid' }, h('div', {}, rules), h('div', {}, session, data)),
-          h('p', {
-            class: 'pbd-note',
-            dataset: { testid: 'pbd-notice' },
-            text: t('setup.pbdNotice'),
-          }),
+          h(
+            'div',
+            { class: 'teacher-grid' },
+            h('div', { class: 'teacher-col' }, game),
+            h('div', { class: 'teacher-col' }, pupils, data),
+            h(
+              'div',
+              { class: 'teacher-col' },
+              session,
+              h(
+                'p',
+                { class: 'pbd-note', dataset: { testid: 'pbd-notice' } },
+                h('span', { class: 'pbd-icon', aria: { hidden: true }, text: 'i' }),
+                h('span', { text: t('setup.pbdNotice') }),
+              ),
+            ),
+          ),
         ),
       ),
     );

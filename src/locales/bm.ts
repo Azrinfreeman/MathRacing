@@ -29,6 +29,7 @@ export const bm = {
   'setup.year.2': 'Tahun 2',
   'setup.pack': 'Pek kurikulum aktif',
   'setup.packStatus': 'Draf: belum disahkan oleh pengulas akademik. Versi {version}.',
+  'setup.packDraft': 'Draf v{version}',
   'setup.topics': 'Topik',
   'setup.topics.hint': 'Pilih satu topik, atau beberapa topik untuk lumba campuran.',
   'setup.topics.all': 'Pilih semua',
@@ -115,6 +116,10 @@ export const bm = {
   'teacher.title': 'Tetapan guru',
   'teacher.back': 'Menu',
   'teacher.session': 'Sesi',
+  'teacher.group.game': 'Permainan',
+  'teacher.group.pupils': 'Bantuan murid',
+  'teacher.on': 'Hidup',
+  'teacher.off': 'Mati',
 
   'setup.pbdNotice':
     'MathRacing menyediakan bukti untuk Pentaksiran Bilik Darjah (PBD). Ia tidak menetapkan Tahap Penguasaan (TP); guru membuat pertimbangan profesional.',

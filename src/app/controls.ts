@@ -43,6 +43,45 @@ export function choice(opts: {
   );
 }
 
+/**
+ * An on/off option as a row with a switch on the right (teacher settings). A real checkbox (role switch) stretched
+ * over the row, so it works with touch, mouse, keyboard and screen readers; the knob position and the "On/Off"
+ * word show the state, never colour alone.
+ */
+export function switchRow(opts: {
+  key: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description?: string;
+  onText: string;
+  offText: string;
+}): HTMLElement {
+  return h(
+    'label',
+    { class: `switch-row${opts.checked ? ' switch-on' : ''}` },
+    h('input', {
+      type: 'checkbox',
+      role: 'switch',
+      checked: opts.checked,
+      dataset: { key: opts.key, testid: opts.key },
+      on: { change: (e) => opts.onChange((e.target as HTMLInputElement).checked) },
+    }),
+    h(
+      'span',
+      { class: 'switch-label' },
+      h('span', { class: 'switch-title', text: opts.title }),
+      opts.description ? h('span', { class: 'switch-desc', text: opts.description }) : null,
+    ),
+    h(
+      'span',
+      { class: 'switch-control', aria: { hidden: true } },
+      h('span', { class: 'switch-state', text: opts.checked ? opts.onText : opts.offText }),
+      h('span', { class: 'switch-track' }, h('span', { class: 'switch-knob' })),
+    ),
+  );
+}
+
 /** The BM / EN switch used in screen headers. */
 export function languageSwitch(
   t: Translator,
