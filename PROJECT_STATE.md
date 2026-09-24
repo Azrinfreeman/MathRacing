@@ -1,6 +1,7 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
-Updated 2026-09-24. Working tree clean at the time of writing; latest feature: racer choice (DECISIONS #39).
+Updated 2026-09-25. Working tree clean at the time of writing; latest feature: "Kira & taip" questions (DECISIONS #42);
+version 1.2.0 (Android versionCode 3).
 
 ## What exists
 
@@ -14,9 +15,9 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 
 - `npm run check`: agents check, lint, typecheck, 554 unit tests, build all green.
 - `npm run test:e2e`: 38/38 green (about 7 min).
-- `npm run apk`: builds `output/apk/MathRacing-<version>-<date>-debug.apk` (git-ignored). Last one:
-  `MathRacing-1.0.0-20260924-0857-debug.apk`, sent to the owner. Not yet run on a real Android device here
-  (no device or emulator connected to this PC).
+- `npm run apk:release`: signed release APK in `output/apk/` (git-ignored). Latest sent to the owner:
+  `MathRacing-1.2.0-20260925-0613-release.apk` (versionCode 3; installs over 1.0/1.1 release builds). Not run on a
+  real Android device here (no device or emulator on this PC). `npm run apk` still builds a debug APK.
 - Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#42).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
@@ -86,8 +87,9 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Release (DECISIONS #40): `npm run apk:release` signs with `android/keystore.properties` (owner-made, git-ignored;
   README "Release APK"). Release key created 2026-09-24 at
   `C:/Users/azrin/mathracing-release.jks` (alias `mathracing`, CN=MathRacing, SHA-256 `a26b10a3...63d`); the password
-  is only in `android/keystore.properties`. First release APK: `MathRacing-1.0.0-20260924-2053-release.apk`.
-  Owner must back up both files off this PC.
+  is only in `android/keystore.properties`. Owner must back up both files off this PC.
+- Every release: raise `version` in `package.json` and `versionCode`/`versionName` in `android/app/build.gradle`
+  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip), then `npm run apk:release`.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35, `docs/PLAN-splash-menu-setup.md`)
@@ -103,8 +105,9 @@ finds player 1's car nose for position checks. New spec: `e2e/cruise.spec.ts`.
 
 - **Dev server is not running.** Start with `npm run dev`. Claude's in-app browser cannot animate: check animation
   in real Chrome or via Playwright.
-- Owner has not reported results from the APK on a tablet/smartboard yet. Possible follow-ups: navigation bar still
-  visible on some devices (immersive mode), keep-screen-on, pace tuning of `DEFAULT_CRUISE`.
+- Owner has tested on a small Android tablet (photo of setup step 2, which led to #41) but has not reported on races
+  with the new questions yet. Tablet model/size unknown; the owner keeps the Android navigation bar visible (no
+  immersive mode). Possible follow-ups: keep-screen-on, pace tuning of `DEFAULT_CRUISE`, smaller Year 2 block ranges.
 - Real five-finger hardware not validated: run `docs/MANUAL-TOUCH-TEST.md` on the target panel.
 - Curriculum packs are `draft-pending-academic-review`; no SP codes exist (never invent them).
 - Cooperative/team mode, clock-setting widget, shape drawing, Year 1 "2027 pack" not built. No animal sounds (owner: no).
@@ -116,11 +119,12 @@ finds player 1's car nose for position checks. New spec: `e2e/cruise.spec.ts`.
 - Wants low token use and no repeated work: follow the "cheapest check" table in `AGENTS.md`; read ranges, not whole files.
 - Commits: one per logical step, trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Cares that animation is visible on tablets/smartboards; verify visual changes with Playwright screenshots.
-- Deliver test builds as an APK (`npm run apk`), sent as a file.
+- Deliver builds as a signed release APK (`npm run apk:release`), sent as a file.
 - Pronouns: use they/them unless stated.
 
 ## Likely next requests (none started)
 
-- Feedback from testing the APK on the tablet and smartboard; tuning pace, sizes, colours.
-- Release signing / Play Store or managed install; Capacitor 8 upgrade.
+- Feedback from races on the tablet and smartboard: question difficulty and ranges, keypad size, pace, colours.
+- Restyling the race and results screens to match the menu look (#41 covered menu screens only).
+- Play Store or managed install; Capacitor 8 upgrade.
 - Manual touch protocol; curriculum review.
