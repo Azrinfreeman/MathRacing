@@ -141,6 +141,17 @@ export class PanelView {
     this.dirty = true;
   }
 
+  /** Cruise: this pupil has not answered for a while and the car crawls. A private, friendly nudge. */
+  showIdle(): void {
+    if (this.feedback.kind === 'hint') return; // the hint is more useful; keep it
+    this.feedback = {
+      kind: 'tryAgain',
+      text: this.t('race.idle'),
+      until: Number.POSITIVE_INFINITY,
+    };
+    this.dirty = true;
+  }
+
   showHint(hint: string): void {
     this.feedback = { kind: 'hint', text: hint, until: Number.POSITIVE_INFINITY };
     this.dirty = true;

@@ -59,7 +59,7 @@ export const bm = {
   'setup.setback': 'Kenderaan undur satu langkah selepas 3 kali salah (Lumba Pantas)',
   'setup.cruise': 'Kenderaan bergerak sendiri (jawapan betul memecut, salah memperlahan)',
   'setup.cruiseNote':
-    'Semua kenderaan bergerak ke hadapan pada kelajuan yang sama. Jawapan betul memberi pecutan; jawapan salah memperlahankan kenderaan seketika, tidak pernah mengundur. Tutup untuk lumba langkah demi langkah.',
+    'Semua kenderaan bergerak ke hadapan pada kelajuan yang sama. Jawapan betul memberi pecutan; jawapan salah memperlahankan kenderaan seketika, tidak pernah mengundur. Kenderaan murid yang tidak menjawab selama 10 saat bergerak sangat perlahan. Tutup untuk lumba langkah demi langkah.',
   'setup.setbackNote':
     'Undur hanya sekali bagi setiap soalan, tidak pernah lebih rendah daripada garisan mula, dan tidak berlaku dalam mod Latihan. Peraturan sama untuk semua murid dan direkodkan untuk guru.',
   'setup.supportNote':
@@ -128,6 +128,7 @@ export const bm = {
   'race.setback': 'Undur 1 langkah. Cuba lagi!',
   'race.boost': 'Betul! Laju!',
   'race.slowed': 'Perlahan sikit. Cuba lagi!',
+  'race.idle': 'Jawab untuk memecut!',
   'race.correct': 'Betul!',
   'race.simpler': 'Soalan lebih mudah',
   'race.done': 'Siap!',
@@ -179,7 +180,7 @@ export const bm = {
   'help.how.1':
     'Setiap murid berdiri di hadapan kotaknya dan menjawab soalan sendiri pada masa yang sama.',
   'help.how.2':
-    'Semua kenderaan bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut kenderaan murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur).',
+    'Semua kenderaan bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut kenderaan murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur). Jika murid berhenti menjawab, kenderaannya bergerak sangat perlahan.',
   'help.how.3':
     'Selepas 2 kali salah, satu petunjuk kecil muncul. Selepas 3 kali salah, sokongan boleh ditawarkan.',
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',

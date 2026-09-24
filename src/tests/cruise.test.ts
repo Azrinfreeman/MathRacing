@@ -5,6 +5,7 @@ import {
   applyBoost,
   applySlow,
   DEFAULT_CRUISE,
+  noteAnswer,
   speedAt,
   speedStateAt,
 } from '../game/core/cruise';
@@ -15,8 +16,18 @@ const C: CruiseConfig = {
   boostMs: 500,
   slowFactor: 0.5,
   slowMs: 1000,
+  // The crawl has its own tests below (config I); here it never starts.
+  idleAfterMs: 1e12,
+  idleFactor: 0.25,
 };
-const body = (distance = 0): CruiseBody => ({ distance, boostLeft: 0, slowUntilMs: 0 });
+/** Crawls after 2 s without an answer, at a quarter of the pace. */
+const I: CruiseConfig = { ...C, idleAfterMs: 2000, idleFactor: 0.25 };
+const body = (distance = 0, idleFromMs = Infinity): CruiseBody => ({
+  distance,
+  boostLeft: 0,
+  slowUntilMs: 0,
+  idleFromMs,
+});
 
 /** Advance in frames of `frameMs` from `from` to `to`; returns the crossing time, if any. */
 function run(
@@ -120,10 +131,71 @@ describe('cruise movement', () => {
     }
   });
 
+  it('crawls from idleAfterMs without an answer; any answer ends the crawl', () => {
+    const b = body(0, 2000);
+    expect(speedStateAt(b, 1999)).toBe('cruise');
+    advanceCruise(b, 0, 4000, 100, I);
+    expect(b.distance).toBeCloseTo(2 + 0.5, 10);
+    expect(speedStateAt(b, 4000)).toBe('crawl');
+    noteAnswer(b, 4000, I);
+    expect(speedStateAt(b, 4000)).toBe('cruise');
+    advanceCruise(b, 4000, 7000, 100, I);
+    expect(b.distance).toBeCloseTo(2.5 + 2 + 0.25, 10);
+  });
+
+  it('a wrong answer while crawling slows for a moment, then returns to full pace, not the crawl', () => {
+    const b = body(0, 0);
+    applySlow(b, 0, I);
+    expect(speedStateAt(b, 0)).toBe('slow');
+    advanceCruise(b, 0, 2000, 100, I);
+    expect(b.distance).toBeCloseTo(0.5 + 1, 10);
+    expect(speedStateAt(b, 2000)).toBe('crawl'); // 2 s after that answer: idle again
+  });
+
+  it('a correct answer while crawling boosts at once', () => {
+    const b = body(0, 0);
+    applyBoost(b, 0, I);
+    expect(speedStateAt(b, 0)).toBe('boost');
+    advanceCruise(b, 0, 1000, 100, I);
+    expect(b.distance).toBeCloseTo(1 + 1, 10);
+  });
+
+  it('with the crawl, the result is still identical however time is sliced into frames', () => {
+    const script = (frameMs: number): number => {
+      const b = body(0, 2000);
+      const run2 = (from: number, to: number): void => {
+        for (let t = from; t < to; t += frameMs)
+          advanceCruise(b, t, Math.min(to, t + frameMs), 100, I);
+      };
+      run2(0, 3333);
+      applySlow(b, 3333, I);
+      run2(3333, 7777);
+      applyBoost(b, 7777, I);
+      run2(7777, 12000);
+      return b.distance;
+    };
+    const whole = script(100000);
+    for (const frame of [1000 / 30, 1000 / 60, 1000 / 144, 7]) {
+      expect(script(frame)).toBeCloseTo(whole, 9);
+    }
+  });
+
+  it('defaults: a pupil who never answers is far slower than one who only answers wrongly', () => {
+    const idle = body(0, DEFAULT_CRUISE.idleAfterMs);
+    advanceCruise(idle, 0, 120000, 100, DEFAULT_CRUISE);
+    const guesser = body(0, DEFAULT_CRUISE.idleAfterMs);
+    for (let t = 0; t < 120000; t += 8000) {
+      applySlow(guesser, t, DEFAULT_CRUISE);
+      advanceCruise(guesser, t, t + 8000, 100, DEFAULT_CRUISE);
+    }
+    expect(idle.distance).toBeLessThan(2.5); // about 0.67 + 110 s at a crawl
+    expect(guesser.distance).toBeGreaterThan(idle.distance * 2);
+  });
+
   it('defaults: doing nothing never beats trying (1 right in 6 still beats idling)', () => {
-    const idle = body();
+    const idle = body(0, DEFAULT_CRUISE.idleAfterMs);
     advanceCruise(idle, 0, 60000, 100, DEFAULT_CRUISE);
-    const trier = body();
+    const trier = body(0, DEFAULT_CRUISE.idleAfterMs);
     let t = 0;
     for (let i = 0; i < 5; i++) {
       advanceCruise(trier, t, t + 3000, 100, DEFAULT_CRUISE);

@@ -4,7 +4,7 @@
 
 ## e2e/
 
-- `cruise.spec.ts` (126): cruise: cars drive on their own
+- `cruise.spec.ts` (150): cruise: cars drive on their own
 - `mathracing.spec.ts` (576): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
 - `setback.spec.ts` (169): setback after 3 wrong answers
 - `support.ts` (267): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
@@ -80,24 +80,24 @@
 ## src/game/core/
 
 - `InputOwnership.ts` (90): PanelId, PointerDownResult, PointerUpResult, InputOwnership
-- `RaceEngine.ts` (663): RaceEngineOptions, RaceConfigError, RaceEngine
-- `RaceState.ts` (292): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
+- `RaceEngine.ts` (680): RaceEngineOptions, RaceConfigError, RaceEngine
+- `RaceState.ts` (297): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
 - `SeededRng.ts` (114): Rng, SeededRng, createSessionSeed
-- `cruise.ts` (109): CruiseConfig, DEFAULT_CRUISE, SpeedState, CruiseBody, boostRate, speedAt, speedStateAt, applyBoost, applySlow, advanceCruise
+- `cruise.ts` (132): CruiseConfig, DEFAULT_CRUISE, SpeedState, CruiseBody, boostRate, speedAt, speedStateAt, noteAnswer, applyBoost, applySlow, advanceCruise
 - `players.ts` (112): SymbolId, VehicleId, PlayerStyle, MAX_PLAYERS, MIN_PLAYERS, PLAYER_STYLES, styleForSlot, relativeLuminance, contrastRatio, defaultPlayerName
 
 ## src/game/scenes/
 
 - `BootScene.ts` (15): BootScene
-- `RaceScene.ts` (174): RaceScene
+- `RaceScene.ts` (178): RaceScene
 - `ReadyScene.ts` (80): ReadyScene
 - `StageScene.ts` (209): StageScene
 
 ## src/game/ui/
 
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
-- `PanelView.ts` (711): PanelAction, PanelMode, PanelView
-- `TrackView.ts` (742): TrackPlayer, TrackView
+- `PanelView.ts` (722): PanelAction, PanelMode, PanelView
+- `TrackView.ts` (746): TrackPlayer, TrackView
 - `VisualRenderer.ts` (845): drawVisual
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (109): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones
@@ -118,8 +118,8 @@
 
 ## src/locales/
 
-- `bm.ts` (204): bm, MessageKey
-- `en.ts` (201): en
+- `bm.ts` (205): bm, MessageKey
+- `en.ts` (202): en
 - `index.ts` (33): Params, Translator, translate, createTranslator, ALL_MESSAGE_KEYS
 
 ## src/
@@ -141,15 +141,15 @@
 
 - `answers.test.ts` (169): normalizeDecimal, senToRmText, evaluateAnswer
 - `app.test.ts` (542): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
-- `cruise.test.ts` (137): cruise movement
+- `cruise.test.ts` (209): cruise movement
 - `curriculum.test.ts` (334): curriculum registry, number words
 - `helpers.ts` (20): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
 - `layout.test.ts` (174): geometry helpers, stage layout, player identity palette
 - `locales.test.ts` (53): locales
-- `motion.test.ts` (247): CarMotion, CarMotion follow mode (cruise)
+- `motion.test.ts` (255): CarMotion, CarMotion follow mode (cruise)
 - `pointerRouter.test.ts` (150): PointerRouter
-- `raceEngine.test.ts` (885): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint, RaceEngine cruise movement
+- `raceEngine.test.ts` (967): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint, RaceEngine cruise movement, RaceEngine cruise: idle crawl
 - `seededRng.test.ts` (95): SeededRng
 - `splash.test.ts` (90): launch splash
 - `stateMachine.test.ts` (60): SessionStateMachine

@@ -1,6 +1,8 @@
 # Implementation plan: idle crawl (a car that is not being answered slows to a crawl)
 
-Status: **proposal, not implemented.** Builds on cruise movement (DECISIONS #36, `docs/PLAN-cruise-boost.md`). Section 6 lists the decisions that are yours; the plan follows the recommended answer for each.
+Status: **implemented** (DECISIONS #37). The owner approved every recommended answer in section 6 ("proceed"). Deviation: the crawling car also keeps its rocket flame off, like a slowed car.
+
+Original status: proposal. Builds on cruise movement (DECISIONS #36, `docs/PLAN-cruise-boost.md`). Section 6 lists the decisions that are yours; the plan follows the recommended answer for each.
 
 ## 1. What is being asked
 

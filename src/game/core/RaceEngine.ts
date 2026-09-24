@@ -2,7 +2,7 @@ import { evaluateAnswer } from '../../curriculum/answers';
 import type { QuestionSource } from '../../curriculum/blueprint';
 import type { GeneratedQuestion, SubmittedAnswer } from '../../curriculum/schema';
 import type { SpeedState } from './cruise';
-import { advanceCruise, applyBoost, applySlow, speedStateAt } from './cruise';
+import { advanceCruise, applyBoost, applySlow, noteAnswer, speedStateAt } from './cruise';
 import type {
   AttemptOutcome,
   AttemptRecord,
@@ -84,6 +84,8 @@ export class RaceEngine {
       distance: 0,
       boostLeft: 0,
       slowUntilMs: 0,
+      idleFromMs: Infinity,
+      crawlNoticed: false,
       totalSlowdowns: 0,
       lastCorrectAtMs: null,
       phase: 'answering',
@@ -171,7 +173,10 @@ export class RaceEngine {
   start(atMs: number): void {
     this.machine.transition('RACING');
     this.integratedToMs = atMs;
-    for (const p of this.playerStates) this.dealNext(p, atMs);
+    for (const p of this.playerStates) {
+      noteAnswer(p, atMs, this.config.cruise);
+      this.dealNext(p, atMs);
+    }
     this.emit({ type: 'started', atMs });
   }
 
@@ -193,6 +198,8 @@ export class RaceEngine {
         if (p.firstActionAtMs !== null) p.firstActionAtMs += delta;
         if (p.resolveAtMs !== null) p.resolveAtMs += delta;
         if (p.slowUntilMs > pausedAt) p.slowUntilMs += delta;
+        // A pause never counts as idling.
+        if (p.idleFromMs > pausedAt) p.idleFromMs += delta;
       }
       // Cruise: the paused stretch is skipped; the stretch before the pause is still integrated next tick.
       if (this.integratedToMs <= pausedAt) this.integratedToMs += delta;
@@ -292,6 +299,7 @@ export class RaceEngine {
     // Cruise effects start no earlier than the time every car is already integrated to (a pointer event
     // can be stamped slightly before the last frame), so distance already travelled is never rewritten.
     const effectAt = Math.max(atMs, this.integratedToMs);
+    p.crawlNoticed = false;
 
     if (!evaluation.correct) {
       if (setback) {
@@ -459,6 +467,11 @@ export class RaceEngine {
       return false;
     }
     this.closeOpenItem(p, atMs, 'replaced');
+    if (this.cruising) {
+      // Asking for an easier item is engaging too: it ends any crawl.
+      noteAnswer(p, Math.max(atMs, this.integratedToMs), this.config.cruise);
+      p.crawlNoticed = false;
+    }
     p.simplerRequests += 1;
     p.supportCount += 1;
     const next = this.source.simpler(p.id, p.itemIndex, p.simplerRequests);
@@ -538,6 +551,10 @@ export class RaceEngine {
         this.emit({ type: 'progress', playerId: p.id, progress, target: last });
       }
       if (at !== null) arrivals.push({ p, slot, at });
+      else if (!p.crawlNoticed && speedStateAt(p, atMs) === 'crawl') {
+        p.crawlNoticed = true;
+        this.emit({ type: 'crawling', playerId: p.id });
+      }
     });
     // A tie (crossings within a microsecond, so float rounding never decides): more correct answers, then
     // the earlier last correct answer, then slot order.

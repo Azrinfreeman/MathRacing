@@ -122,6 +122,10 @@ export type PlayerRaceState = {
   boostLeft: number;
   /** Cruise: the car is slowed while time is before this. */
   slowUntilMs: number;
+  /** Cruise: the car crawls from this time on (the last answer plus `idleAfterMs`). */
+  idleFromMs: number;
+  /** Cruise: the 'crawling' event was sent for the current idle spell. */
+  crawlNoticed: boolean;
   /** Cruise: wrong answers that slowed the car (teacher evidence only). */
   totalSlowdowns: number;
   lastCorrectAtMs: number | null;
@@ -270,6 +274,7 @@ export type RaceEvent =
   | { type: 'setback'; playerId: string; from: number; progress: number }
   | { type: 'boost'; playerId: string }
   | { type: 'slowed'; playerId: string }
+  | { type: 'crawling'; playerId: string }
   | { type: 'hint'; playerId: string; hint: string }
   | { type: 'support'; playerId: string; kind: 'visual' | 'simpler-offered' }
   | { type: 'winner'; playerId: string; atMs: number; revised: boolean }

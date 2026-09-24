@@ -708,7 +708,16 @@ describe('RaceEngine with the real question blueprint', () => {
 
 describe('RaceEngine cruise movement', () => {
   // Round numbers: 1 step per second, a boost adds 1 step over 0.5 s, a slow-down halves speed for 1 s.
-  const CRUISE = { cruiseStepMs: 1000, boostSteps: 1, boostMs: 500, slowFactor: 0.5, slowMs: 1000 };
+  // The crawl never starts here; it has its own describe block below.
+  const CRUISE = {
+    cruiseStepMs: 1000,
+    boostSteps: 1,
+    boostMs: 500,
+    slowFactor: 0.5,
+    slowMs: 1000,
+    idleAfterMs: 1e9,
+    idleFactor: 0.25,
+  };
   const cruising = (overrides: Partial<RaceConfig> = {}): RaceEngine => {
     const engine = ready(config({ movement: 'cruise', cruise: CRUISE, ...overrides }));
     engine.start(0);
@@ -881,5 +890,78 @@ describe('RaceEngine cruise movement', () => {
     expect(engine.speedState('p1')).toBe('stopped');
     expect(engine.player('p1')).toMatchObject({ progress: 1, distance: 1 });
     expect(engine.attempts[0]?.speedEffect).toBe('none');
+  });
+});
+
+describe('RaceEngine cruise: idle crawl', () => {
+  // 1 step per second; after 2 s without an answer a car crawls at a quarter of the pace.
+  const IDLE = {
+    cruiseStepMs: 1000,
+    boostSteps: 1,
+    boostMs: 500,
+    slowFactor: 0.5,
+    slowMs: 1000,
+    idleAfterMs: 2000,
+    idleFactor: 0.25,
+  };
+  const crawling = (): { engine: RaceEngine; events: RaceEvent[] } => {
+    const engine = ready(config({ movement: 'cruise', cruise: IDLE, raceLength: 10 }));
+    const events: RaceEvent[] = [];
+    engine.on((e) => events.push(e));
+    engine.start(0);
+    return { engine, events };
+  };
+  const crawlEvents = (events: RaceEvent[], id: string): number =>
+    events.filter((e) => e.type === 'crawling' && e.playerId === id).length;
+
+  it('when nobody answers, every car crawls after idleAfterMs but still moves', () => {
+    const { engine, events } = crawling();
+    engine.tick(4000);
+    expect(engine.players.map((p) => p.distance)).toEqual([2.5, 2.5, 2.5]);
+    expect(engine.players.map((p) => engine.speedState(p.id))).toEqual(['crawl', 'crawl', 'crawl']);
+    expect(events.filter((e) => e.type === 'crawling')).toHaveLength(3);
+  });
+
+  it('a pupil who keeps answering keeps full pace while an idle one crawls', () => {
+    const { engine } = crawling();
+    engine.submit('p1', WRONG, 1900); // slowed 1900-2900, idle only from 3900
+    engine.tick(3000);
+    expect(engine.player('p1')?.distance).toBeCloseTo(1.9 + 0.5 + 0.1, 10);
+    expect(engine.player('p2')?.distance).toBeCloseTo(2 + 0.25, 10);
+    expect(engine.speedState('p1')).toBe('cruise');
+    expect(engine.speedState('p2')).toBe('crawl');
+  });
+
+  it('sends one crawling event per idle spell', () => {
+    const { engine, events } = crawling();
+    engine.tick(2500);
+    engine.tick(3000);
+    expect(crawlEvents(events, 'p1')).toBe(1);
+    engine.submit('p1', WRONG, 3000);
+    engine.tick(4500);
+    expect(crawlEvents(events, 'p1')).toBe(1);
+    engine.tick(5500); // idle again from 5000
+    expect(crawlEvents(events, 'p1')).toBe(2);
+  });
+
+  it('a pause never counts as idling', () => {
+    const { engine } = crawling();
+    engine.tick(1000);
+    engine.pause(1000);
+    engine.resume(11000);
+    engine.tick(11900);
+    expect(engine.player('p1')?.distance).toBeCloseTo(1.9, 10);
+    expect(engine.speedState('p1')).toBe('cruise');
+    engine.tick(13000);
+    expect(engine.speedState('p1')).toBe('crawl');
+  });
+
+  it('asking for a simpler item also ends the crawl', () => {
+    const { engine } = crawling();
+    for (const at of [100, 200, 300]) engine.submit('p1', WRONG, at);
+    engine.tick(2500);
+    expect(engine.speedState('p1')).toBe('crawl');
+    expect(engine.requestSimpler('p1', 2500)).toBe(true);
+    expect(engine.speedState('p1')).toBe('cruise');
   });
 });

@@ -123,4 +123,28 @@ test.describe('cruise: cars drive on their own', () => {
     expect(await rocketNoseX(page, geo)).toBeGreaterThan(geo.markXs[0] ?? 0);
     expect(errors).toEqual([]);
   });
+
+  test('a car whose pupil stops answering crawls; one answer brings full speed back', async ({
+    page,
+  }) => {
+    const errors = await freshPage(page);
+    const o = { ...BASE, seed: 'E2E-CRUISE-IDLE' };
+    await fillSetup(page, o);
+    await startRace(page);
+    const vp = viewport(page);
+    const geo = computeTrackGeometry(computeStageLayout(vp.w, vp.h, 2).track, 2, o.length);
+    // After 10 s without an answer the car crawls at a fifth of the pace: 4 s of crawling moves it about
+    // 0.05 steps, where cruising would move it about 0.27 steps.
+    await page.waitForTimeout(11_000);
+    const before = await rocketNoseX(page, geo);
+    await page.waitForTimeout(4000);
+    const after = await rocketNoseX(page, geo);
+    await page.screenshot({ path: `${SHOTS}/12-cruise-idle-crawl.png` });
+    expect(after).toBeGreaterThanOrEqual(before);
+    expect(after - before).toBeLessThan(geo.stepPx * 0.14);
+    await clickTaps(page, tapPlan(questionSource(o).question('p1', 0), vp, 2, 0));
+    await page.waitForTimeout(1600);
+    expect(await rocketNoseX(page, geo)).toBeGreaterThan(after + geo.stepPx * 0.9);
+    expect(errors).toEqual([]);
+  });
 });

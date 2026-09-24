@@ -220,6 +220,14 @@ describe('CarMotion follow mode (cruise)', () => {
     }
   });
 
+  it('a crawling car still reads as driving forward and never settles to a stop', () => {
+    const m = new CarMotion();
+    const d = cruise(m, 0, 1 / 75, 3000, 'crawl');
+    expect(m.direction).toBe('forward');
+    expect(m.velocity).toBeGreaterThan(0);
+    expect(m.progress).toBeLessThan(d);
+  });
+
   it('catches up without overshooting when the target stops at the finish', () => {
     const m = new CarMotion();
     const d = cruise(m, 0, 0.9, 1500, 'boost');

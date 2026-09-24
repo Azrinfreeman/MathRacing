@@ -59,6 +59,10 @@ export class RaceScene extends StageScene {
         this.track.flash(event.playerId);
         break;
       }
+      case 'crawling': {
+        this.panelById(event.playerId)?.showIdle();
+        break;
+      }
       case 'setback': {
         // The car rolls backward; the panel's step counter and pips follow the new position.
         this.track.setProgress(event.playerId, event.progress);

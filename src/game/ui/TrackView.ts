@@ -589,7 +589,11 @@ export class TrackView {
     const vehicle: VehicleId = style.vehicle;
     switch (vehicle) {
       case 'rocket':
-        if (pose.direction === 'forward' && pose.speedState !== 'slow') {
+        if (
+          pose.direction === 'forward' &&
+          pose.speedState !== 'slow' &&
+          pose.speedState !== 'crawl'
+        ) {
           // The flame grows with speed (and is long while boosting), so a correct answer is visible.
           const boost = pose.speedState === 'boost' ? 0.3 : 0;
           const f =
