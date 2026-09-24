@@ -121,8 +121,8 @@ export const bm = {
   'ready.waiting': 'Menunggu semua pemain...',
   'ready.go': 'Mula!',
 
-  'race.pause': 'Jeda',
-  'race.holdToPause': 'Tekan lama untuk jeda',
+  'race.pause': 'Henti',
+  'race.holdToPause': 'Tekan lama untuk berhenti',
   'race.submit': 'Hantar',
   'race.tryAgain': 'Cuba lagi.',
   'race.setback': 'Undur 1 langkah. Cuba lagi!',
@@ -140,11 +140,11 @@ export const bm = {
   'race.step': '{n} / {total}',
   'race.total': 'Jumlah',
 
-  'pause.title': 'Perlumbaan dijeda',
+  'pause.title': 'Perlumbaan dihentikan seketika',
   'pause.resume': 'Sambung',
   'pause.end': 'Tamatkan lumba',
   'pause.exit': 'Keluar ke persediaan',
-  'pause.help': 'Jawapan yang sedang ditaip disimpan. Masa jeda tidak dikira.',
+  'pause.help': 'Jawapan yang sedang ditaip disimpan. Masa berhenti tidak dikira.',
 
   'results.title': 'Keputusan',
   'results.winner': '{name} menang!',
@@ -186,7 +186,7 @@ export const bm = {
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',
   'help.teacher.title': 'Untuk guru',
   'help.teacher.1':
-    'Tekan lama butang Jeda di bahagian atas trek, atau tekan kekunci Esc, untuk menjeda perlumbaan.',
+    'Tekan lama butang Henti di bahagian atas trek, atau tekan kekunci Esc, untuk menghentikan perlumbaan seketika.',
   'help.teacher.2':
     'Selepas perlumbaan, buka "Papar bukti guru" untuk melihat rekod. Eksport CSV tersedia.',
   'help.teacher.3':

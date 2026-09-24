@@ -51,7 +51,7 @@ npx playwright install chromium
 2. **Splash and menu:** the app opens with a short splash, then the main menu: **Main** (Lumba Pantas), **Latihan** (practice, no winner), **Main semula** (repeat the last setup) and, in the corner, **Tetapan guru** (sound, reduce motion, hints, support, cruise or step race with setback, session seed, local data).
 3. **Setup in four steps:** **Tahun** (tap a year), **Topik & Tahap** (topic cards and 1-4 star levels; **Pratonton 5 soalan** shows five sample questions with answers), **Pemain** (2-5 players, each with their own vehicle; names are optional, use nicknames or initials only) and **Sedia?** (summary, mode, race length and **Mula**). Tap any step at the top to jump back to it.
 4. **Mula:** each pupil stands at the panel with their colour, symbol and name and touches their button to confirm (this doubles as a touch check), then a 3-2-1 countdown runs. **Mulakan sekarang** skips waiting.
-5. **Racing:** pupils type an answer and press **Hantar** (choice tiles answer on tap). The small **Jeda** button above the track needs a press-and-hold (or press **Esc**) to pause; **Sambung** resumes. The race also pauses if the tab is hidden.
+5. **Racing:** pupils type an answer and press **Hantar** (choice tiles answer on tap). The small **Henti** button above the track needs a press-and-hold (or press **Esc**) to pause; **Sambung** resumes. The race also pauses if the tab is hidden.
 6. **Results:** the class sees finishing order and progress. **Main Lagi** starts a fresh race with the same setup and new questions; **Persediaan Baharu** returns to the setup summary; **Eksport CSV** downloads the evidence; **Papar bukti guru** shows teacher-only counts per pupil and per SK.
 
 ### Controls
