@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerText, evaluateAnswer, normalizeDecimal, senToRmText } from '../curriculum/answers';
+import { evaluateAnswer, normalizeDecimal, senToRmText } from '../curriculum/answers';
 import type { GeneratedQuestion } from '../curriculum/schema';
 
 function base(overrides: Partial<GeneratedQuestion>): GeneratedQuestion {
@@ -86,84 +86,5 @@ describe('evaluateAnswer', () => {
     const q = base({ acceptedAnswer: { kind: 'number', value: '0.3' } });
     expect(evaluateAnswer(q, { kind: 'number', raw: '0.30' }).correct).toBe(true);
     expect(evaluateAnswer(q, { kind: 'number', raw: '0.30000000000000004' }).correct).toBe(false);
-  });
-
-  it('checks choices by option id and rejects unknown ids as invalid', () => {
-    const q = base({
-      widget: 'choice-tiles',
-      acceptedAnswer: { kind: 'choice', optionId: 'o2' },
-      options: [
-        { id: 'o1', label: 'a' },
-        { id: 'o2', label: 'b' },
-      ],
-    });
-    expect(evaluateAnswer(q, { kind: 'choice', optionId: 'o2' })).toMatchObject({
-      valid: true,
-      correct: true,
-    });
-    expect(evaluateAnswer(q, { kind: 'choice', optionId: 'o1' })).toMatchObject({
-      valid: true,
-      correct: false,
-    });
-    expect(evaluateAnswer(q, { kind: 'choice', optionId: 'zzz' })).toMatchObject({
-      valid: false,
-      correct: false,
-    });
-  });
-
-  it('requires a complete, ordered sequence', () => {
-    const q = base({
-      widget: 'order-strip',
-      acceptedAnswer: { kind: 'sequence', optionIds: ['a', 'b', 'c'] },
-      options: [
-        { id: 'b', label: '2' },
-        { id: 'a', label: '1' },
-        { id: 'c', label: '3' },
-      ],
-    });
-    expect(evaluateAnswer(q, { kind: 'sequence', optionIds: ['a', 'b', 'c'] }).correct).toBe(true);
-    expect(evaluateAnswer(q, { kind: 'sequence', optionIds: ['b', 'a', 'c'] })).toMatchObject({
-      valid: true,
-      correct: false,
-    });
-    expect(evaluateAnswer(q, { kind: 'sequence', optionIds: ['a', 'b'] }).valid).toBe(false);
-    expect(evaluateAnswer(q, { kind: 'sequence', optionIds: ['a', 'a', 'c'] }).valid).toBe(false);
-  });
-
-  it('compares tap-picture sets without regard to order, and count answers by size', () => {
-    const options = [
-      { id: 'i0', label: 'x' },
-      { id: 'i1', label: 'y' },
-      { id: 'i2', label: 'z' },
-      { id: 'i3', label: 'w' },
-    ];
-    const setQ = base({
-      widget: 'tap-picture',
-      acceptedAnswer: { kind: 'set', optionIds: ['i0', 'i2'] },
-      options,
-    });
-    expect(evaluateAnswer(setQ, { kind: 'set', optionIds: ['i2', 'i0'] }).correct).toBe(true);
-    expect(evaluateAnswer(setQ, { kind: 'set', optionIds: ['i0'] }).correct).toBe(false);
-    expect(evaluateAnswer(setQ, { kind: 'set', optionIds: [] }).valid).toBe(false);
-    const countQ = base({
-      widget: 'tap-picture',
-      acceptedAnswer: { kind: 'count', count: 2 },
-      options,
-    });
-    expect(evaluateAnswer(countQ, { kind: 'set', optionIds: ['i1', 'i3'] }).correct).toBe(true);
-    expect(evaluateAnswer(countQ, { kind: 'set', optionIds: ['i1', 'i1'] }).correct).toBe(false);
-    expect(evaluateAnswer(countQ, { kind: 'set', optionIds: ['i1'] }).correct).toBe(false);
-  });
-
-  it('answerText describes visual-only options', () => {
-    const q = base({
-      widget: 'choice-tiles',
-      acceptedAnswer: { kind: 'choice', optionId: 'o1' },
-      options: [
-        { id: 'o1', visual: { kind: 'clock', hour: 3, minute: 0 } },
-        { id: 'o2', visual: { kind: 'clock', hour: 6, minute: 0 } },
-      ],
-    });
-    expect(answerText(q)).toBe('clock 3:00');
   });
 });

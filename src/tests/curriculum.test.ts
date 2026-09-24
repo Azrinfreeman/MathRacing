@@ -12,6 +12,7 @@ import type {
 import { LEVELS, validateGeneratedQuestion, validatePack } from '../curriculum/schema';
 import { numberToWords } from '../curriculum/text/vocab';
 import { SeededRng } from '../game/core/SeededRng';
+import { visualTotal } from '../curriculum/visual';
 
 const registry = getDefaultRegistry();
 const cases = registry
@@ -36,64 +37,48 @@ function generate(
 /** Every question must have exactly one defensible correct response through the shared answer service. */
 function expectExactlyOneAnswer(q: GeneratedQuestion): void {
   const a = q.acceptedAnswer;
-  const options = q.options ?? [];
-  switch (q.widget) {
-    case 'number-pad': {
-      if (a.kind !== 'number') throw new Error('number-pad without number answer');
-      expect(evaluateAnswer(q, { kind: 'number', raw: a.value })).toMatchObject({
-        valid: true,
-        correct: true,
-      });
-      expect(a.value.length).toBeLessThanOrEqual(4); // fits the keypad response field
-      expect(Number(a.value)).toBeGreaterThanOrEqual(0);
-      expect(evaluateAnswer(q, { kind: 'number', raw: String(Number(a.value) + 1) }).correct).toBe(
-        false,
-      );
-      break;
-    }
-    case 'choice-tiles': {
-      const correct = options.filter(
-        (o) => evaluateAnswer(q, { kind: 'choice', optionId: o.id }).correct,
-      );
-      expect(correct).toHaveLength(1);
-      break;
-    }
-    case 'tap-picture': {
-      if (a.kind === 'choice') {
-        const correct = options.filter(
-          (o) => evaluateAnswer(q, { kind: 'set', optionIds: [o.id] }).correct,
-        );
-        expect(correct).toHaveLength(1);
-      } else if (a.kind === 'set') {
-        expect(evaluateAnswer(q, { kind: 'set', optionIds: a.optionIds })).toMatchObject({
-          valid: true,
-          correct: true,
-        });
-        expect(evaluateAnswer(q, { kind: 'set', optionIds: a.optionIds.slice(1) }).correct).toBe(
-          false,
-        );
-      } else {
-        expect(a.kind).toBe('count');
-      }
-      break;
-    }
-    case 'order-strip': {
-      if (a.kind !== 'sequence') throw new Error('order-strip without sequence');
-      expect(evaluateAnswer(q, { kind: 'sequence', optionIds: a.optionIds }).correct).toBe(true);
-      // the presented order must not already be the answer
-      expect(
-        evaluateAnswer(q, { kind: 'sequence', optionIds: options.map((o) => o.id) }).correct,
-      ).toBe(false);
-      break;
-    }
-    case 'build-value': {
-      if (a.kind !== 'number') throw new Error('build-value without number');
-      expect(evaluateAnswer(q, { kind: 'number', raw: a.value }).correct).toBe(true);
-      expect(evaluateAnswer(q, { kind: 'number', raw: String(Number(a.value) - 1) }).correct).toBe(
-        false,
-      );
-      break;
-    }
+  expect(q.widget).toBe('number-pad');
+  expect(evaluateAnswer(q, { kind: 'number', raw: a.value })).toMatchObject({
+    valid: true,
+    correct: true,
+  });
+  expect(a.value).toMatch(/^\d{1,3}$/); // one whole number from 0 to 999 (DECISIONS #42)
+  expect(evaluateAnswer(q, { kind: 'number', raw: String(Number(a.value) + 1) }).correct).toBe(
+    false,
+  );
+}
+
+/**
+ * "Count all" and "how many are left" questions: the things drawn (minus the crossed-out ones) are exactly the
+ * answer, and the rows-of-5 help picture shows the same things (DECISIONS #42).
+ */
+const COUNT_ALL = new Set([
+  'y1-easy-count',
+  'y1-easy-add',
+  'y1-easy-sub',
+  'y1-easy-groups',
+  'y1-easy-money',
+  'y2-easy-blocks',
+  'y2-easy-add',
+  'y2-easy-sub',
+  'y2-easy-mul',
+  'y2-easy-money',
+]);
+function expectCountable(q: GeneratedQuestion): void {
+  const visual = q.prompt.visual;
+  expect(visual, 'every question has a picture').toBeDefined();
+  if (!visual) return;
+  const total = visualTotal(visual);
+  if (COUNT_ALL.has(q.templateId)) {
+    expect(total, `${q.templateId} draws something to count`).not.toBeNull();
+    const perUnit = q.prompt.unit === 'RM' ? 100 : 1;
+    expect(String((total ?? 0) / perUnit), `${q.templateId} drawn count`).toBe(
+      q.acceptedAnswer.value,
+    );
+  }
+  if (q.hintVisual) {
+    expect(q.hintVisual.kind).toBe('ten-frames');
+    expect(visualTotal(q.hintVisual)).toBe(total);
   }
 }
 
@@ -103,7 +88,7 @@ describe('curriculum registry', () => {
     for (const pack of registry.allPacks()) expect(validatePack(pack)).toEqual([]);
   });
 
-  it('covers every planned topic with at least two templates', () => {
+  it('covers every planned topic with at least one counting question', () => {
     const y1 = registry.packForYear(1);
     const y2 = registry.packForYear(2);
     expect(y1.topics.map((t) => t.code)).toEqual(['1.0', '2.0', '3.0', '4.0', '5.0', '6.0', '7.0']);
@@ -122,20 +107,14 @@ describe('curriculum registry', () => {
         expect(
           registry.templatesForTopic(pack.packId, topic.id).length,
           `${topic.id} template count`,
-        ).toBeGreaterThanOrEqual(2);
+        ).toBeGreaterThanOrEqual(1);
       }
     }
   });
 
-  it('exercises all five widget kinds', () => {
+  it('answers every question on the number pad: nothing to order, build or select (DECISIONS #42)', () => {
     const kinds = new Set<WidgetKind>(cases.map((c) => c.template.widget));
-    expect([...kinds].sort()).toEqual([
-      'build-value',
-      'choice-tiles',
-      'number-pad',
-      'order-strip',
-      'tap-picture',
-    ]);
+    expect([...kinds]).toEqual(['number-pad']);
   });
 
   it('does not invent SP codes: SP is empty until verified codes are supplied', () => {
@@ -198,23 +177,16 @@ describe('curriculum registry', () => {
   });
 
   it('flags malformed generated questions', () => {
-    const q = generate('y1-op-add', 'ok', 2);
+    const q = generate('y1-easy-add', 'ok', 2);
     expect(validateGeneratedQuestion(q)).toEqual([]);
     expect(validateGeneratedQuestion({ ...q, standardKandungan: [] })).not.toEqual([]);
-    expect(
-      validateGeneratedQuestion({ ...q, acceptedAnswer: { kind: 'number', value: '007' } }),
-    ).not.toEqual([]);
-    expect(
-      validateGeneratedQuestion({ ...q, acceptedAnswer: { kind: 'choice', optionId: 'x' } }),
-    ).not.toEqual([]);
-    const c = generate('y1-num-compare-values', 'ok-choice', 2);
-    const dup = {
-      ...c,
-      options: (c.options ?? []).map((o, i) =>
-        i === 0 ? { ...o } : { ...o, label: (c.options ?? [])[0]?.label },
-      ),
-    };
-    expect(validateGeneratedQuestion(dup).join(' ')).toContain('duplicate option content');
+    const bad = (value: string): string[] =>
+      validateGeneratedQuestion({ ...q, acceptedAnswer: { kind: 'number', value } });
+    expect(bad('007')).not.toEqual([]); // not normalised
+    expect(bad('1000')).not.toEqual([]); // more than three digits
+    expect(bad('2.5')).not.toEqual([]); // not a whole number
+    const { visual: _visual, ...noPicture } = q.prompt;
+    expect(validateGeneratedQuestion({ ...q, prompt: noPicture }).join(' ')).toContain('picture');
   });
 });
 
@@ -286,6 +258,7 @@ describe.each(cases)('template $template.id', ({ pack, template }) => {
         expect(q.widget).toBe(template.widget);
         expect(JSON.stringify(q)).not.toMatch(/undefined|NaN|\[object/);
         expectExactlyOneAnswer(q);
+        expectCountable(q);
         if (template.recompute && q.acceptedAnswer.kind === 'number') {
           const params = (q.metadata as { params: JsonObject }).params;
           expect(normalizeDecimal(template.recompute(params)), seed).toBe(q.acceptedAnswer.value);
@@ -294,13 +267,7 @@ describe.each(cases)('template $template.id', ({ pack, template }) => {
           expect(generate(template.id, seed, level), `determinism ${seed}`).toEqual(q);
         }
         // Variety is judged on everything a pupil can see, including option labels and pictures.
-        distinct.add(
-          JSON.stringify([
-            q.prompt,
-            q.acceptedAnswer,
-            (q.options ?? []).map((o) => o.label ?? o.visual),
-          ]),
-        );
+        distinct.add(JSON.stringify([q.prompt, q.acceptedAnswer]));
       }
       expect(distinct.size, 'question variety').toBeGreaterThanOrEqual(2);
     },

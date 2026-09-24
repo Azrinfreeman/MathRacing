@@ -426,16 +426,20 @@ export class PanelView {
       );
       drawVisual(this.ctx, q.supportVisual, inset(visualArea, visualArea.h * 0.06), 'sv');
     }
-    const { expression, text, visual } = q.prompt;
-    const hasText = text.trim().length > 0;
+    const { expression } = q.prompt;
+    // With the hint (after two wrong answers) the picture is rearranged into rows of 5 (DECISIONS #42).
+    const visual = s.hintShown && q.hintVisual ? q.hintVisual : q.prompt.visual;
     const hasExpr = expression !== undefined && expression.trim().length > 0;
+    // A sum with a picture shows just the sum and the picture: the picture needs the room to be counted.
+    const text = visual && hasExpr ? '' : q.prompt.text;
+    const hasText = text.trim().length > 0;
     let textH: number;
     let exprH = 0;
     let visualH = 0;
     if (visual && hasExpr) {
-      textH = 0.24;
-      exprH = 0.28;
-      visualH = 0.48;
+      textH = 0;
+      exprH = 0.26;
+      visualH = 0.74;
     } else if (visual) {
       textH = hasText ? 0.26 : 0;
       visualH = 1 - textH;

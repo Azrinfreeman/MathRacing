@@ -613,15 +613,7 @@ export class RaceEngine {
   }
 
   private describeSubmitted(answer: SubmittedAnswer): string {
-    switch (answer.kind) {
-      case 'number':
-        return answer.raw;
-      case 'choice':
-        return answer.optionId;
-      case 'sequence':
-      case 'set':
-        return answer.optionIds.join(',');
-    }
+    return answer.raw;
   }
 
   private log(

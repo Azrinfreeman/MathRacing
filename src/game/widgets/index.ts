@@ -1,25 +1,13 @@
 import type { GeneratedQuestion } from '../../curriculum/schema';
-import { BuildValueWidget } from './BuildValueWidget';
-import { ChoiceTilesWidget } from './ChoiceTilesWidget';
 import { NumberPadWidget } from './NumberPadWidget';
-import { OrderStripWidget } from './OrderStripWidget';
-import { TapPictureWidget } from './TapPictureWidget';
 import type { WidgetModel } from './types';
 
-/** Create a fresh, independent widget model for one player's current question. */
-export function createWidget(question: GeneratedQuestion): WidgetModel {
-  switch (question.widget) {
-    case 'number-pad':
-      return new NumberPadWidget();
-    case 'choice-tiles':
-      return new ChoiceTilesWidget(question);
-    case 'tap-picture':
-      return new TapPictureWidget(question);
-    case 'order-strip':
-      return new OrderStripWidget(question);
-    case 'build-value':
-      return new BuildValueWidget(question);
-  }
+/**
+ * Create a fresh, independent widget model for one player's current question. Every question is answered on
+ * the number pad (DECISIONS #42).
+ */
+export function createWidget(_question: GeneratedQuestion): WidgetModel {
+  return new NumberPadWidget();
 }
 
 export type { WidgetControl, WidgetEffect, WidgetModel } from './types';

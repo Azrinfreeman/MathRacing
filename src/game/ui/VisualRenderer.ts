@@ -1,4 +1,5 @@
 import type {
+  BlockSet,
   MoneyItem,
   ObjectGroup,
   ObjectShape,
@@ -6,6 +7,7 @@ import type {
   Shape3D,
   VisualModel,
 } from '../../curriculum/visual';
+import { blockLayout, equalGroupLayout, tenFrameCells } from './countLayout';
 import type { DrawContext } from './DrawContext';
 import type { Rect } from './geometry';
 import { center, inset } from './geometry';
@@ -24,8 +26,17 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
     case 'objects':
       drawObjects(ctx, v.groups, area);
       break;
+    case 'ten-frames':
+      drawTenFrames(ctx, v.groups, area);
+      break;
+    case 'base-ten':
+      drawBaseTen(ctx, v.sets, v.crossed, area);
+      break;
+    case 'equal-groups':
+      drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area);
+      break;
     case 'clock':
-      drawClock(ctx, v.hour, v.minute, area, key);
+      drawClock(ctx, v.hour, v.minute, area, key, v.fives === true);
       break;
     case 'money':
       drawMoney(ctx, v.items, area, key);
@@ -108,30 +119,149 @@ function drawObjects(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rec
     const gridH = rows * size;
     const x0 = inner.x + (inner.w - gridW) / 2;
     const y0 = inner.y + (inner.h - gridH) / 2;
+    const firstCrossed = group.count - (group.crossed ?? 0);
     for (let i = 0; i < group.count; i++) {
       const r = Math.floor(i / cols);
       const c = i % cols;
       // centre an incomplete last row
       const inRow = r === rows - 1 ? group.count - r * cols : cols;
       const rowOffset = ((cols - inRow) * size) / 2;
+      const x = x0 + rowOffset + c * size + size / 2;
+      const y = y0 + r * size + size / 2;
       drawObject(
         ctx.g,
         group.shape,
-        x0 + rowOffset + c * size + size / 2,
-        y0 + r * size + size / 2,
+        x,
+        y,
         size * 0.38,
-        group.color,
+        i >= firstCrossed ? '#cbd5e1' : group.color,
       );
+      if (i >= firstCrossed) drawCross(ctx, x, y, size * 0.4);
     }
   });
 }
 
+/** A grey X over a crossed-out thing ("Berapa tinggal?"): neutral, never red. */
+function drawCross(ctx: DrawContext, x: number, y: number, r: number): void {
+  ctx.g.lineStyle(Math.max(2, r * 0.28), 0x475569, 1);
+  ctx.g.lineBetween(x - r, y - r, x + r, y + r);
+  ctx.g.lineBetween(x - r, y + r, x + r, y - r);
+}
+
+// ---------------------------------------------------------------------------------- counting pictures
+
+function drawTenFrames(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rect): void {
+  const n = groups.length;
+  const gap = n > 1 ? area.w * 0.04 : 0;
+  const cellW = (area.w - gap * (n - 1)) / n;
+  groups.forEach((group, gi) => {
+    const box: Rect = { x: area.x + gi * (cellW + gap), y: area.y, w: cellW, h: area.h };
+    const { cells, cell, frames } = tenFrameCells(
+      group.count,
+      inset(box, Math.min(box.w, box.h) * 0.04),
+    );
+    for (const f of frames) {
+      ctx.g.fillStyle(0xffffff, 1);
+      ctx.g.fillRect(f.x, f.y, f.w, f.h);
+      ctx.g.lineStyle(Math.max(1, cell * 0.06), 0x94a3b8, 1);
+      for (let c = 0; c <= 5; c++)
+        ctx.g.lineBetween(f.x + c * cell, f.y, f.x + c * cell, f.y + f.h);
+      for (let r = 0; r <= 2; r++)
+        ctx.g.lineBetween(f.x, f.y + r * cell, f.x + f.w, f.y + r * cell);
+    }
+    const firstCrossed = group.count - (group.crossed ?? 0);
+    cells.forEach((p, i) => {
+      const crossed = i >= firstCrossed;
+      drawObject(ctx.g, group.shape, p.x, p.y, cell * 0.36, crossed ? '#cbd5e1' : group.color);
+      if (crossed) drawCross(ctx, p.x, p.y, cell * 0.36);
+    });
+  });
+}
+
+const BLOCK_FILL = 0x60a5fa;
+const BLOCK_EDGE = 0x1e3a8a;
+
+function drawBaseTen(
+  ctx: DrawContext,
+  sets: readonly BlockSet[],
+  crossed: BlockSet | undefined,
+  area: Rect,
+): void {
+  const { g } = ctx;
+  const n = sets.length;
+  const gap = n > 1 ? area.w * 0.05 : 0;
+  const setW = (area.w - gap * (n - 1)) / n;
+  sets.forEach((set, si) => {
+    const box: Rect = { x: area.x + si * (setW + gap), y: area.y, w: setW, h: area.h };
+    if (n > 1) {
+      g.lineStyle(Math.max(1, area.h * 0.012), 0x94a3b8, 0.8);
+      g.strokeRoundedRect(box.x, box.y, box.w, box.h, Math.min(box.w, box.h) * 0.1);
+    }
+    const { blocks, unit } = blockLayout(set, inset(box, Math.min(box.w, box.h) * 0.08));
+    // crossed blocks are the last ones of each kind in the first set
+    const cross = si === 0 && crossed ? crossed : { hundreds: 0, tens: 0, ones: 0 };
+    const kindCount = { hundred: set.hundreds, ten: set.tens, one: set.ones };
+    const kindCross = { hundred: cross.hundreds, ten: cross.tens, one: cross.ones };
+    const seen = { hundred: 0, ten: 0, one: 0 };
+    const line = Math.max(1, unit * 0.08);
+    for (const b of blocks) {
+      const index = seen[b.kind]++;
+      const isCrossed = index >= kindCount[b.kind] - kindCross[b.kind];
+      const r = b.rect;
+      g.fillStyle(isCrossed ? 0xe2e8f0 : BLOCK_FILL, 1);
+      g.fillRect(r.x, r.y, r.w, r.h);
+      g.lineStyle(line, BLOCK_EDGE, isCrossed ? 0.35 : 1);
+      g.strokeRect(r.x, r.y, r.w, r.h);
+      if (b.kind !== 'one' && unit > 5) {
+        // segment lines: a rod shows its 10 cubes, a flat its 10 x 10 grid
+        g.lineStyle(Math.max(1, line * 0.5), BLOCK_EDGE, isCrossed ? 0.2 : 0.45);
+        for (let k = 1; k < 10; k++)
+          g.lineBetween(r.x, r.y + (r.h * k) / 10, r.x + r.w, r.y + (r.h * k) / 10);
+        if (b.kind === 'hundred')
+          for (let k = 1; k < 10; k++)
+            g.lineBetween(r.x + (r.w * k) / 10, r.y, r.x + (r.w * k) / 10, r.y + r.h);
+      }
+      if (isCrossed) {
+        g.lineStyle(Math.max(2, unit * 0.22), 0x475569, 1);
+        g.lineBetween(r.x, r.y, r.x + r.w, r.y + r.h);
+        g.lineBetween(r.x, r.y + r.h, r.x + r.w, r.y);
+      }
+    }
+  });
+}
+
+function drawEqualGroups(
+  ctx: DrawContext,
+  groups: number,
+  perGroup: number,
+  shape: ObjectShape,
+  color: string,
+  area: Rect,
+): void {
+  const layout = equalGroupLayout(groups, perGroup, area);
+  for (const grp of layout.groups) {
+    const r = grp.rect;
+    ctx.g.fillStyle(0xf1f5f9, 1);
+    ctx.g.fillRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+    ctx.g.lineStyle(Math.max(1.5, layout.cell * 0.1), 0x64748b, 1);
+    ctx.g.strokeRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+    for (const p of grp.cells) drawObject(ctx.g, shape, p.x, p.y, layout.cell * 0.36, color);
+  }
+}
+
 // --------------------------------------------------------------------------------------------- clock
 
-function drawClock(ctx: DrawContext, hour: number, minute: number, area: Rect, key: string): void {
+function drawClock(
+  ctx: DrawContext,
+  hour: number,
+  minute: number,
+  area: Rect,
+  key: string,
+  fives = false,
+): void {
   const { g } = ctx;
   const c = center(area);
-  const r = (Math.min(area.w, area.h) / 2) * 0.96;
+  const r = (Math.min(area.w, area.h) / 2) * (fives ? 0.8 : 0.96);
   g.fillStyle(0xffffff, 1);
   g.fillCircle(c.x, c.y, r);
   g.lineStyle(Math.max(2, r * 0.06), 0x0f172a, 1);
@@ -159,6 +289,23 @@ function drawClock(ctx: DrawContext, hour: number, minute: number, area: Rect, k
         {
           size: r * 0.27,
           color: THEME.ink,
+          bold: true,
+        },
+      );
+    }
+  }
+  if (fives && r > 30) {
+    // minute labels 5, 10, ... 55 just outside the face, so the minutes can be counted in fives
+    for (let n = 1; n < 12; n++) {
+      const a = (n * Math.PI) / 6;
+      ctx.text(
+        `${key}:m${n}`,
+        String(n * 5),
+        c.x + Math.sin(a) * r * 1.13,
+        c.y - Math.cos(a) * r * 1.13,
+        {
+          size: r * 0.17,
+          color: '#1d4ed8',
           bold: true,
         },
       );

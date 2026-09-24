@@ -1,17 +1,14 @@
 import type { Rng } from '../../game/core/SeededRng';
 import type {
-  AcceptedAnswer,
   BuildContext,
   BuiltQuestion,
   JsonObject,
   Level,
-  QuestionOption,
   QuestionTemplate,
   TemplateFixture,
   WidgetKind,
 } from '../schema';
 import { visualSignature } from '../visual';
-import type { VisualModel } from '../visual';
 
 /** Pick the BM or English string; English falls back to BM when not provided. */
 export function tr(ctx: Pick<BuildContext, 'language'>, bm: string, en?: string): string {
@@ -69,68 +66,6 @@ export function defineTemplate<P extends JsonObject>(def: TemplateDef<P>): Quest
   return template;
 }
 
-export type OptionSpec = { label?: string; visual?: VisualModel; value?: number };
-
-function specKey(o: OptionSpec): string {
-  return `${o.label ?? ''}|${o.visual ? visualSignature(o.visual) : ''}`;
-}
-
-/**
- * Build shuffled choice options with exactly one correct entry. Throws on duplicate content so a
- * generator bug is caught by tests instead of producing an ambiguous question.
- */
-export function buildChoices(
-  ctx: BuildContext,
-  correct: OptionSpec,
-  wrong: OptionSpec[],
-): { options: QuestionOption[]; acceptedAnswer: AcceptedAnswer } {
-  const specs = [correct, ...wrong];
-  const keys = new Set(specs.map(specKey));
-  if (keys.size !== specs.length) {
-    throw new Error(`duplicate option content: ${specs.map(specKey).join(' / ')}`);
-  }
-  const order = ctx.rng.shuffle(specs.map((_, i) => i));
-  const options: QuestionOption[] = order.map((specIndex, position) => {
-    const spec = specs[specIndex] as OptionSpec;
-    const option: QuestionOption = { id: `o${position + 1}` };
-    if (spec.label !== undefined) option.label = spec.label;
-    if (spec.visual !== undefined) option.visual = spec.visual;
-    if (spec.value !== undefined) option.value = spec.value;
-    return option;
-  });
-  const correctPosition = order.indexOf(0);
-  return { options, acceptedAnswer: { kind: 'choice', optionId: `o${correctPosition + 1}` } };
-}
-
-/** Unique integers near `correct` (within [min,max]) for plausible numeric distractors. */
-export function numericDistractors(
-  rng: Rng,
-  correct: number,
-  count: number,
-  min: number,
-  max: number,
-  seeds: number[] = [],
-): number[] {
-  const out: number[] = [];
-  const used = new Set<number>([correct]);
-  const push = (n: number): void => {
-    if (n >= min && n <= max && !used.has(n) && out.length < count) {
-      used.add(n);
-      out.push(n);
-    }
-  };
-  for (const s of seeds) push(s);
-  let guard = 0;
-  while (out.length < count && guard < 400) {
-    guard++;
-    const spread = Math.max(2, Math.round((max - min) / 8));
-    push(correct + rng.int(-spread, spread));
-  }
-  // Deterministic fallback so the loop can never fail silently on tiny ranges.
-  for (let n = min; n <= max && out.length < count; n++) push(n);
-  return out;
-}
-
 export function isPrime(n: number): boolean {
   if (n < 2) return false;
   for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
@@ -148,7 +83,6 @@ export function fingerprint(built: BuiltQuestion): string {
     built.prompt.text,
     built.prompt.visual ? visualSignature(built.prompt.visual) : '',
     built.acceptedAnswer,
-    (built.options ?? []).map((o) => o.label ?? (o.visual ? visualSignature(o.visual) : '')),
   ]);
 }
 

@@ -1,4 +1,4 @@
-import type { BuildContext, BuiltQuestion, Level, QuestionOption } from '../schema';
+import type { BuiltQuestion, Level } from '../schema';
 import { normalizeDecimal } from '../answers';
 import type { VisualModel } from '../visual';
 
@@ -18,6 +18,7 @@ type NumberBuild = {
   answer: number | string;
   hint?: string;
   supportVisual?: VisualModel;
+  hintVisual?: VisualModel;
 };
 
 /** Build a number-pad question. The accepted answer is stored as an exact normalised decimal string. */
@@ -36,74 +37,7 @@ export function numberBuilt(o: NumberBuild): BuiltQuestion {
   if (o.visual !== undefined) built.prompt.visual = o.visual;
   if (o.hint !== undefined) built.hint = o.hint;
   if (o.supportVisual !== undefined) built.supportVisual = o.supportVisual;
-  return built;
-}
-
-type OrderBuild = {
-  band: string;
-  text: string;
-  expression?: string;
-  /** Cards in the correct order. */
-  cards: Array<{ id: string; label: string }>;
-  hint?: string;
-};
-
-/** Build an order-strip question, presenting the cards in a deterministic shuffle that is never already sorted. */
-export function orderBuilt(ctx: BuildContext, o: OrderBuild): BuiltQuestion {
-  const correct = o.cards.map((c) => c.id);
-  let shuffled = ctx.rng.shuffle(o.cards);
-  let guard = 0;
-  while (shuffled.every((c, i) => c.id === correct[i]) && guard < 20) {
-    shuffled = ctx.rng.shuffle(o.cards);
-    guard++;
-  }
-  if (shuffled.every((c, i) => c.id === correct[i])) {
-    // Extremely unlikely fallback: swap the first two cards.
-    shuffled = shuffled.slice();
-    const first = shuffled[0];
-    const second = shuffled[1];
-    if (first && second) {
-      shuffled[0] = second;
-      shuffled[1] = first;
-    }
-  }
-  const options: QuestionOption[] = shuffled.map((c) => ({ id: c.id, label: c.label }));
-  const built: BuiltQuestion = {
-    difficultyBand: o.band,
-    widget: 'order-strip',
-    prompt: { text: o.text },
-    options,
-    acceptedAnswer: { kind: 'sequence', optionIds: correct },
-  };
-  if (o.expression !== undefined) built.prompt.expression = o.expression;
-  if (o.hint !== undefined) built.hint = o.hint;
-  return built;
-}
-
-type TapBuild = {
-  band: string;
-  text: string;
-  expression?: string;
-  options: QuestionOption[];
-  acceptedAnswer: BuiltQuestion['acceptedAnswer'];
-  multi: boolean;
-  columns?: number;
-  hint?: string;
-  visual?: VisualModel;
-};
-
-export function tapBuilt(o: TapBuild): BuiltQuestion {
-  const built: BuiltQuestion = {
-    difficultyBand: o.band,
-    widget: 'tap-picture',
-    prompt: { text: o.text },
-    options: o.options,
-    acceptedAnswer: o.acceptedAnswer,
-    widgetConfig: { multi: o.multi, ...(o.columns !== undefined ? { columns: o.columns } : {}) },
-  };
-  if (o.expression !== undefined) built.prompt.expression = o.expression;
-  if (o.visual !== undefined) built.prompt.visual = o.visual;
-  if (o.hint !== undefined) built.hint = o.hint;
+  if (o.hintVisual !== undefined) built.hintVisual = o.hintVisual;
   return built;
 }
 

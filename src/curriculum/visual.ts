@@ -9,7 +9,16 @@ export type Shape2D =
   'triangle' | 'square' | 'rectangle' | 'circle' | 'pentagon' | 'hexagon' | 'octagon';
 export type Shape3D = 'cube' | 'cuboid' | 'cylinder' | 'cone' | 'sphere' | 'pyramid';
 
-export type ObjectGroup = { count: number; shape: ObjectShape; color: string };
+export type ObjectGroup = {
+  count: number;
+  shape: ObjectShape;
+  color: string;
+  /** The last `crossed` objects are drawn crossed out ("Berapa tinggal?"). */
+  crossed?: number;
+};
+
+/** Base-ten blocks: flats of 100, rods of 10 and single cubes. */
+export type BlockSet = { hundreds: number; tens: number; ones: number };
 
 export type MoneyItem = { type: 'coin' | 'note'; valueSen: number };
 
@@ -20,7 +29,14 @@ export type PatternItem = { shape: ObjectShape; color: string } | null; // null 
 export type VisualModel =
   /** Countable objects. Several groups are drawn side by side. */
   | { kind: 'objects'; groups: ObjectGroup[] }
-  | { kind: 'clock'; hour: number; minute: number }
+  /** The same groups arranged in ten-frames (2 rows of 5), so larger counts are quick to count. */
+  | { kind: 'ten-frames'; groups: ObjectGroup[] }
+  /** One or two sets of base-ten blocks; `crossed` blocks of the first set are drawn crossed out. */
+  | { kind: 'base-ten'; sets: BlockSet[]; crossed?: BlockSet }
+  /** `groups` circled groups of `perGroup` objects (repeated addition, multiplication, sharing). */
+  | { kind: 'equal-groups'; groups: number; perGroup: number; shape: ObjectShape; color: string }
+  /** `fives` labels the minute marks 5, 10, ... 55 around the face. */
+  | { kind: 'clock'; hour: number; minute: number; fives?: boolean }
   | { kind: 'money'; items: MoneyItem[] }
   | { kind: 'shape2d'; shape: Shape2D; color?: string }
   | { kind: 'shape3d'; shape: Shape3D; color?: string }
@@ -69,9 +85,41 @@ export function validateVisual(v: VisualModel): string[] {
         if (!Number.isInteger(g.count) || g.count < 0 || g.count > 20) {
           problems.push(`objects: count ${g.count} outside 0..20 (must stay countable)`);
         }
+        problems.push(...crossedProblems('objects', g));
       }
       break;
     }
+    case 'ten-frames': {
+      if (v.groups.length === 0 || v.groups.length > 2) problems.push('ten-frames: 1 or 2 groups');
+      const total = v.groups.reduce((n, g) => n + g.count, 0);
+      if (total > 50) problems.push(`ten-frames: ${total} objects, at most 50 (5 frames)`);
+      for (const g of v.groups) {
+        if (!Number.isInteger(g.count) || g.count < 0) problems.push('ten-frames: bad count');
+        problems.push(...crossedProblems('ten-frames', g));
+      }
+      break;
+    }
+    case 'base-ten': {
+      if (v.sets.length === 0 || v.sets.length > 2) problems.push('base-ten: 1 or 2 sets');
+      for (const b of v.sets) problems.push(...blockProblems(b));
+      const first = v.sets[0];
+      if (v.crossed && first) {
+        problems.push(...blockProblems(v.crossed));
+        if (
+          v.crossed.hundreds > first.hundreds ||
+          v.crossed.tens > first.tens ||
+          v.crossed.ones > first.ones
+        )
+          problems.push('base-ten: more crossed than drawn');
+      }
+      break;
+    }
+    case 'equal-groups':
+      if (!Number.isInteger(v.groups) || v.groups < 1 || v.groups > 10)
+        problems.push('equal-groups: groups 1..10');
+      if (!Number.isInteger(v.perGroup) || v.perGroup < 1 || v.perGroup > 10)
+        problems.push('equal-groups: perGroup 1..10');
+      break;
     case 'clock':
       if (!Number.isInteger(v.hour) || v.hour < 1 || v.hour > 12)
         problems.push('clock: hour 1..12');
@@ -142,11 +190,56 @@ export function validateVisual(v: VisualModel): string[] {
   return problems;
 }
 
+function crossedProblems(kind: string, g: ObjectGroup): string[] {
+  if (g.crossed === undefined) return [];
+  return Number.isInteger(g.crossed) && g.crossed >= 0 && g.crossed <= g.count
+    ? []
+    : [`${kind}: crossed ${g.crossed} outside 0..${g.count}`];
+}
+
+function blockProblems(b: BlockSet): string[] {
+  const ok = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= 9;
+  return ok(b.hundreds) && ok(b.tens) && ok(b.ones) ? [] : ['base-ten: each place 0..9'];
+}
+
+export function blockValue(b: BlockSet): number {
+  return b.hundreds * 100 + b.tens * 10 + b.ones;
+}
+
+/**
+ * How many things a counting picture shows once crossed-out things are taken away: the answer of every "count
+ * all" or "how many are left" question. Null for pictures that are not a count (a clock, a ruler, a shape).
+ */
+export function visualTotal(v: VisualModel): number | null {
+  switch (v.kind) {
+    case 'objects':
+    case 'ten-frames':
+      return v.groups.reduce((n, g) => n + g.count - (g.crossed ?? 0), 0);
+    case 'base-ten':
+      return (
+        v.sets.reduce((n, b) => n + blockValue(b), 0) - (v.crossed ? blockValue(v.crossed) : 0)
+      );
+    case 'equal-groups':
+      return v.groups * v.perGroup;
+    case 'money':
+      return v.items.reduce((n, m) => n + m.valueSen, 0);
+    default:
+      return null;
+  }
+}
+
 /** Short plain-text description of a visual (used for fixtures, previews and screen-reader labels). */
 export function describeVisual(v: VisualModel): string {
   switch (v.kind) {
     case 'objects':
-      return v.groups.map((g) => `${g.count} ${g.shape}`).join(', ');
+    case 'ten-frames':
+      return v.groups
+        .map((g) => `${g.count} ${g.shape}${g.crossed ? ` (${g.crossed} crossed out)` : ''}`)
+        .join(', ');
+    case 'base-ten':
+      return `blocks ${v.sets.map((b) => blockValue(b)).join(' + ')}${v.crossed ? ` - ${blockValue(v.crossed)}` : ''}`;
+    case 'equal-groups':
+      return `${v.groups} groups of ${v.perGroup} ${v.shape}`;
     case 'clock':
       return `clock ${v.hour}:${v.minute.toString().padStart(2, '0')}`;
     case 'money':

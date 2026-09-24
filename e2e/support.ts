@@ -114,45 +114,11 @@ export function tapPlan(
     if (!c) throw new Error(`no control ${id} for ${q.templateId}`);
     return { x: c.rect.x + c.rect.w / 2, y: c.rect.y + c.rect.h / 2 };
   };
-  const a = q.acceptedAnswer;
-  const opts = q.options ?? [];
-  switch (q.widget) {
-    case 'number-pad':
-      if (a.kind !== 'number') throw new Error('number-pad needs a number answer');
-      return [...a.value.split('').map((d) => centre(`d${d}`)), centre('submit')];
-    case 'choice-tiles':
-      if (a.kind !== 'choice') throw new Error('choice needs a choice answer');
-      return [centre(a.optionId)];
-    case 'tap-picture':
-      if (a.kind === 'choice') return [centre(a.optionId)];
-      if (a.kind === 'set') return [...a.optionIds.map(centre), centre('submit')];
-      if (a.kind === 'count')
-        return [...opts.slice(0, a.count).map((o) => centre(o.id)), centre('submit')];
-      throw new Error('tap-picture answer kind');
-    case 'order-strip':
-      if (a.kind !== 'sequence') throw new Error('order needs a sequence');
-      return [...a.optionIds.map(centre), centre('submit')];
-    case 'build-value': {
-      if (a.kind !== 'number') throw new Error('build needs a number');
-      let left = Number(a.value);
-      const taps: Point[] = [];
-      for (const part of [...opts].sort((p, r) => (r.value ?? 0) - (p.value ?? 0))) {
-        const v = part.value ?? 0;
-        while (v > 0 && left >= v) {
-          taps.push(centre(part.id));
-          left -= v;
-        }
-      }
-      if (left !== 0) throw new Error(`build-value target ${a.value} not reachable`);
-      return [...taps, centre('submit')];
-    }
-  }
+  // every question is answered on the number pad (DECISIONS #42): the digits, then Hantar
+  return [...q.acceptedAnswer.value.split('').map((d) => centre(`d${d}`)), centre('submit')];
 }
 
-/**
- * Taps for a wrong (but complete) number-pad answer: one digit that is not the answer. Only number-pad
- * questions are supported, so tests that need wrong answers pick a topic and seed that deal number pads.
- */
+/** Taps for a wrong (but complete) answer: one digit that is not the answer. */
 export function wrongTapPlan(
   q: GeneratedQuestion,
   viewport: { w: number; h: number },
@@ -160,8 +126,6 @@ export function wrongTapPlan(
   playerIndex: number,
 ): Point[] {
   const a = q.acceptedAnswer;
-  if (q.widget !== 'number-pad' || a.kind !== 'number')
-    throw new Error(`wrongTapPlan needs a number-pad question, got ${q.widget}`);
   const layout = computeStageLayout(viewport.w, viewport.h, players);
   const panel = layout.panels[playerIndex] as Rect;
   const widget = createWidget(q);

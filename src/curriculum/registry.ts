@@ -149,10 +149,9 @@ export class CurriculumRegistry {
         spStatus: template.standardPembelajaran.length > 0 ? 'listed' : 'not-listed-in-plan',
       },
     };
-    if (built.options) question.options = built.options;
-    if (built.widgetConfig) question.widgetConfig = built.widgetConfig;
     if (built.hint) question.hint = built.hint;
     if (built.supportVisual) question.supportVisual = built.supportVisual;
+    if (built.hintVisual) question.hintVisual = built.hintVisual;
     return question;
   }
 

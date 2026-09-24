@@ -1,10 +1,5 @@
 import type { CurriculumPack, CurriculumTopic } from '../schema';
-import { Y2_FRACTION_TEMPLATES } from '../generators/y2Fractions';
-import { Y2_MONEY_TEMPLATES } from '../generators/y2Money';
-import { Y2_NUMBER_TEMPLATES } from '../generators/y2Numbers';
-import { Y2_OPERATION_TEMPLATES } from '../generators/y2Operations';
-import { Y2_DATA_TEMPLATES, Y2_SPACE_TEMPLATES } from '../generators/y2SpaceData';
-import { Y2_MEASURE_TEMPLATES, Y2_TIME_TEMPLATES } from '../generators/y2TimeMeasure';
+import { Y2_EASY_TEMPLATES } from '../generators/easyY2';
 
 /** Topic codes and SK ranges copied from section 6 of the KPM game plan (see the Year 1 pack for the SP note). */
 const topics: CurriculumTopic[] = [
@@ -84,7 +79,7 @@ const topics: CurriculumTopic[] = [
 
 export const KPM_MS_Y2_V1: CurriculumPack = {
   packId: 'kpm-ms-y2',
-  version: '1.0.0',
+  version: '2.0.0',
   year: 2,
   title: {
     bm: 'KSSR (Semakan 2017) - Edisi 3 - Matematik Tahun 2',
@@ -98,14 +93,6 @@ export const KPM_MS_Y2_V1: CurriculumPack = {
     'Scope paraphrased from the MathRacing KPM game plan (24 September 2026). Not a substitute for the official KPM document; ' +
     'a qualified Malaysian primary Mathematics educator must sign off every template before classroom deployment.',
   topics,
-  templates: [
-    ...Y2_NUMBER_TEMPLATES,
-    ...Y2_OPERATION_TEMPLATES,
-    ...Y2_FRACTION_TEMPLATES,
-    ...Y2_MONEY_TEMPLATES,
-    ...Y2_TIME_TEMPLATES,
-    ...Y2_MEASURE_TEMPLATES,
-    ...Y2_SPACE_TEMPLATES,
-    ...Y2_DATA_TEMPLATES,
-  ],
+  // "Kira & taip": every question is a picture to count and one number (DECISIONS #42).
+  templates: Y2_EASY_TEMPLATES,
 };
