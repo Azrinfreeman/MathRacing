@@ -857,11 +857,20 @@ main.wiz-body {
 }
 .summary-racers {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 2px;
 }
-.summary-racer svg,
+/* one row for up to five racers: each shrinks rather than wrapping (the step must fit 1024x600) */
+.summary-racer {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 2.6em;
+}
+.summary-racer svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 .standing-racer svg,
 .evidence-racer svg {
   width: 2.6em;

@@ -73,6 +73,59 @@ test.describe('cruise: cars drive on their own', () => {
     expect(errors).toEqual([]);
   });
 
+  test('pupils race as animals: a duck and a goose cruise, boost past the first mark and are recorded', async ({
+    page,
+  }) => {
+    const errors = await freshPage(page);
+    const o: RaceOptions = { ...BASE, racers: ['duck', 'goose'] };
+    await fillSetup(page, o);
+    await startRace(page);
+    const vp = viewport(page);
+    const geo = computeTrackGeometry(computeStageLayout(vp.w, vp.h, 2).track, 2, o.length);
+
+    await page.waitForTimeout(3000);
+    const idleNose = await rocketNoseX(page, geo, 'beak');
+    expect(idleNose).toBeGreaterThan(geo.startLineX + geo.stepPx * 0.1);
+    expect(idleNose).toBeLessThan(geo.markXs[0] ?? 0);
+
+    await clickTaps(page, tapPlan(questionSource(o).question('p1', 0), vp, 2, 0));
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `${SHOTS}/13-animals-boost.png` });
+    await page.waitForTimeout(1400);
+    expect(await rocketNoseX(page, geo, 'beak')).toBeGreaterThan(geo.markXs[0] ?? 0);
+
+    const racers = await page.evaluate(
+      () =>
+        new Promise<unknown>((resolve, reject) => {
+          const open = indexedDB.open('mathracing-evidence');
+          open.onerror = () => reject(open.error);
+          open.onsuccess = () => {
+            const req = open.result.transaction('sessions').objectStore('sessions').getAll();
+            req.onsuccess = () =>
+              resolve((req.result as { playerRacers?: string[] }[])[0]?.playerRacers);
+            req.onerror = () => reject(req.error);
+          };
+        }),
+    );
+    expect(racers).toEqual(['duck', 'goose']);
+    expect(errors).toEqual([]);
+  });
+
+  test('five animals stay readable on a 1024x600 tablet', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 600 });
+    const errors = await freshPage(page);
+    await fillSetup(page, {
+      ...BASE,
+      players: 5,
+      names: [],
+      racers: ['duck', 'goose', 'chicken', 'turtle', 'rabbit'],
+    });
+    await startRace(page);
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: `${SHOTS}/13-animals-5p-1024x600.png` });
+    expect(errors).toEqual([]);
+  });
+
   test('a wrong answer only slows the car: it never moves back and there is no setback', async ({
     page,
   }) => {

@@ -1,12 +1,20 @@
 import type * as Phaser from 'phaser';
 import type { Translator } from '../../locales';
 import type { SpeedState } from '../core/cruise';
+import { PLAYER_STYLES } from '../core/players';
 import type { PlayerStyle } from '../core/players';
 import type { RacerId } from '../core/racers';
 import { TextPool } from './DrawContext';
 import type { Rect } from './geometry';
 import { CarMotion } from './motion';
-import { OUTLINE_WIDTH, STILL_POSE, gaitPhase, racerKind, racerParts } from './racerShapes';
+import {
+  OUTLINE_WIDTH,
+  STILL_POSE,
+  gaitPhase,
+  partsBounds,
+  racerKind,
+  racerParts,
+} from './racerShapes';
 import type { Pose } from './racerShapes';
 import { drawSymbol } from './shapes';
 import { computeTrackGeometry } from './trackGeometry';
@@ -14,6 +22,21 @@ import type { TrackGeometry } from './trackGeometry';
 import { THEME, hexToNumber, lighten } from './theme';
 
 export type TrackPlayer = { id: string; name: string; style: PlayerStyle; racer: RacerId };
+
+/**
+ * How far above the racer's centre the name chip sits, as a share of the racer size. Vehicles keep the original
+ * height; a tall animal (the goose's head, the rabbit's ears) lifts the chip so it does not hide the head.
+ */
+const nameLiftCache = new Map<RacerId, number>();
+function nameLift(racer: RacerId): number {
+  let lift = nameLiftCache.get(racer);
+  if (lift === undefined) {
+    const top = partsBounds(racerParts(racer, PLAYER_STYLES[0] as PlayerStyle, STILL_POSE)).minY;
+    lift = racerKind(racer) === 'animal' ? Math.max(0.36, (0 - top) / 2 + 0.02) : 0.36;
+    nameLiftCache.set(racer, lift);
+  }
+  return lift;
+}
 
 /** Nose-down tilt while slowed, so a slow-down reads as braking. */
 const SLOW_LEAN = 0.05;
@@ -445,7 +468,7 @@ export class TrackView {
       }
       this.drawRacer(p.style, p.racer, x, y, size, pose);
       // the name chip sits just above the vehicle and stays inside its own lane
-      this.pool.text(`name:${p.id}`, p.name, x, y - size * 0.36, {
+      this.pool.text(`name:${p.id}`, p.name, x, y - size * nameLift(p.racer), {
         size: Math.max(11, Math.min(laneH * 0.2, 24)),
         color: THEME.white,
         bold: true,

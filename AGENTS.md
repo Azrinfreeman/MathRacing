@@ -20,7 +20,7 @@ Full file list with exports: `docs/REPO-MAP.md` (generated). Rationale for every
   - new teacher option: `storage/settings.ts` + `setupState` + `TeacherScreen` + both locales + `storage.test.ts`
   - new attempt field: `RaceState` + `RaceEngine.log` + `reporting/exportCsv` + `storage.test.ts` fixtures
   - new template: `generators/<group>` + `curriculum.test.ts`, then `npm run docs:curriculum`
-  - car visuals: `TrackView` + `motion.ts` + `motion.test.ts`
+  - racer visuals: `ui/racerShapes.ts` (parts drawn by both `TrackView` and `app/art.ts`) + `motion.ts` + `racers.test.ts` / `motion.test.ts`; catalogue in `core/racers.ts`
 
 ## Commands: run the cheapest one that proves your change
 

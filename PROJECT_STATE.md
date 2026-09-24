@@ -1,6 +1,6 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
-Updated 2026-09-24. Working tree clean at the time of writing; last code commit `f5eac1b`.
+Updated 2026-09-24. Working tree clean at the time of writing; latest feature: racer choice (DECISIONS #39).
 
 ## What exists
 
@@ -12,12 +12,12 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 
 ## Verified state (last full run, after the latest commits)
 
-- `npm run check`: agents check, lint, typecheck, 981 unit tests, build all green.
-- `npm run test:e2e`: 34/34 green (about 6 min).
+- `npm run check`: agents check, lint, typecheck, 993 unit tests, build all green.
+- `npm run test:e2e`: 36/36 green (about 7 min).
 - `npm run apk`: builds `output/apk/MathRacing-<version>-<date>-debug.apk` (git-ignored). Last one:
   `MathRacing-1.0.0-20260924-0857-debug.apk`, sent to the owner. Not yet run on a real Android device here
   (no device or emulator connected to this PC).
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#38).
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#39).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -39,6 +39,18 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Evidence: CSV column `speed_effect` (boost/slow/none); `stepDelta` +1 on correct; `progressAfter` = distance
   (2 dp) in cruise; `SessionMeta.movement`.
 - BM pause wording: "Jeda" replaced by "Henti" / "berhenti" / "dihentikan seketika".
+
+## Racer choice (DECISIONS #39, `docs/PLAN-racer-choice.md`)
+
+- Pemain step: tap a player's racer picture -> sheet with 5 vehicles (rocket, kart, wedge, saucer, block) and
+  5 animals (duck, goose, chicken, turtle, rabbit). A racer held by another active player is greyed out. Colour,
+  symbol and lane number stay per slot; defaults = the old fixed vehicles.
+- `core/racers.ts`: catalogue (ids are stable: saved and exported), `takenRacers`, `resolveRacers` (no clashes among
+  active seats). `ui/racerShapes.ts`: every racer as pure parts drawn by `TrackView` (Phaser) and `art.ts racerSvg`.
+  Animals: natural colours, player colour on a scarf + ringed badge, gait from distance travelled, wing flap on boost.
+- Saved per seat in `Settings.racers` (never with names). `SessionMeta.playerRacers` (optional: older sessions lack
+  it), CSV column `racer` before `parameters_json`; results and evidence show the racer.
+- E2E: `fillSetup` option `racers: ['duck', ...]`; `rocketNoseX(page, geo, 'beak')` finds a duck/goose beak.
 
 ## Android APK (DECISIONS #38)
 
@@ -69,7 +81,7 @@ finds player 1's car nose for position checks. New spec: `e2e/cruise.spec.ts`.
   visible on some devices (immersive mode), keep-screen-on, pace tuning of `DEFAULT_CRUISE`.
 - Real five-finger hardware not validated: run `docs/MANUAL-TOUCH-TEST.md` on the target panel.
 - Curriculum packs are `draft-pending-academic-review`; no SP codes exist (never invent them).
-- Cooperative/team mode, clock-setting widget, shape drawing, pupil-chosen vehicles, Year 1 "2027 pack" not built.
+- Cooperative/team mode, clock-setting widget, shape drawing, Year 1 "2027 pack" not built. No animal sounds (owner: no).
 
 ## Owner preferences (how to work with them)
 

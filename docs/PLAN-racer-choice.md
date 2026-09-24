@@ -1,7 +1,9 @@
 # Implementation plan: pupils choose their racer (vehicles or animals such as a duck or goose)
 
-Status: **decisions answered, not implemented.** The owner answered D1-D7 (section 7); every section below
-follows those answers. Say "proceed" to build it.
+Status: **implemented** (DECISIONS #39) with the owner's answers in section 7. Deviations: steps 1-2 were one commit
+(shared parts and the animals together); the badge on animals sits on a ring in the player colour next to the scarf;
+the name chip on the track is lifted above tall animals (goose head, rabbit ears); racer names live in the catalogue
+(`racers.ts`), not in the locale files.
 
 ## 1. What is being asked
 

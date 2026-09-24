@@ -18,6 +18,8 @@ export type RaceOptions = {
   players: number;
   length: number;
   names?: string[];
+  /** Racer ids picked in the racer sheet, per player (e.g. 'duck'). */
+  racers?: string[];
   mode?: 'quick' | 'practice';
   language?: 'bm' | 'en';
   /** Teacher settings to switch on or off, by their `opt-*` test id suffix. */
@@ -60,6 +62,10 @@ export async function fillSetup(page: Page, o: RaceOptions): Promise<void> {
   // step 3: players
   await page.getByTestId(`count-${o.players}`).click();
   for (const [i, name] of (o.names ?? []).entries()) await page.getByTestId(`name-${i}`).fill(name);
+  for (const [i, racer] of (o.racers ?? []).entries()) {
+    await page.getByTestId(`racer-${i}`).click();
+    await page.getByTestId(`racer-tile-${racer}`).click();
+  }
   await page.getByTestId('setup-next').click();
   // step 4: mode and race length
   await page.getByTestId(`mode-${o.mode ?? 'quick'}`).click();
@@ -197,32 +203,44 @@ export async function answerItems(
 }
 
 /**
- * The x of player 1's vehicle nose, in page pixels: player 1 drives the orange rocket, so its right-most
- * orange pixel in lane 1 is the nose. Returns -1 when no orange pixel is found.
+ * The x of player 1's racer nose, in page pixels. By default player 1 drives the orange rocket, so its right-most
+ * orange pixel in lane 1 is the nose; with `'beak'` it is the right-most bright orange beak pixel (duck, goose),
+ * which the rocket orange, the player's scarf and the yellow duck body do not match. Returns -1 when none found.
  */
-export async function rocketNoseX(page: Page, geo: TrackGeometry): Promise<number> {
+export async function rocketNoseX(
+  page: Page,
+  geo: TrackGeometry,
+  nose: 'rocket' | 'beak' = 'rocket',
+): Promise<number> {
   const vp = page.viewportSize() ?? { width: 1920, height: 1080 };
   const png = await page.screenshot({
     clip: { x: 0, y: Math.round(geo.top), width: vp.width, height: Math.round(geo.laneH) },
   });
-  return page.evaluate(async (b64) => {
-    const img = new Image();
-    img.src = `data:image/png;base64,${b64}`;
-    await img.decode();
-    const c = document.createElement('canvas');
-    c.width = img.width;
-    c.height = img.height;
-    const ctx = c.getContext('2d');
-    if (!ctx) return -1;
-    ctx.drawImage(img, 0, 0);
-    const d = ctx.getImageData(0, 0, c.width, c.height).data;
-    let max = -1;
-    for (let i = 0; i < d.length; i += 4) {
-      const [r, g, b] = [d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0];
-      if (r > 170 && g > 45 && g < 110 && b < 40) max = Math.max(max, (i / 4) % c.width);
-    }
-    return max;
-  }, png.toString('base64'));
+  return page.evaluate(
+    async ([b64, kind]) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d');
+      if (!ctx) return -1;
+      ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, c.width, c.height).data;
+      let max = -1;
+      for (let i = 0; i < d.length; i += 4) {
+        const [r, g, b] = [d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0];
+        const hit =
+          kind === 'beak'
+            ? r > 230 && g > 90 && g < 140 && b < 60
+            : r > 170 && g > 45 && g < 110 && b < 40;
+        if (hit) max = Math.max(max, (i / 4) % c.width);
+      }
+      return max;
+    },
+    [png.toString('base64'), nose] as const,
+  );
 }
 
 /** Read every stored attempt straight from IndexedDB (the same evidence the CSV export uses). */

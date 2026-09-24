@@ -4,10 +4,10 @@
 
 ## e2e/
 
-- `cruise.spec.ts` (150): cruise: cars drive on their own
+- `cruise.spec.ts` (203): cruise: cars drive on their own
 - `mathracing.spec.ts` (576): splash, menu and setup steps, classroom happy path, layout at classroom resolutions, 2x display scaling (4K panel at 200 percent), multi-touch: pointers stay with the panel they started in, evidence, export and deletion, offline and installability
 - `setback.spec.ts` (169): setback after 3 wrong answers
-- `support.ts` (267): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
+- `support.ts` (285): RaceOptions, Point, watchErrors, fillSetup, startRace, questionSource, tapPlan, wrongTapPlan, SUCCESS_WAIT_MS, clickTaps, answerItems, rocketNoseX, readAttempts, readSessionCount
 
 ## scripts/
 
@@ -20,20 +20,20 @@
 
 ## src/app/
 
-- `AppController.ts` (533): AppDeps, AppController
+- `AppController.ts` (540): AppDeps, AppController
 - `StageChrome.ts` (225): StagePhase, StageHandlers, StageChrome
-- `art.ts` (263): symbolBadgeSvg, vehicleSvg, levelStarsSvg, topicIconSvg, MENU_ICONS
+- `art.ts` (136): symbolBadgeSvg, racerSvg, levelStarsSvg, topicIconSvg, MENU_ICONS
 - `controls.ts` (73): choice, languageSwitch, svgArt
 - `dialogs.ts` (130): confirmDialog, contentDialog, toast
 - `dom.ts` (89): Child, Attrs, h, append, clear
 - `help.ts` (56): showHelp
-- `setupState.ts` (140): SetupInput, SetupState, stateFromSettings, settingsFromState, defaultTopicForYear, keepYearTopics, normalizeNames, buildSetupInput
+- `setupState.ts` (149): SetupInput, SetupState, stateFromSettings, settingsFromState, defaultTopicForYear, keepYearTopics, normalizeNames, buildSetupInput
 
 ## src/app/screens/
 
 - `MenuScreen.ts` (153): MenuDeps, MenuScreen
-- `ResultsScreen.ts` (311): ResultsData, ResultsCallbacks, ResultsScreen
-- `SetupScreen.ts` (637): SetupStep, SetupDeps, summarizeSetup, SetupScreen
+- `ResultsScreen.ts` (333): ResultsData, ResultsCallbacks, ResultsScreen
+- `SetupScreen.ts` (746): SetupStep, SetupDeps, summarizeSetup, SetupScreen
 - `SplashScreen.ts` (83): SplashOptions, runSplash
 - `TeacherScreen.ts` (230): TeacherDeps, TeacherScreen
 
@@ -82,10 +82,11 @@
 
 - `InputOwnership.ts` (90): PanelId, PointerDownResult, PointerUpResult, InputOwnership
 - `RaceEngine.ts` (680): RaceEngineOptions, RaceConfigError, RaceEngine
-- `RaceState.ts` (297): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
+- `RaceState.ts` (300): SessionPhase, IllegalTransitionError, PhaseListener, SessionStateMachine, RaceMode, RACE_LENGTHS, DEFAULT_RACE_LENGTH, SupportKind, Movement, SpeedEffect, PlayerConfig, RaceConfig, DEFAULT_RACE_TIMING, PlayerPhase, +12 more
 - `SeededRng.ts` (114): Rng, SeededRng, createSessionSeed
 - `cruise.ts` (132): CruiseConfig, DEFAULT_CRUISE, SpeedState, CruiseBody, boostRate, speedAt, speedStateAt, noteAnswer, applyBoost, applySlow, advanceCruise
-- `players.ts` (112): SymbolId, VehicleId, PlayerStyle, MAX_PLAYERS, MIN_PLAYERS, PLAYER_STYLES, styleForSlot, relativeLuminance, contrastRatio, defaultPlayerName
+- `players.ts` (114): SymbolId, PlayerStyle, MAX_PLAYERS, MIN_PLAYERS, PLAYER_STYLES, styleForSlot, relativeLuminance, contrastRatio, defaultPlayerName
+- `racers.ts` (98): RacerId, RacerKind, RacerInfo, RACERS, isRacerId, racerInfo, defaultRacerForSlot, defaultRacers, takenRacers, resolveRacers
 
 ## src/game/scenes/
 
@@ -98,11 +99,12 @@
 
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
 - `PanelView.ts` (722): PanelAction, PanelMode, PanelView
-- `TrackView.ts` (746): TrackPlayer, TrackView
+- `TrackView.ts` (640): TrackPlayer, TrackView
 - `VisualRenderer.ts` (845): drawVisual
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (109): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones
 - `motion.ts` (132): Direction, CarMotion
+- `racerShapes.ts` (799): Pose, STILL_POSE, Pt, RacerPart, OUTLINE_WIDTH, ANIMAL_OUTLINE, gaitPhase, racerKind, ANIMAL_COLORS, racerParts, partsBounds
 - `shapes.ts` (282): drawPolygon, regularPolygon, starPoints, drawSymbol, drawObject, drawShape2D
 - `theme.ts` (50): FONT_FAMILY, THEME, hexToNumber, lighten, darken
 - `trackGeometry.ts` (84): CAR_TAIL, CAR_NOSE, TrackGeometry, computeTrackGeometry
@@ -119,8 +121,8 @@
 
 ## src/locales/
 
-- `bm.ts` (205): bm, MessageKey
-- `en.ts` (202): en
+- `bm.ts` (211): bm, MessageKey
+- `en.ts` (208): en
 - `index.ts` (33): Params, Translator, translate, createTranslator, ALL_MESSAGE_KEYS
 
 ## src/
@@ -130,18 +132,18 @@
 ## src/reporting/
 
 - `evidence.ts` (96): PlayerEvidence, TopicEvidence, EvidenceSummary, summarizeEvidence
-- `exportCsv.ts` (85): BOM, escapeCell, CSV_COLUMNS, attemptsToCsv, csvFileName, downloadCsv
+- `exportCsv.ts` (90): BOM, escapeCell, CSV_COLUMNS, attemptsToCsv, csvFileName, downloadCsv
 
 ## src/storage/
 
 - `IndexedDbSessionRepository.ts` (125): IndexedDbSessionRepository, RepositoryChoice, createRepository
 - `SessionRepository.ts` (74): SessionRepository, compareAttempts, InMemorySessionRepository
-- `settings.ts` (151): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, SettingsStore
+- `settings.ts` (159): Settings, DEFAULT_SETTINGS, KeyValueStore, sanitizeSettings, SettingsStore
 
 ## src/tests/
 
 - `answers.test.ts` (169): normalizeDecimal, senToRmText, evaluateAnswer
-- `app.test.ts` (542): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
+- `app.test.ts` (584): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `cruise.test.ts` (209): cruise movement
 - `curriculum.test.ts` (334): curriculum registry, number words
 - `helpers.ts` (20): correctSubmission
@@ -151,9 +153,10 @@
 - `motion.test.ts` (255): CarMotion, CarMotion follow mode (cruise)
 - `pointerRouter.test.ts` (150): PointerRouter
 - `raceEngine.test.ts` (967): RaceEngine setup and lifecycle, RaceEngine movement rules, RaceEngine setback rule, RaceEngine hints and support, RaceEngine winner rules, RaceEngine practice mode, RaceEngine pause, resume and early end, RaceEngine evidence log, RaceEngine with the real question blueprint, RaceEngine cruise movement, RaceEngine cruise: idle crawl
+- `racers.test.ts` (153): racer catalogue, racer shapes
 - `seededRng.test.ts` (95): SeededRng
 - `splash.test.ts` (90): launch splash
 - `stateMachine.test.ts` (60): SessionStateMachine
-- `storage.test.ts` (367): session repositories, CSV export, settings
+- `storage.test.ts` (399): session repositories, CSV export, settings
 - `trackGeometry.test.ts` (56): track geometry
 - `widgets.test.ts` (295): NumberPadWidget, ChoiceTilesWidget, TapPictureWidget, OrderStripWidget, BuildValueWidget, hitControl, widget layout across every template

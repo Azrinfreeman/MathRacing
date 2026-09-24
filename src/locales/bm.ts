@@ -184,9 +184,9 @@ export const bm = {
   'help.title': 'Bantuan',
   'help.how.title': 'Cara bermain',
   'help.how.1':
-    'Setiap murid berdiri di hadapan kotaknya dan menjawab soalan sendiri pada masa yang sama.',
+    'Setiap murid memilih pelumba sendiri (kenderaan atau haiwan) dalam langkah Pemain, kemudian berdiri di hadapan kotaknya dan menjawab soalan sendiri pada masa yang sama.',
   'help.how.2':
-    'Semua kenderaan bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut kenderaan murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur). Jika murid berhenti menjawab, kenderaannya bergerak sangat perlahan.',
+    'Semua pelumba bergerak sendiri ke penamat pada kelajuan yang sama. Jawapan betul memecut pelumba murid itu; jawapan salah memperlahankannya seketika (tidak pernah mengundur). Jika murid berhenti menjawab, pelumbanya bergerak sangat perlahan.',
   'help.how.3':
     'Selepas 2 kali salah, satu petunjuk kecil muncul. Selepas 3 kali salah, sokongan boleh ditawarkan.',
   'help.how.4': 'Murid pertama yang mencapai penamat menang. Dalam mod Latihan, tiada pemenang.',

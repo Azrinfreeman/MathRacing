@@ -183,9 +183,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   'help.title': 'Help',
   'help.how.title': 'How to play',
   'help.how.1':
-    'Each pupil stands in front of their own box and answers their own question at the same time.',
+    'Each pupil picks their own racer (a vehicle or an animal) in the Players step, then stands in front of their own box and answers their own question at the same time.',
   'help.how.2':
-    "Every vehicle drives itself towards the finish at the same pace. A correct answer boosts that pupil's vehicle; a wrong answer slows it for a moment (it never moves back). If a pupil stops answering, their vehicle only crawls.",
+    "Every racer moves itself towards the finish at the same pace. A correct answer boosts that pupil's racer; a wrong answer slows it for a moment (it never moves back). If a pupil stops answering, their racer only crawls.",
   'help.how.3':
     'After 2 wrong attempts a small hint appears. After 3 wrong attempts support can be offered.',
   'help.how.4': 'The first pupil to reach the finish wins. In Practice mode there is no winner.',
