@@ -300,6 +300,41 @@ test.describe('classroom happy path', () => {
     expect(errors).toEqual([]);
   });
 
+  test('pictograph and measuring questions keep the pictured item and accepted count aligned', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 600 });
+    const errors = await freshPage(page);
+    for (const [topic, language] of [
+      ['y1-data', 'bm'],
+      ['y1-measurement', 'en'],
+    ] as const) {
+      const o: RaceOptions = {
+        seed: `E2E-MATCH-${topic}`,
+        topics: [topic],
+        level: 2,
+        players: 2,
+        length: 5,
+        language,
+      };
+      const q = questionSource(o).question('p1', 0);
+      expect(q.prompt.visual?.kind).toBe(topic === 'y1-data' ? 'pictograph' : 'unit-bar');
+      await fillSetup(page, o);
+      await startRace(page);
+      if (topic === 'y1-measurement')
+        await page.screenshot({ path: `${SHOTS}/16-measuring-unit-match.png` });
+      await answerItems(page, o, 0, 1);
+      await page.waitForTimeout(SUCCESS_WAIT_MS);
+      expect(
+        (await readAttempts(page)).some(
+          (a) => a.playerId === 'p1' && a.templateId === q.templateId && a.correct,
+        ),
+      ).toBe(true);
+      if (topic === 'y1-data') await freshPage(page);
+    }
+    expect(errors).toEqual([]);
+  });
+
   test('Year 2 number-pad and English interface work', async ({ page }) => {
     const errors = await freshPage(page);
     const o: RaceOptions = {

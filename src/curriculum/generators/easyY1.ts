@@ -1,6 +1,6 @@
-import type { Level, LocalText, QuestionTemplate } from '../schema';
-import type { ObjectShape } from '../visual';
-import { FRUITS, OBJECT_COLORS, PETS, text } from '../text/vocab';
+import type { Level, QuestionTemplate } from '../schema';
+import type { MeasuringUnit, ObjectShape } from '../visual';
+import { MEASURING_UNIT_NAMES, OBJECT_COLORS, OBJECT_SHAPE_NAMES, text } from '../text/vocab';
 import { numberBuilt } from './builders';
 import {
   COUNT_SHAPES,
@@ -323,12 +323,14 @@ const money = defineTemplate<MoneyP>({
       unit: ringgit ? 'RM' : 'sen',
       answer: ringgit ? total / 100 : total,
       hint: ringgit
-        ? tr(
-            ctx,
-            'RM5, kemudian tambah satu-satu: 6, 7, ...',
-            'Start at RM5, then count on: 6, 7, ...',
-          )
-        : tr(ctx, 'Kira lompat 10: 10, 20, 30, ...', 'Skip count in 10s: 10, 20, 30, ...'),
+        ? p.items.includes(500)
+          ? tr(
+              ctx,
+              'Mula pada RM5, kemudian kira RM1 satu-satu.',
+              'Start at RM5, then count each RM1 note.',
+            )
+          : tr(ctx, 'Kira setiap wang kertas RM1.', 'Count each RM1 note.')
+        : tr(ctx, `Kira lompat ${p.items[0]} sen.`, `Skip count in ${p.items[0]} sen.`),
     });
   },
   recompute: (p) => {
@@ -368,18 +370,14 @@ const clockHour = defineTemplate<HourP>({
 
 // ------------------------------------------------------------------------------ 5.0 Measurement
 
-const UNIT_WORDS: LocalText[] = [
-  { bm: 'klip kertas', en: 'paper clips' },
-  { bm: 'blok', en: 'blocks' },
-  { bm: 'kiub', en: 'cubes' },
-];
+const MEASURING_UNITS: MeasuringUnit[] = ['paperclip', 'block', 'cube'];
 const UNIT_RANGE: Record<Level, [number, number]> = {
   1: pickRange(2, 5),
   2: pickRange(3, 8),
   3: pickRange(5, 12),
   4: pickRange(5, 15),
 };
-type UnitP = { units: number; word: number };
+type UnitP = { units: number; unit: MeasuringUnit };
 const unitCount = defineTemplate<UnitP>({
   id: 'y1-easy-unit-count',
   topicId: 'y1-measurement',
@@ -390,20 +388,20 @@ const unitCount = defineTemplate<UnitP>({
   arithmetic: true,
   sample: (rng, level) => ({
     units: rng.int(UNIT_RANGE[level][0], UNIT_RANGE[level][1]),
-    word: rng.int(0, UNIT_WORDS.length - 1),
+    unit: rng.pick(MEASURING_UNITS),
   }),
   build: (p, ctx) => {
-    const word = text(ctx.language, UNIT_WORDS[p.word] as LocalText);
+    const word = text(ctx.language, MEASURING_UNIT_NAMES[p.unit]);
     return numberBuilt({
       band: `units-${UNIT_RANGE[ctx.level][1]}`,
       text: tr(ctx, `Berapa ${word} panjangnya?`, `How many ${word} long?`),
-      visual: { kind: 'unit-bar', units: p.units, unitLabel: word },
+      visual: { kind: 'unit-bar', units: p.units, unit: p.unit },
       answer: p.units,
       hint: tr(ctx, 'Kira dari hujung ke hujung.', 'Count from end to end.'),
     });
   },
   recompute: (p) => String(p.units),
-  fixtures: [{ params: { units: 6, word: 0 }, expected: { answerText: '6' } }],
+  fixtures: [{ params: { units: 6, unit: 'paperclip' }, expected: { answerText: '6' } }],
 });
 
 // ------------------------------------------------------------------------------ 6.0 Space
@@ -430,7 +428,7 @@ const PICTO: Record<Level, { rows: number; max: number }> = {
   3: { rows: 4, max: 9 },
   4: { rows: 4, max: 10 },
 };
-type PictoP = { pets: boolean; labelIdx: number[]; counts: number[]; ask: number };
+type PictoP = { shapes: ObjectShape[]; counts: number[]; ask: number };
 const pictograph = defineTemplate<PictoP>({
   id: 'y1-easy-pictograph',
   topicId: 'y1-data',
@@ -441,33 +439,25 @@ const pictograph = defineTemplate<PictoP>({
   arithmetic: true,
   sample: (rng, level) => {
     const cfg = PICTO[level];
-    const pets = rng.chance(0.5);
-    const names = pets ? PETS : FRUITS;
-    const labelIdx = rng.shuffle(names.map((_, i) => i)).slice(0, cfg.rows);
+    const shapes = rng.shuffle(ROW_SHAPES).slice(0, cfg.rows);
     return {
-      pets,
-      labelIdx,
-      counts: labelIdx.map(() => rng.int(1, cfg.max)),
+      shapes,
+      counts: shapes.map(() => rng.int(1, cfg.max)),
       ask: rng.int(0, cfg.rows - 1),
     };
   },
   build: (p, ctx) => {
-    const names = p.pets ? PETS : FRUITS;
-    const rows = p.labelIdx.map((li, i) => ({
-      label: text(ctx.language, names[li] as LocalText),
+    const rows = p.shapes.map((shape, i) => ({
+      label: text(ctx.language, OBJECT_SHAPE_NAMES[shape]),
       count: p.counts[i] as number,
-      shape: ROW_SHAPES[i] as ObjectShape,
+      shape,
       color: color(i),
     }));
     const row = rows[p.ask];
     if (!row) throw new Error('y1-easy-pictograph: ask index out of range');
     return numberBuilt({
       band: `rows-${rows.length}`,
-      text: tr(
-        ctx,
-        `Berapa ${row.label.toLowerCase()}?`,
-        `How many for ${row.label.toLowerCase()}?`,
-      ),
+      text: tr(ctx, `Berapa ${row.label.toLowerCase()}?`, `How many ${row.label.toLowerCase()}s?`),
       visual: { kind: 'pictograph', rows },
       answer: row.count,
       hint: tr(ctx, 'Kira gambar pada baris itu sahaja.', 'Count the pictures in that row only.'),
@@ -476,7 +466,7 @@ const pictograph = defineTemplate<PictoP>({
   recompute: (p) => String(p.counts[p.ask]),
   fixtures: [
     {
-      params: { pets: false, labelIdx: [0, 1, 2], counts: [4, 2, 5], ask: 0 },
+      params: { shapes: ['circle', 'square', 'triangle'], counts: [4, 2, 5], ask: 0 },
       level: 1,
       expected: { answerText: '4' },
     },

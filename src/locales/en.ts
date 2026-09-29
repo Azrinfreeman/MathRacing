@@ -217,7 +217,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   'help.how.2':
     "Every racer moves itself towards the finish at the same pace. A correct answer boosts that pupil's racer; a wrong answer slows it for a moment (it never moves back). If a pupil stops answering, their racer only crawls.",
   'help.how.3':
-    'Every question: count the picture, type the number, press Go. After 2 wrong answers the picture is arranged in fives and a small hint appears. After 3 wrong answers an easier question can be offered.',
+    'Every question: read the question, count the matching picture, type the number, press Go. After 2 wrong answers loose objects are arranged in fives and a small hint appears. After 3 wrong answers an easier question can be offered.',
   'help.how.4': 'The first pupil to reach the finish wins. In Practice mode there is no winner.',
   'help.teacher.title': 'For teachers',
   'help.teacher.1':

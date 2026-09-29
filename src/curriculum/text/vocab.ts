@@ -1,6 +1,6 @@
 import type { Language, LocalText } from '../schema';
 import { pickText } from '../schema';
-import type { Shape2D, Shape3D } from '../visual';
+import type { MeasuringUnit, ObjectShape, Shape2D, Shape3D } from '../visual';
 
 /** Number words, Bahasa Melayu and British English, for 0..1000. */
 const BM_UNITS = [
@@ -117,6 +117,23 @@ export const SHAPE2D_NAMES: Record<Shape2D, LocalText> = {
   pentagon: { bm: 'Pentagon', en: 'Pentagon' },
   hexagon: { bm: 'Heksagon', en: 'Hexagon' },
   octagon: { bm: 'Oktagon', en: 'Octagon' },
+};
+
+/** Pictograph category names are the actual symbols drawn in each row. */
+export const OBJECT_SHAPE_NAMES: Record<ObjectShape, LocalText> = {
+  circle: { bm: 'Bulatan', en: 'Circle' },
+  star: { bm: 'Bintang', en: 'Star' },
+  square: { bm: 'Segi empat sama', en: 'Square' },
+  triangle: { bm: 'Segi tiga', en: 'Triangle' },
+  diamond: { bm: 'Belah ketupat', en: 'Diamond' },
+  heart: { bm: 'Hati', en: 'Heart' },
+};
+
+/** The measuring noun and its drawing share one unit identifier. */
+export const MEASURING_UNIT_NAMES: Record<MeasuringUnit, LocalText> = {
+  paperclip: { bm: 'klip kertas', en: 'paper clips' },
+  block: { bm: 'blok', en: 'blocks' },
+  cube: { bm: 'kiub', en: 'cubes' },
 };
 
 export const SHAPE3D_NAMES: Record<Shape3D, LocalText> = {

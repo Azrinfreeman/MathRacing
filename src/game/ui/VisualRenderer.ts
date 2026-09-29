@@ -1,5 +1,6 @@
 import type {
   BlockSet,
+  MeasuringUnit,
   MoneyItem,
   ObjectGroup,
   ObjectShape,
@@ -54,7 +55,7 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
       drawFraction(ctx, v.numerator, v.denominator, v.style, v.shaded, area);
       break;
     case 'unit-bar':
-      drawUnitBar(ctx, v.units, v.color ?? '#f59e0b', area);
+      drawUnitBar(ctx, v.units, v.unit, v.color ?? '#f59e0b', area);
       break;
     case 'length-bar':
       drawLengthBar(ctx, v.length, v.max, v.color ?? '#2563eb', area);
@@ -706,7 +707,13 @@ function drawFraction(
 
 // ---------------------------------------------------------------------------------------- measurement
 
-function drawUnitBar(ctx: DrawContext, units: number, colorHex: string, area: Rect): void {
+function drawUnitBar(
+  ctx: DrawContext,
+  units: number,
+  unit: MeasuringUnit,
+  colorHex: string,
+  area: Rect,
+): void {
   const { g } = ctx;
   const unitW = Math.min((area.w * 0.94) / units, area.h * 0.5);
   const totalW = unitW * units;
@@ -720,17 +727,71 @@ function drawUnitBar(ctx: DrawContext, units: number, colorHex: string, area: Re
   const tileY = barY + barH + area.h * 0.1;
   const tileH = Math.min(area.h * 0.36, unitW * 0.9);
   for (let i = 0; i < units; i++) {
+    const tileX = x0 + i * unitW + unitW * 0.06;
     g.fillStyle(0xf8fafc, 1);
-    g.fillRoundedRect(x0 + i * unitW + unitW * 0.06, tileY, unitW * 0.88, tileH, tileH * 0.25);
+    g.fillRoundedRect(tileX, tileY, unitW * 0.88, tileH, tileH * 0.25);
     g.lineStyle(Math.max(1.5, unitW * 0.04), 0x475569, 1);
-    g.strokeRoundedRect(x0 + i * unitW + unitW * 0.06, tileY, unitW * 0.88, tileH, tileH * 0.25);
-    g.fillStyle(0x94a3b8, 1);
-    g.fillRect(
-      x0 + i * unitW + unitW * 0.22,
-      tileY + tileH * 0.42,
-      unitW * 0.56,
-      Math.max(2, tileH * 0.16),
+    g.strokeRoundedRect(tileX, tileY, unitW * 0.88, tileH, tileH * 0.25);
+    drawMeasuringUnit(
+      ctx,
+      unit,
+      tileX + unitW * 0.16,
+      tileY + tileH * 0.12,
+      unitW * 0.68,
+      tileH * 0.76,
     );
+  }
+}
+
+/** Keep the object named by the prompt visible in every measuring cell, even at 15 units. */
+function drawMeasuringUnit(
+  ctx: DrawContext,
+  unit: MeasuringUnit,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  const { g } = ctx;
+  if (unit === 'paperclip') {
+    g.lineStyle(Math.max(1.2, Math.min(w, h) * 0.15), 0x1e40af, 1);
+    g.strokeRoundedRect(x + w * 0.08, y + h * 0.04, w * 0.58, h * 0.88, w * 0.28);
+    g.strokeRoundedRect(x + w * 0.32, y + h * 0.13, w * 0.58, h * 0.74, w * 0.24);
+  } else if (unit === 'block') {
+    g.fillStyle(0x2563eb, 1);
+    g.fillRoundedRect(x + w * 0.05, y + h * 0.16, w * 0.9, h * 0.68, Math.min(w, h) * 0.1);
+    g.lineStyle(Math.max(1, w * 0.06), 0x1e3a8a, 1);
+    g.strokeRoundedRect(x + w * 0.05, y + h * 0.16, w * 0.9, h * 0.68, Math.min(w, h) * 0.1);
+  } else {
+    const edge = Math.max(1, w * 0.06);
+    drawPolygon(
+      g,
+      [
+        { x: x + w * 0.12, y: y + h * 0.33 },
+        { x: x + w * 0.32, y: y + h * 0.12 },
+        { x: x + w * 0.86, y: y + h * 0.12 },
+        { x: x + w * 0.66, y: y + h * 0.33 },
+      ],
+      0x93c5fd,
+      0x1e3a8a,
+      edge,
+    );
+    drawPolygon(
+      g,
+      [
+        { x: x + w * 0.66, y: y + h * 0.33 },
+        { x: x + w * 0.86, y: y + h * 0.12 },
+        { x: x + w * 0.86, y: y + h * 0.68 },
+        { x: x + w * 0.66, y: y + h * 0.88 },
+      ],
+      0x1d4ed8,
+      0x1e3a8a,
+      edge,
+    );
+    g.fillStyle(0x3b82f6, 1);
+    g.fillRect(x + w * 0.12, y + h * 0.33, w * 0.54, h * 0.55);
+    g.lineStyle(edge, 0x1e3a8a, 1);
+    g.strokeRect(x + w * 0.12, y + h * 0.33, w * 0.54, h * 0.55);
   }
 }
 

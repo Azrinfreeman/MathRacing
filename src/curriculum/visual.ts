@@ -5,6 +5,7 @@
  */
 
 export type ObjectShape = 'circle' | 'star' | 'square' | 'triangle' | 'diamond' | 'heart';
+export type MeasuringUnit = 'paperclip' | 'block' | 'cube';
 export type Shape2D =
   'triangle' | 'square' | 'rectangle' | 'circle' | 'pentagon' | 'hexagon' | 'octagon';
 export type Shape3D = 'cube' | 'cuboid' | 'cylinder' | 'cone' | 'sphere' | 'pyramid';
@@ -50,7 +51,7 @@ export type VisualModel =
       shaded?: number[];
     }
   /** Object measured with non-standard units (e.g. paper clips). */
-  | { kind: 'unit-bar'; units: number; unitLabel: string; color?: string }
+  | { kind: 'unit-bar'; units: number; unit: MeasuringUnit; color?: string }
   /** A plain bar whose length is the thing being compared. */
   | { kind: 'length-bar'; length: number; max: number; color?: string }
   | { kind: 'ruler'; lengthCm: number; maxCm: number }
@@ -149,6 +150,7 @@ export function validateVisual(v: VisualModel): string[] {
     case 'unit-bar':
       if (!Number.isInteger(v.units) || v.units < 1 || v.units > 15)
         problems.push('unit-bar: units');
+      if (!['paperclip', 'block', 'cube'].includes(v.unit)) problems.push('unit-bar: unit');
       break;
     case 'length-bar':
       if (v.length <= 0 || v.length > v.max) problems.push('length-bar: length within max');
@@ -255,7 +257,7 @@ export function describeVisual(v: VisualModel): string {
     case 'length-bar':
       return `length-bar ${v.length}`;
     case 'unit-bar':
-      return `unit-bar ${v.units}`;
+      return `unit-bar ${v.units} ${v.unit}`;
     case 'ruler':
       return `ruler ${v.lengthCm} cm`;
     case 'cup':

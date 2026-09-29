@@ -1,7 +1,7 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
-Updated 2026-09-25. Latest feature: simplified menus (DECISIONS #43), approved and implemented from
-`docs/PLAN-simple-menus.md`. Version 1.3.0 (Android versionCode 4), packaged as a release APK with the new menus.
+Updated 2026-09-29. Latest change: question/picture/hint consistency audit (DECISIONS #44). Web app version
+1.3.1 and Android versionCode 5 are prepared; a new signed APK is pending restoration of the Android SDK.
 
 ## What exists
 
@@ -11,23 +11,20 @@ Capacitor 6.2.2 (Android shell). 22 counting templates x 4 levels (number pad on
 Android APK. Repo: `D:\UProject\ProjectAIVibeCode\MathRacing`.
 Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (1920x1080 CSS px), landscape.
 
-## Verified state (menu simplification, 2026-09-25)
+## Verified state (question consistency, 2026-09-29)
 
-- `npm run check`: agents check, lint, typecheck, 559 unit tests and production/PWA build green. The final small
-  validation-message correction also passed `check:fast` and the rebuilt production browser checks.
-- Browser coverage: all 43 tests passed across the full run and focused rerun. The full run passed 41/43;
-  two mixed-topic tests exposed a helper topic-order mismatch (not a generator change). After restoring requested
-  selection order, all 12 affected menu/mixed-topic tests passed on rerun. Installed Chrome was used via
-  `PLAYWRIGHT_CHANNEL=chrome`; the pinned Playwright Chromium binary is not installed here. Run outside the
-  restricted sandbox for clean preview-server teardown on this PC.
+- `npm run check`: agents check, lint, typecheck, 559 unit tests and production/PWA build green.
+- `npm run test:e2e`: 44/44 browser tests green, including the new Year 1 pictograph/measurement check at
+  1024x600. Installed Chrome was used via `PLAYWRIGHT_CHANNEL=chrome`; run outside the restricted sandbox for
+  clean preview-server teardown on this PC. The measuring-unit screenshot was visually inspected.
 - Both languages fit at 960x540, 1024x600, 1280x800 and 1920x1080, including Year 2's eight topics and five players.
   One 960x540 question-screen screenshot was visually inspected; actual Android keyboard/navigation-bar testing
   and five-finger hardware validation remain outstanding.
-- `npm run apk:release`: signed release APK in `output/apk/` (git-ignored). Latest sent to the owner:
-  `MathRacing-1.3.0-20260925-0748-release.apk` (versionCode 4; installs over 1.0-1.2 release builds; built after
-  `npm run check` (559 unit) and `npm run test:e2e` 43/43 green on 2026-09-25). Not run on a
-  real Android device here (no device or emulator on this PC). `npm run apk` still builds a debug APK.
-- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#43).
+- `npm run apk:release` cannot currently start: `C:/Users/azrin/AppData/Local/Android/Sdk` (the previously
+  configured SDK) is missing, and standard alternate locations were checked. The latest signed file remains
+  `output/apk/MathRacing-1.3.0-20260925-0748-release.apk` (versionCode 4), which does **not** contain #44.
+  After restoring the Android SDK platform 34/build-tools 34, run `npm run apk:release` for v1.3.1/code 5.
+- Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#44).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
 
@@ -53,12 +50,15 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 ## Questions: "Kira & taip" (DECISIONS #42, `docs/PLAN-easy-questions.md`)
 
 - Every question = a picture to count + one whole number (0-999) on the number pad. Templates in
-  `curriculum/generators/easyY1.ts` (10) and `easyY2.ts` (12), shared bits in `easyShared.ts`; packs 2.0.0.
+  `curriculum/generators/easyY1.ts` (10) and `easyY2.ts` (12), shared bits in `easyShared.ts`; packs 2.0.1.
   Old generators and the tiles/tap/order/build widgets are deleted.
 - New visuals: `ten-frames`, `base-ten`, `equal-groups`, `ObjectGroup.crossed`, clock `fives`; layout in
   `game/ui/countLayout.ts`; `visualTotal()` in `visual.ts`. `hintVisual` (ten-frames) replaces the picture once the
   hint shows (PanelView). Number pad goes 1-5 / 6-0 / C+Hantar on short panels.
 - Evidence: `SessionMeta.questionStyle='easy'`, CSV `question_style`.
+- #44: Year 1 pictograph row names now match their drawn shape symbols; measurement prompts name the paper
+  clips/blocks/cubes actually drawn; money hints mention only visible denominations. Curriculum property tests
+  compare question, picture, answer and hint across all 22 templates in BM and EN.
 - Known tight spot: Year 2 levels 3-4 block pictures on a 5-player small tablet (blocks ~4-5 px). If pupils struggle,
   lower `ARITH_HUNDREDS` in `easyY2.ts` or the blocks range.
 
@@ -104,7 +104,8 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   `C:/Users/azrin/mathracing-release.jks` (alias `mathracing`, CN=MathRacing, SHA-256 `a26b10a3...63d`); the password
   is only in `android/keystore.properties`. Owner must back up both files off this PC.
 - Every release: raise `version` in `package.json` and `versionCode`/`versionName` in `android/app/build.gradle`
-  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip, 1.3.0/4 simple menus), then `npm run apk:release`.
+  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip, 1.3.0/4 simple menus; 1.3.1/5 question
+  consistency is prepared but not packaged), then `npm run apk:release`.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35/#43)

@@ -79,7 +79,7 @@ const topics: CurriculumTopic[] = [
 
 export const KPM_MS_Y2_V1: CurriculumPack = {
   packId: 'kpm-ms-y2',
-  version: '2.0.0',
+  version: '2.0.1',
   year: 2,
   title: {
     bm: 'KSSR (Semakan 2017) - Edisi 3 - Matematik Tahun 2',

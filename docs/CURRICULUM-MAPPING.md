@@ -9,7 +9,7 @@
 - Every pack is marked `draft-pending-academic-review` with `reviewer: null`. Nothing here has been signed off by a Malaysian primary Mathematics educator.
 - Topic titles in Bahasa Melayu are working labels for the plan's English topic names, not quotations of official KPM wording.
 
-## KSSR (Revised 2017) - Edition 3 - Mathematics Year 1 (`kpm-ms-y1` v2.0.0)
+## KSSR (Revised 2017) - Edition 3 - Mathematics Year 1 (`kpm-ms-y1` v2.0.1)
 
 Basis: KSSR (Semakan 2017), Dokumen Penjajaran Edisi 3, Matematik Tahap I. Effective date recorded: 2024-05-03. Templates: 10.
 
@@ -72,7 +72,7 @@ Plan scope: Collect, classify and arrange everyday data; read pictographs where 
 |---|---|---|---|---|---|---|---|---|
 | `y1-easy-pictograph` | number-pad | Read a pictograph where one picture represents one item (count one row) | 3 rows, up to 5 | 3 rows, up to 7 | 4 rows, up to 9 | 4 rows, up to 10 | n/a | - |
 
-## KSSR (Revised 2017) - Edition 3 - Mathematics Year 2 (`kpm-ms-y2` v2.0.0)
+## KSSR (Revised 2017) - Edition 3 - Mathematics Year 2 (`kpm-ms-y2` v2.0.1)
 
 Basis: KSSR (Semakan 2017), Dokumen Penjajaran Edisi 3, Matematik Tahap I. Effective date recorded: 2024-05-03. Templates: 12.
 

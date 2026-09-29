@@ -10,7 +10,13 @@ import type {
   WidgetKind,
 } from '../curriculum/schema';
 import { LEVELS, validateGeneratedQuestion, validatePack } from '../curriculum/schema';
-import { numberToWords } from '../curriculum/text/vocab';
+import {
+  MEASURING_UNIT_NAMES,
+  OBJECT_SHAPE_NAMES,
+  SHAPE2D_SIDES,
+  numberToWords,
+  text,
+} from '../curriculum/text/vocab';
 import { SeededRng } from '../game/core/SeededRng';
 import { visualTotal } from '../curriculum/visual';
 
@@ -79,6 +85,91 @@ function expectCountable(q: GeneratedQuestion): void {
   if (q.hintVisual) {
     expect(q.hintVisual.kind).toBe('ten-frames');
     expect(visualTotal(q.hintVisual)).toBe(total);
+  }
+}
+
+/** Audit what the pupil actually reads against the pictured symbols and the answer for every visual type in use. */
+function expectPictureMatchesQuestion(q: GeneratedQuestion): void {
+  const visual = q.prompt.visual;
+  if (!visual) throw new Error(`${q.templateId}: missing picture`);
+  const answer = Number(q.acceptedAnswer.value);
+  switch (visual.kind) {
+    case 'objects':
+    case 'ten-frames':
+      if (q.templateId === 'y1-easy-one-more') {
+        const delta =
+          q.language === 'bm'
+            ? q.prompt.text.startsWith('Tambah')
+            : q.prompt.text.startsWith('One more');
+        expect(answer).toBe((visualTotal(visual) ?? 0) + (delta ? 1 : -1));
+      } else {
+        expect(answer).toBe(visualTotal(visual));
+      }
+      break;
+    case 'base-ten':
+    case 'money':
+      expect(answer * (q.prompt.unit === 'RM' ? 100 : 1)).toBe(visualTotal(visual));
+      if (visual.kind === 'money') {
+        const values = visual.items.map((item) => item.valueSen);
+        if (!values.includes(1000)) expect(q.hint).not.toContain('RM10');
+        if (!values.includes(500)) expect(q.hint).not.toContain('RM5');
+        if (values.every((v) => v === 20)) expect(q.hint).toContain('20');
+      }
+      break;
+    case 'equal-groups':
+      expect(answer).toBe(q.templateId === 'y2-easy-div' ? visual.perGroup : visualTotal(visual));
+      break;
+    case 'clock':
+      expect(answer).toBe(visual.minute === 0 ? visual.hour : visual.minute);
+      break;
+    case 'fraction': {
+      const asksColoured =
+        q.language === 'bm'
+          ? q.prompt.text.includes('berwarna')
+          : q.prompt.text.includes('coloured');
+      expect(answer).toBe(asksColoured ? visual.numerator : visual.denominator);
+      break;
+    }
+    case 'shape2d':
+      expect(answer).toBe(SHAPE2D_SIDES[visual.shape]);
+      break;
+    case 'unit-bar': {
+      const noun = text(q.language, MEASURING_UNIT_NAMES[visual.unit]);
+      expect(q.prompt.text).toContain(noun);
+      expect(answer).toBe(visual.units);
+      break;
+    }
+    case 'pictograph': {
+      for (const row of visual.rows) {
+        expect(row.label).toBe(text(q.language, OBJECT_SHAPE_NAMES[row.shape]));
+      }
+      const target = visual.rows.filter((row) =>
+        q.prompt.text
+          .toLowerCase()
+          .includes(
+            q.language === 'bm' ? ` ${row.label.toLowerCase()}?` : ` ${row.label.toLowerCase()}s?`,
+          ),
+      );
+      expect(target).toHaveLength(1);
+      expect(answer).toBe(target[0]?.count);
+      break;
+    }
+    case 'bar-chart': {
+      const target = visual.categories.filter((bar) =>
+        q.prompt.text.toLowerCase().includes(`${bar.label.toLowerCase()}?`),
+      );
+      expect(target).toHaveLength(1);
+      expect(answer).toBe(target[0]?.value);
+      break;
+    }
+    case 'ruler':
+      expect(answer).toBe(visual.lengthCm);
+      break;
+    case 'cup':
+      expect(answer).toBe(visual.ml);
+      break;
+    default:
+      throw new Error(`${q.templateId}: picture kind ${visual.kind} has not been audited`);
   }
 }
 
@@ -259,6 +350,7 @@ describe.each(cases)('template $template.id', ({ pack, template }) => {
         expect(JSON.stringify(q)).not.toMatch(/undefined|NaN|\[object/);
         expectExactlyOneAnswer(q);
         expectCountable(q);
+        expectPictureMatchesQuestion(q);
         if (template.recompute && q.acceptedAnswer.kind === 'number') {
           const params = (q.metadata as { params: JsonObject }).params;
           expect(normalizeDecimal(template.recompute(params)), seed).toBe(q.acceptedAnswer.value);
@@ -280,6 +372,7 @@ describe.each(cases)('template $template.id', ({ pack, template }) => {
         expect(validateGeneratedQuestion(q)).toEqual([]);
         expect(q.language).toBe('en');
         expectExactlyOneAnswer(q);
+        expectPictureMatchesQuestion(q);
       }
     }
   });

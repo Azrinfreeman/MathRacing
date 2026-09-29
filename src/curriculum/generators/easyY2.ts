@@ -355,8 +355,16 @@ const money = defineTemplate<MoneyP>({
       answer: p.tens * 10 + p.fives * 5 + p.ones,
       hint: tr(
         ctx,
-        'Kira RM10 dahulu, kemudian RM5, kemudian RM1.',
-        'Count the RM10 notes first, then RM5, then RM1.',
+        `Kira wang kertas ${[
+          p.tens > 0 ? 'RM10' : '',
+          p.fives > 0 ? 'RM5' : '',
+          p.ones > 0 ? 'RM1' : '',
+        ]
+          .filter(Boolean)
+          .join(', ')} satu demi satu.`,
+        `Count the ${[p.tens > 0 ? 'RM10' : '', p.fives > 0 ? 'RM5' : '', p.ones > 0 ? 'RM1' : '']
+          .filter(Boolean)
+          .join(', ')} notes one by one.`,
       ),
     }),
   recompute: (p) => String(p.tens * 10 + p.fives * 5 + p.ones),
