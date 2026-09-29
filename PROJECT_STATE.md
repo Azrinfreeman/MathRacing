@@ -1,7 +1,7 @@
 # PROJECT_STATE (read this first in a new session; then AGENTS.md is auto-loaded via CLAUDE.md)
 
-Updated 2026-09-29. Latest change: question/picture/hint consistency audit (DECISIONS #44). Web app version
-1.3.1 and Android versionCode 5 are prepared; a new signed APK is pending restoration of the Android SDK.
+Updated 2026-09-29. Latest change: question/picture/hint consistency audit (DECISIONS #44). Version 1.3.1
+(Android versionCode 5) is packaged as a signed release APK.
 
 ## What exists
 
@@ -20,10 +20,10 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
 - Both languages fit at 960x540, 1024x600, 1280x800 and 1920x1080, including Year 2's eight topics and five players.
   One 960x540 question-screen screenshot was visually inspected; actual Android keyboard/navigation-bar testing
   and five-finger hardware validation remain outstanding.
-- `npm run apk:release` cannot currently start: `C:/Users/azrin/AppData/Local/Android/Sdk` (the previously
-  configured SDK) is missing, and standard alternate locations were checked. The latest signed file remains
-  `output/apk/MathRacing-1.3.0-20260925-0748-release.apk` (versionCode 4), which does **not** contain #44.
-  After restoring the Android SDK platform 34/build-tools 34, run `npm run apk:release` for v1.3.1/code 5.
+- `npm run apk:release` produced `output/apk/MathRacing-1.3.1-20260929-1204-release.apk` (3,340,671 bytes;
+  SHA-256 `3def7b7021df544e9e064231929bf34688d507a48b2f4c795c0d701905192183`). `apksigner` verified v1/v2
+  signatures with the recorded release-key certificate; `aapt` verified package `my.edu.mathracing`, versionCode 5,
+  versionName 1.3.1 and target SDK 34. Not yet installed on a physical Android device.
 - Structure, commands, traps: `AGENTS.md`. File list: `docs/REPO-MAP.md`. Rationale: `docs/DECISIONS.md` (#1-#44).
 
 ## How the race works now (DECISIONS #36-#37, plans `docs/PLAN-cruise-boost.md`, `docs/PLAN-idle-crawl.md`)
@@ -96,16 +96,17 @@ Target hardware: Android tablets (1024x600 to 1920x1200) and TV smartboards (192
   git-ignored), `capacitor.config.json` (appId `my.edu.mathracing`), `scripts/build-apk.mjs` (`npm run apk`).
 - Landscape (`sensorLandscape`), full screen, icon from `public/icons/icon-192.png`, navy launch colour.
 - Service worker is not registered inside the native app (`window.Capacitor.isNativePlatform()` in `src/main.ts`).
-- Build PC: JDK 17 at `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot`, SDK at
-  `C:\Users\azrin\AppData\Local\Android\Sdk` (platform 34, build-tools 34). Traps: `local.properties` needs forward
-  slashes; the shell does not search the current folder, so `gradlew.bat` is called by full path.
+- Build PC: JDK 17 at `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot`. The former SDK at
+  `C:\Users\azrin\AppData\Local\Android\Sdk` is missing; use Unity's bundled SDK at
+  `D:\Program Files\Unity\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\SDK` (platform 34, build-tools 34) by setting `ANDROID_HOME` for the release-build command. `local.properties` needs forward slashes; the shell
+  does not search the current folder, so `gradlew.bat` is called by full path.
 - Release (DECISIONS #40): `npm run apk:release` signs with `android/keystore.properties` (owner-made, git-ignored;
   README "Release APK"). Release key created 2026-09-24 at
   `C:/Users/azrin/mathracing-release.jks` (alias `mathracing`, CN=MathRacing, SHA-256 `a26b10a3...63d`); the password
   is only in `android/keystore.properties`. Owner must back up both files off this PC.
 - Every release: raise `version` in `package.json` and `versionCode`/`versionName` in `android/app/build.gradle`
-  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip, 1.3.0/4 simple menus; 1.3.1/5 question
-  consistency is prepared but not packaged), then `npm run apk:release`.
+  (history: 1.0.0/1, 1.1.0/2 menu look, 1.2.0/3 Kira & taip, 1.3.0/4 simple menus, 1.3.1/5 question
+  consistency), then `npm run apk:release`.
 - `npm audit`: `tar` in `@capacitor/cli` (build-PC only, not in the APK); fix = Capacitor 8 (needs SDK 36, JDK 21).
 
 ## App flow (DECISIONS #35/#43)
