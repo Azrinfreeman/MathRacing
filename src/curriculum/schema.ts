@@ -27,6 +27,35 @@ export function pickText(language: Language, text: LocalText): string {
   return text.bm;
 }
 
+/**
+ * A word-free badge drawn beside the picture in place of an instruction (DECISIONS #45). `none` means the picture
+ * (or the unit chip on the answer field) already says what to type.
+ */
+export type Cue =
+  | 'none'
+  | 'count'
+  | 'plus-one'
+  | 'minus-one'
+  | 'shaded'
+  | 'parts'
+  | 'sides'
+  | 'corners'
+  | 'hour'
+  | 'minute';
+
+export const CUES: readonly Cue[] = [
+  'none',
+  'count',
+  'plus-one',
+  'minus-one',
+  'shaded',
+  'parts',
+  'sides',
+  'corners',
+  'hour',
+  'minute',
+];
+
 export type PromptModel = {
   /** Short instruction, kept brief to limit reading burden. */
   text: string;
@@ -34,6 +63,8 @@ export type PromptModel = {
   expression?: string;
   /** Unit shown beside a numeric input (e.g. "sen", "RM", "ml"); never part of the typed value. */
   unit?: string;
+  /** What the pupil panel draws instead of `text`, which stays for teachers and screen readers. */
+  cue?: Cue;
   visual?: VisualModel;
 };
 
@@ -178,6 +209,8 @@ export function validateGeneratedQuestion(q: GeneratedQuestion): string[] {
   ) {
     p.push(`prompt expression looks broken: ${q.prompt.expression}`);
   }
+  if (q.prompt.cue === undefined || !CUES.includes(q.prompt.cue))
+    p.push(`prompt cue ${String(q.prompt.cue)} invalid`);
   if (q.prompt.visual) p.push(...validateVisual(q.prompt.visual).map((m) => `prompt visual: ${m}`));
   if (q.supportVisual)
     p.push(...validateVisual(q.supportVisual).map((m) => `support visual: ${m}`));

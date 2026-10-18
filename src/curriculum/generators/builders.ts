@@ -1,4 +1,4 @@
-import type { BuiltQuestion, Level } from '../schema';
+import type { BuiltQuestion, Cue, Level } from '../schema';
 import { normalizeDecimal } from '../answers';
 import type { VisualModel } from '../visual';
 
@@ -14,6 +14,8 @@ type NumberBuild = {
   text: string;
   expression?: string;
   unit?: string;
+  /** Word-free badge for the pupil panel; `none` when the picture alone is clear. */
+  cue: Cue;
   visual?: VisualModel;
   answer: number | string;
   hint?: string;
@@ -29,7 +31,7 @@ export function numberBuilt(o: NumberBuild): BuiltQuestion {
   const built: BuiltQuestion = {
     difficultyBand: o.band,
     widget: 'number-pad',
-    prompt: { text: o.text },
+    prompt: { text: o.text, cue: o.cue },
     acceptedAnswer: { kind: 'number', value },
   };
   if (o.expression !== undefined) built.prompt.expression = o.expression;

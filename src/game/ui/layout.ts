@@ -107,3 +107,41 @@ export function computePanelZones(
   const progress: Rect = { x: inner.x, y: feedback.y + feedbackH + gap, w: inner.w, h: progressH };
   return { header, prompt, answer, widget, feedback, progress };
 }
+
+/** Where the pupil panel draws the parts of a question (DECISIONS #45). */
+export type PromptLayout = {
+  /** The sum, when the question has one. */
+  expression: Rect | null;
+  /** The word-free badge that replaces the instruction, beside the picture. */
+  cue: Rect | null;
+  /** The picture: it gets everything the old instruction line used to take. */
+  visual: Rect;
+};
+
+/**
+ * Split the prompt zone for a question with a picture. A sum keeps its line on top; otherwise a cue badge sits at
+ * the left and the picture fills the rest. Pure, so the tests measure the same area the panel draws in.
+ */
+export function computePromptLayout(
+  prompt: Rect,
+  opts: { hasExpression: boolean; hasCue: boolean },
+): PromptLayout {
+  if (opts.hasExpression) {
+    const top = prompt.h * 0.26;
+    return {
+      expression: { x: prompt.x, y: prompt.y, w: prompt.w, h: top },
+      cue: null,
+      visual: { x: prompt.x, y: prompt.y + top, w: prompt.w, h: prompt.h - top },
+    };
+  }
+  if (opts.hasCue) {
+    const size = Math.min(prompt.h * 0.5, prompt.w * 0.15);
+    const gap = size * 0.12;
+    return {
+      expression: null,
+      cue: { x: prompt.x, y: prompt.y + (prompt.h - size) / 2, w: size, h: size },
+      visual: { x: prompt.x + size + gap, y: prompt.y, w: prompt.w - size - gap, h: prompt.h },
+    };
+  }
+  return { expression: null, cue: null, visual: prompt };
+}

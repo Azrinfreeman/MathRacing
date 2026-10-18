@@ -69,6 +69,8 @@ export type VisualModel =
       max: number;
       xTitle?: string;
       yTitle?: string;
+      /** Index of the one bar the question asks about, drawn with a pointer so no sentence is needed. */
+      highlight?: number;
       /** Draw an arrow on one axis, used by the "which axis" question. */
       highlightAxis?: 'x' | 'y';
     }

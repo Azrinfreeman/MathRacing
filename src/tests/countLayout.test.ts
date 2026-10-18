@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { getDefaultRegistry } from '../curriculum/registry';
-import type { Level } from '../curriculum/schema';
+import type { GeneratedQuestion, Level } from '../curriculum/schema';
 import type { VisualModel } from '../curriculum/visual';
 import { SeededRng } from '../game/core/SeededRng';
 import { blockLayout, equalGroupLayout, tenFrameCells } from '../game/ui/countLayout';
 import type { Rect } from '../game/ui/geometry';
-import { computePanelZones, computeStageLayout } from '../game/ui/layout';
+import { computePanelZones, computePromptLayout, computeStageLayout } from '../game/ui/layout';
 
 const registry = getDefaultRegistry();
 
-/** The picture area PanelView gives a question (sum line on top when there is one). */
-function pictureArea(w: number, h: number, players: number): Rect {
+/** The picture area PanelView gives a question: the sum line or the cue badge shares the prompt zone. */
+function pictureArea(w: number, h: number, players: number, q: GeneratedQuestion): Rect {
   const panel = computeStageLayout(w, h, players).panels[0] as Rect;
   const prompt = computePanelZones(panel, { hasVisual: true, showAnswerField: true }).prompt;
-  const top = prompt.h * 0.26; // the sum or the instruction line
-  return { x: prompt.x, y: prompt.y + top, w: prompt.w, h: prompt.h - top };
+  return computePromptLayout(prompt, {
+    hasExpression: (q.prompt.expression ?? '').trim().length > 0,
+    hasCue: (q.prompt.cue ?? 'none') !== 'none',
+  }).visual;
 }
 
 /** Size in px of one counted thing (object cell, rod width, group cell). Null for other pictures. */
@@ -77,7 +79,7 @@ describe('counting pictures stay countable (DECISIONS #42)', () => {
               language: 'bm',
               questionId: 'c',
             });
-            const area = pictureArea(w, h, 5);
+            const area = pictureArea(w, h, 5, q);
             for (const v of [q.prompt.visual, q.hintVisual]) {
               if (!v) continue;
               const size = thingSize(v, area);

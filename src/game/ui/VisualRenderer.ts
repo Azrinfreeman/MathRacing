@@ -974,6 +974,22 @@ function drawBarChart(
     g.fillRect(bx, plot.y + plot.h - bh, bw, bh);
     g.lineStyle(Math.max(1, bw * 0.05), 0x0f172a, 1);
     g.strokeRect(bx, plot.y + plot.h - bh, bw, bh);
+    if (v.highlight === i) {
+      // a pointer above the asked bar, so the question needs no sentence
+      const tipY = plot.y + plot.h - bh - area.h * 0.02;
+      const aw = Math.min(bw * 0.8, area.h * 0.16);
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(
+        bx + bw / 2,
+        tipY,
+        bx + bw / 2 - aw / 2,
+        tipY - aw,
+        bx + bw / 2 + aw / 2,
+        tipY - aw,
+      );
+      g.lineStyle(Math.max(3, bw * 0.1), 0xf97316, 1);
+      g.strokeRect(bx, plot.y + plot.h - bh, bw, bh);
+    }
     ctx.text(`${key}:c${i}`, cat.label, bx + bw / 2, plot.y + plot.h + area.h * 0.03, {
       size: Math.max(9, Math.min(area.h * 0.11, bandW * 0.24)),
       color: THEME.ink,

@@ -70,6 +70,7 @@ export function shapeCountTemplate(o: {
     build: (p, ctx) =>
       numberBuilt({
         band: p.ask,
+        cue: p.ask === 'sides' ? 'sides' : 'corners',
         text:
           p.ask === 'sides'
             ? tr(ctx, 'Berapa sisi?', 'How many sides?')

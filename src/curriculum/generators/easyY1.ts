@@ -53,6 +53,7 @@ const count = defineTemplate<CountP>({
     );
     return numberBuilt({
       band: `count-${COUNT_RANGE[ctx.level][1]}`,
+      cue: 'count',
       text: tr(ctx, 'Berapa?', 'How many?'),
       visual,
       answer: p.count,
@@ -90,6 +91,7 @@ const oneMore = defineTemplate<OneMoreP>({
     );
     return numberBuilt({
       band: p.more ? 'one-more' : 'one-fewer',
+      cue: p.more ? 'plus-one' : 'minus-one',
       text: p.more
         ? tr(ctx, 'Tambah satu lagi. Berapa?', 'One more. How many?')
         : tr(ctx, 'Kurang satu. Berapa?', 'One fewer. How many?'),
@@ -159,6 +161,7 @@ const add = defineTemplate<AddP>({
     );
     return numberBuilt({
       band: `sum-${SUM_MAX[ctx.level]}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.a} + ${p.b} = ?`,
       visual,
@@ -207,6 +210,7 @@ const sub = defineTemplate<SubP>({
     );
     return numberBuilt({
       band: `from-${SUM_MAX[ctx.level]}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${p.a} ${MINUS} ${p.b} = ?`,
       visual,
@@ -254,6 +258,7 @@ const groups = defineTemplate<GroupsP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `groups-of-${p.size}`,
+      cue: 'count',
       text: tr(
         ctx,
         `Kumpulan ${p.size}. Berapa semua?`,
@@ -316,6 +321,7 @@ const money = defineTemplate<MoneyP>({
     const ringgit = (p.items[0] ?? 0) >= 100;
     return numberBuilt({
       band: ringgit ? 'ringgit' : 'sen',
+      cue: 'none',
       text: ringgit
         ? tr(ctx, 'Berapa ringgit?', 'How many ringgit?')
         : tr(ctx, 'Berapa sen?', 'How many sen?'),
@@ -355,6 +361,7 @@ const clockHour = defineTemplate<HourP>({
   build: (p, ctx) =>
     numberBuilt({
       band: 'hour',
+      cue: 'hour',
       text: tr(ctx, 'Pukul berapa?', 'What hour is it?'),
       visual: { kind: 'clock', hour: p.hour, minute: 0 },
       answer: p.hour,
@@ -394,6 +401,7 @@ const unitCount = defineTemplate<UnitP>({
     const word = text(ctx.language, MEASURING_UNIT_NAMES[p.unit]);
     return numberBuilt({
       band: `units-${UNIT_RANGE[ctx.level][1]}`,
+      cue: 'count',
       text: tr(ctx, `Berapa ${word} panjangnya?`, `How many ${word} long?`),
       visual: { kind: 'unit-bar', units: p.units, unit: p.unit },
       answer: p.units,
@@ -457,6 +465,7 @@ const pictograph = defineTemplate<PictoP>({
     if (!row) throw new Error('y1-easy-pictograph: ask index out of range');
     return numberBuilt({
       band: `rows-${rows.length}`,
+      cue: 'count',
       text: tr(ctx, `Berapa ${row.label.toLowerCase()}?`, `How many ${row.label.toLowerCase()}s?`),
       visual: { kind: 'pictograph', rows },
       answer: row.count,

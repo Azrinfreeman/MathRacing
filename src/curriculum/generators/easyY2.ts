@@ -54,6 +54,7 @@ const blocks = defineTemplate<BlocksP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `blocks-${ctx.level}`,
+      cue: 'count',
       text: tr(ctx, 'Nombor berapa?', 'What number is this?'),
       visual: { kind: 'base-ten', sets: [toSet(p)] },
       answer: value(p),
@@ -97,6 +98,7 @@ const add = defineTemplate<AddP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `sum-${ctx.level}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${value(p.a)} + ${value(p.b)} = ?`,
       visual: { kind: 'base-ten', sets: [toSet(p.a), toSet(p.b)] },
@@ -134,6 +136,7 @@ const sub = defineTemplate<SubP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `from-${ctx.level}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${value(p.a)} ${MINUS} ${value(p.c)} = ?`,
       visual: { kind: 'base-ten', sets: [toSet(p.a)], crossed: toSet(p.c) },
@@ -187,6 +190,7 @@ const mul = defineTemplate<MulP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `x${p.size}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.groups} ${TIMES} ${p.size} = ?`,
       visual: {
@@ -246,6 +250,7 @@ const div = defineTemplate<DivP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `share-${p.groups}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa dalam setiap kumpulan?', 'How many in each group?'),
       expression: `${p.groups * p.each} ${DIVIDE} ${p.groups} = ?`,
       visual: {
@@ -292,6 +297,7 @@ const fractionParts = defineTemplate<PartsP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `d${p.den}`,
+      cue: p.askShaded ? 'shaded' : 'parts',
       text: p.askShaded
         ? tr(ctx, 'Berapa bahagian berwarna?', 'How many parts are coloured?')
         : tr(ctx, 'Berapa bahagian semuanya?', 'How many parts altogether?'),
@@ -345,6 +351,7 @@ const money = defineTemplate<MoneyP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `notes-${ctx.level}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa ringgit?', 'How many ringgit?'),
       visual: moneyItems([
         ...Array.from({ length: p.tens }, () => 1000),
@@ -394,6 +401,7 @@ const clock = defineTemplate<ClockP>({
   build: (p, ctx) =>
     numberBuilt({
       band: p.minute === 0 ? 'hour' : 'minutes-5',
+      cue: p.minute === 0 ? 'hour' : 'minute',
       text:
         p.minute === 0
           ? tr(ctx, 'Pukul berapa?', 'What hour is it?')
@@ -443,6 +451,7 @@ const ruler = defineTemplate<RulerP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `ruler-${p.maxCm}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa cm panjangnya?', 'How many cm long?'),
       visual: { kind: 'ruler', lengthCm: p.lengthCm, maxCm: p.maxCm },
       unit: 'cm',
@@ -480,6 +489,7 @@ const cup = defineTemplate<CupP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `cup-${p.maxMl}`,
+      cue: 'none',
       text: tr(ctx, 'Berapa ml air?', 'How many ml of water?'),
       visual: { kind: 'cup', ml: p.ml, maxMl: p.maxMl },
       unit: 'ml',
@@ -547,6 +557,7 @@ const barRead = defineTemplate<BarP>({
     if (!bar) throw new Error('y2-easy-bar-read: ask index out of range');
     return numberBuilt({
       band: `scale-${cfg.scale}`,
+      cue: 'count',
       text: tr(
         ctx,
         `Berapa murid pilih ${bar.label.toLowerCase()}?`,
@@ -557,6 +568,7 @@ const barRead = defineTemplate<BarP>({
         categories,
         scale: cfg.scale,
         max: cfg.max,
+        highlight: p.ask,
         yTitle: text(ctx.language, Y_TITLE),
       },
       answer: bar.value,
