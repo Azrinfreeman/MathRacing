@@ -1,6 +1,6 @@
 # Implementation plan: picture-first questions (no reading)
 
-Status: **implemented** (DECISIONS #45), except the hint slide-in animation, which was left out. Prepared 2026-10-18.
+Status: **implemented** (DECISIONS #45, extended to pictures only by #46), except the hint slide-in animation, which was left out. Prepared 2026-10-18.
 Request: make questions visual so pupils answer quickly instead of reading text.
 
 ## What the panel shows today

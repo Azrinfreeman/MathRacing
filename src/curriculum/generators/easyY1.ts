@@ -158,10 +158,11 @@ const add = defineTemplate<AddP>({
         { count: p.b, shape: p.shape, color: color(p.colorB) },
       ],
       ctx.level >= 3,
+      'plus',
     );
     return numberBuilt({
       band: `sum-${SUM_MAX[ctx.level]}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.a} + ${p.b} = ?`,
       visual,
@@ -210,7 +211,7 @@ const sub = defineTemplate<SubP>({
     );
     return numberBuilt({
       band: `from-${SUM_MAX[ctx.level]}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${p.a} ${MINUS} ${p.b} = ?`,
       visual,
@@ -299,12 +300,13 @@ const money = defineTemplate<MoneyP>({
   topicId: M_TOPIC,
   widget: 'number-pad',
   sk: M_SK,
-  scope: 'Recognise Malaysian coins and notes and find their value (count the money)',
+  scope:
+    'Recognise Malaysian coins and notes (count the coins, or the dots that show a note’s ringgit)',
   levelNotes: [
-    '1-5 coins of 10 sen',
-    '2-5 coins of 10 or 20 sen, up to 100 sen',
-    '1-10 RM1 notes',
-    'one RM5 note and 1-5 RM1 notes',
+    'count 1-5 coins',
+    'count 2-5 coins',
+    'RM1 notes: one dot each, 1-10 notes',
+    'one RM5 note (five dots) and 1-5 RM1 notes',
   ],
   arithmetic: true,
   sample: (rng, level) => {
@@ -321,13 +323,12 @@ const money = defineTemplate<MoneyP>({
     const ringgit = (p.items[0] ?? 0) >= 100;
     return numberBuilt({
       band: ringgit ? 'ringgit' : 'sen',
-      cue: 'none',
+      cue: 'count',
       text: ringgit
         ? tr(ctx, 'Berapa ringgit?', 'How many ringgit?')
-        : tr(ctx, 'Berapa sen?', 'How many sen?'),
+        : tr(ctx, 'Berapa syiling?', 'How many coins?'),
       visual: moneyItems(p.items),
-      unit: ringgit ? 'RM' : 'sen',
-      answer: ringgit ? total / 100 : total,
+      answer: ringgit ? total / 100 : p.items.length,
       hint: ringgit
         ? p.items.includes(500)
           ? tr(
@@ -336,14 +337,14 @@ const money = defineTemplate<MoneyP>({
               'Start at RM5, then count each RM1 note.',
             )
           : tr(ctx, 'Kira setiap wang kertas RM1.', 'Count each RM1 note.')
-        : tr(ctx, `Kira lompat ${p.items[0]} sen.`, `Skip count in ${p.items[0]} sen.`),
+        : tr(ctx, 'Kira setiap syiling.', 'Count each coin.'),
     });
   },
   recompute: (p) => {
     const total = p.items.reduce((n, v) => n + v, 0);
-    return String((p.items[0] ?? 0) >= 100 ? total / 100 : total);
+    return String((p.items[0] ?? 0) >= 100 ? total / 100 : p.items.length);
   },
-  fixtures: [{ params: { items: [10, 10, 10] }, level: 1, expected: { answerText: '30' } }],
+  fixtures: [{ params: { items: [10, 10, 10] }, level: 1, expected: { answerText: '3' } }],
 });
 
 // ------------------------------------------------------------------------------ 4.0 Time
@@ -467,7 +468,7 @@ const pictograph = defineTemplate<PictoP>({
       band: `rows-${rows.length}`,
       cue: 'count',
       text: tr(ctx, `Berapa ${row.label.toLowerCase()}?`, `How many ${row.label.toLowerCase()}s?`),
-      visual: { kind: 'pictograph', rows },
+      visual: { kind: 'pictograph', rows, highlight: p.ask },
       answer: row.count,
       hint: tr(ctx, 'Kira gambar pada baris itu sahaja.', 'Count the pictures in that row only.'),
     });

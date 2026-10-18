@@ -8,7 +8,7 @@ import type { WidgetControl, WidgetModel } from '../widgets';
 import type { DrawContext } from './DrawContext';
 import { TextPool } from './DrawContext';
 import type { Rect } from './geometry';
-import { drawBulb, drawCue } from './cueIcons';
+import { drawBulb, drawCheck, drawCue, drawQuestionMark, drawRetry } from './cueIcons';
 import { contains, inset } from './geometry';
 import type { PanelZones } from './layout';
 import { computePanelZones, computePromptLayout } from './layout';
@@ -395,8 +395,7 @@ export class PanelView {
 
     const locked = s.phase !== 'answering';
     this.drawPrompt(q, zones.prompt, s);
-    if (widget.showAnswerField)
-      this.drawAnswerField(zones.answer, widget.responseText(), q.prompt.unit);
+    if (widget.showAnswerField) this.drawAnswerField(zones.answer, widget.responseText());
     this.controls = widget.layout(zones.widget);
     this.drawControls(this.controls, locked);
     this.drawFeedbackZone(zones.feedback, s, locked);
@@ -427,85 +426,39 @@ export class PanelView {
       );
       drawVisual(this.ctx, q.supportVisual, inset(visualArea, visualArea.h * 0.06), 'sv');
     }
-    const { expression } = q.prompt;
     // With the hint (after two wrong answers) the picture is rearranged into rows of 5 (DECISIONS #42).
     const visual = s.hintShown && q.hintVisual ? q.hintVisual : q.prompt.visual;
-    const hasExpr = expression !== undefined && expression.trim().length > 0;
-    if (visual) {
-      // Picture first (DECISIONS #45): no sentence on the pupil panel, just the sum or a small cue badge.
-      const cue = q.prompt.cue ?? 'none';
-      const parts = computePromptLayout(main, { hasExpression: hasExpr, hasCue: cue !== 'none' });
-      if (parts.expression && expression !== undefined)
-        this.drawExpression(expression, parts.expression, main.w);
-      if (parts.cue) drawCue(this.ctx, cue, parts.cue, 'pcue');
-      drawVisual(this.ctx, visual, parts.visual, 'pv');
-      return;
-    }
-    const hasText = q.prompt.text.trim().length > 0;
-    const textH = hasExpr ? (hasText ? 0.34 : 0) : 1;
-    let y = main.y;
-    if (hasText && textH > 0) {
-      const h = main.h * textH;
-      this.ctx.text('ptext', q.prompt.text, main.x + main.w / 2, y + h / 2, {
-        size: Math.max(12, Math.min(h * 0.62, main.w * 0.075)),
-        color: THEME.muted,
-        bold: true,
-        maxWidth: main.w * 0.97,
-        maxHeight: h,
-        minSize: 9,
-      });
-      y += h;
-    }
-    if (hasExpr && expression !== undefined) {
-      this.drawExpression(
-        expression,
-        { x: main.x, y, w: main.w, h: main.h - (y - main.y) },
-        main.w,
-      );
-    }
+    if (!visual) return;
+    // Pictures only (DECISIONS #46): no sentence, no sum, no numeral. A small drawn badge says what to count.
+    const cue = q.prompt.cue ?? 'none';
+    const parts = computePromptLayout(main, { hasExpression: false, hasCue: cue !== 'none' });
+    if (parts.cue) drawCue(this.ctx, cue, parts.cue);
+    drawVisual(this.ctx, visual, parts.visual, 'pv');
   }
 
-  private drawExpression(expression: string, r: Rect, mainW: number): void {
-    this.ctx.text('pexpr', expression, r.x + r.w / 2, r.y + r.h / 2, {
-      size: Math.max(16, Math.min(r.h * 0.72, mainW * 0.15)),
-      color: THEME.ink,
-      bold: true,
-      maxWidth: r.w * 0.97,
-      maxHeight: r.h,
-      minSize: 12,
-    });
-  }
-
-  private drawAnswerField(area: Rect, value: string, unit: string | undefined): void {
+  private drawAnswerField(area: Rect, value: string): void {
     const { g, style } = this;
     g.fillStyle(0xffffff, 1);
     g.fillRoundedRect(area.x, area.y, area.w, area.h, area.h * 0.22);
     g.lineStyle(Math.max(2, area.h * 0.05), hexToNumber(style.color), 1);
     g.strokeRoundedRect(area.x, area.y, area.w, area.h, area.h * 0.22);
-    const unitW = unit ? area.w * 0.24 : 0;
-    this.ctx.text(
-      'answer',
-      value === '' ? '?' : value,
-      area.x + (area.w - unitW) / 2,
-      area.y + area.h / 2,
-      {
-        size: area.h * 0.66,
-        color: value === '' ? '#94a3b8' : THEME.ink,
-        bold: true,
-        maxWidth: area.w - unitW - area.h * 0.3,
-        minSize: 12,
-      },
-    );
-    if (unit) {
-      this.ctx.text('unit', unit, area.x + area.w - area.h * 0.25, area.y + area.h / 2, {
-        size: area.h * 0.42,
-        color: THEME.muted,
-        bold: true,
-        ax: 1,
-        maxWidth: unitW,
-        minSize: 9,
-      });
+    if (value === '') {
+      drawQuestionMark(
+        g,
+        area.x + area.w / 2,
+        area.y + area.h / 2,
+        area.h * 0.6,
+        hexToNumber('#94a3b8'),
+      );
+      return;
     }
+    this.ctx.text('answer', value, area.x + area.w / 2, area.y + area.h / 2, {
+      size: area.h * 0.66,
+      color: THEME.ink,
+      bold: true,
+      maxWidth: area.w - area.h * 0.3,
+      minSize: 12,
+    });
   }
 
   private drawControls(controls: readonly WidgetControl[], locked: boolean): void {
@@ -636,22 +589,12 @@ export class PanelView {
       g.fillRoundedRect(textArea.x, textArea.y, textArea.w, textArea.h, textArea.h * 0.25);
       g.lineStyle(Math.max(1.5, area.h * 0.04), good ? THEME.good : THEME.softBorder, 1);
       g.strokeRoundedRect(textArea.x, textArea.y, textArea.w, textArea.h, textArea.h * 0.25);
-      if (fb.kind === 'hint') {
-        // The hint is the picture rearranged into rows of 5; the strip shows a bulb, not a sentence (#45).
-        drawBulb(
-          g,
-          { x: textArea.x + textArea.w / 2, y: textArea.y + textArea.h / 2 },
-          textArea.h * 0.34,
-        );
-      } else
-        this.ctx.text('fb', fb.text, textArea.x + textArea.w / 2, textArea.y + textArea.h / 2, {
-          size: area.h * 0.42,
-          color: good ? '#14532d' : '#7c2d12',
-          bold: true,
-          maxWidth: textArea.w * 0.94,
-          maxHeight: textArea.h * 0.9,
-          minSize: 8,
-        });
+      // Only drawings (DECISIONS #46): a bulb for the hint, a tick for right, a circular arrow for try again.
+      const at = { x: textArea.x + textArea.w / 2, y: textArea.y + textArea.h / 2 };
+      const r = textArea.h * 0.34;
+      if (fb.kind === 'hint') drawBulb(g, at, r);
+      else if (good) drawCheck(g, at.x, at.y, r, THEME.good);
+      else drawRetry(g, at.x, at.y, r, 0xea580c);
     }
     if (offerSimpler) {
       const rect: Rect = { x: area.x + area.w - buttonW, y: area.y, w: buttonW, h: area.h };
@@ -700,13 +643,13 @@ export class PanelView {
     };
     g.fillStyle(0xffffff, 0.88);
     g.fillRoundedRect(area.x, area.y, area.w, area.h, area.h * 0.05);
-    this.ctx.text('done', `✓ ${this.t('race.done')}`, area.x + area.w / 2, area.y + area.h / 2, {
-      size: Math.min(area.h * 0.22, area.w * 0.22),
-      color: '#14532d',
-      bold: true,
-      maxWidth: area.w * 0.9,
-      minSize: 12,
-    });
+    drawCheck(
+      g,
+      area.x + area.w / 2,
+      area.y + area.h / 2,
+      Math.min(area.h * 0.22, area.w * 0.22),
+      THEME.good,
+    );
   }
 
   destroy(): void {

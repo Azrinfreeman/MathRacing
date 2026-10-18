@@ -41,7 +41,8 @@ export type Cue =
   | 'sides'
   | 'corners'
   | 'hour'
-  | 'minute';
+  | 'minute'
+  | 'each';
 
 export const CUES: readonly Cue[] = [
   'none',
@@ -54,6 +55,7 @@ export const CUES: readonly Cue[] = [
   'corners',
   'hour',
   'minute',
+  'each',
 ];
 
 export type PromptModel = {

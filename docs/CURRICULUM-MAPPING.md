@@ -38,7 +38,7 @@ Plan scope: Recognise Malaysian coins and notes; represent and exchange sen to R
 
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
-| `y1-easy-money` | number-pad | Recognise Malaysian coins and notes and find their value (count the money) | 1-5 coins of 10 sen | 2-5 coins of 10 or 20 sen, up to 100 sen | 1-10 RM1 notes | one RM5 note and 1-5 RM1 notes | n/a | - |
+| `y1-easy-money` | number-pad | Recognise Malaysian coins and notes (count the coins, or the dots that show a note’s ringgit) | count 1-5 coins | count 2-5 coins | RM1 notes: one dot each, 1-10 notes | one RM5 note (five dots) and 1-5 RM1 notes | n/a | - |
 
 ### 4.0 Masa / Time (SK 4.1-4.2)
 
@@ -109,7 +109,7 @@ Plan scope: Recognise and determine Malaysian money to RM100; add and subtract u
 
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
-| `y2-easy-money` | number-pad | Recognise and determine the value of Malaysian money to RM100 (count the notes) | 1-10 RM1 notes | RM5 and RM1 notes, up to RM20 | RM10, RM5 and RM1 notes, up to RM50 | RM10, RM5 and RM1 notes, up to RM100 | n/a | - |
+| `y2-easy-money` | number-pad | Recognise Malaysian notes and find their value to RM100 (count the dots: one per ringgit) | 1-10 RM1 notes | RM5 and RM1 notes, up to RM20 | RM10, RM5 and RM1 notes, up to RM50 | RM10, RM5 and RM1 notes, up to RM100 | n/a | - |
 
 ### 5.0 Masa / Time (SK 5.1-5.2)
 
@@ -126,7 +126,7 @@ Plan scope: Recognise, measure and estimate length in cm/m, mass in g/kg and liq
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
 | `y2-easy-ruler` | number-pad | Measure length in centimetres with a ruler | 2-10 cm | 3-15 cm | 4-20 cm | 4-20 cm | n/a | - |
-| `y2-easy-cup` | number-pad | Measure liquid volume in millilitres with a measuring cup | 100s, cup to 500 ml | 100s, cup to 1000 ml | 100s, cup to 1000 ml | 50s, cup to 1000 ml | n/a | - |
+| `y2-easy-cup` | number-pad | Read the water level on a measuring cup (count the marks up to the water) | cup of 5 marks | cup of 10 marks | cup of 10 marks | cup of 20 marks | n/a | - |
 
 ### 7.0 Ruang / Space (SK 7.1-7.2)
 
@@ -142,7 +142,7 @@ Plan scope: Collect, classify and arrange everyday data; read bar charts and ans
 
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
-| `y2-easy-bar-read` | number-pad | Read a bar chart (how many pupils chose mango?) | 3 bars, scale 1 | 4 bars, scale 1 | 4 bars, scale 2 | 5 bars, scale 5 | n/a | - |
+| `y2-easy-bar-read` | number-pad | Read a bar chart (how many pupils chose mango?) | 3 bars, up to 10 | 4 bars, up to 10 | 4 bars, up to 12 | 5 bars, up to 15 | n/a | - |
 
 ## Coverage summary
 

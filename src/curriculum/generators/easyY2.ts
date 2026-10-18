@@ -98,10 +98,10 @@ const add = defineTemplate<AddP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `sum-${ctx.level}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${value(p.a)} + ${value(p.b)} = ?`,
-      visual: { kind: 'base-ten', sets: [toSet(p.a), toSet(p.b)] },
+      visual: { kind: 'base-ten', sets: [toSet(p.a), toSet(p.b)], join: 'plus' },
       answer: value(p.a) + value(p.b),
       hint: text(ctx.language, BLOCK_HINT),
     }),
@@ -136,7 +136,7 @@ const sub = defineTemplate<SubP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `from-${ctx.level}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${value(p.a)} ${MINUS} ${value(p.c)} = ?`,
       visual: { kind: 'base-ten', sets: [toSet(p.a)], crossed: toSet(p.c) },
@@ -190,7 +190,7 @@ const mul = defineTemplate<MulP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `x${p.size}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.groups} ${TIMES} ${p.size} = ?`,
       visual: {
@@ -250,7 +250,7 @@ const div = defineTemplate<DivP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `share-${p.groups}`,
-      cue: 'none',
+      cue: 'each',
       text: tr(ctx, 'Berapa dalam setiap kumpulan?', 'How many in each group?'),
       expression: `${p.groups * p.each} ${DIVIDE} ${p.groups} = ?`,
       visual: {
@@ -334,7 +334,8 @@ const money = defineTemplate<MoneyP>({
   topicId: 'y2-money',
   widget: 'number-pad',
   sk: ['4.1-4.5'],
-  scope: 'Recognise and determine the value of Malaysian money to RM100 (count the notes)',
+  scope:
+    'Recognise Malaysian notes and find their value to RM100 (count the dots: one per ringgit)',
   levelNotes: [
     '1-10 RM1 notes',
     'RM5 and RM1 notes, up to RM20',
@@ -351,27 +352,18 @@ const money = defineTemplate<MoneyP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `notes-${ctx.level}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa ringgit?', 'How many ringgit?'),
       visual: moneyItems([
         ...Array.from({ length: p.tens }, () => 1000),
         ...Array.from({ length: p.fives }, () => 500),
         ...Array.from({ length: p.ones }, () => 100),
       ]),
-      unit: 'RM',
       answer: p.tens * 10 + p.fives * 5 + p.ones,
       hint: tr(
         ctx,
-        `Kira wang kertas ${[
-          p.tens > 0 ? 'RM10' : '',
-          p.fives > 0 ? 'RM5' : '',
-          p.ones > 0 ? 'RM1' : '',
-        ]
-          .filter(Boolean)
-          .join(', ')} satu demi satu.`,
-        `Count the ${[p.tens > 0 ? 'RM10' : '', p.fives > 0 ? 'RM5' : '', p.ones > 0 ? 'RM1' : '']
-          .filter(Boolean)
-          .join(', ')} notes one by one.`,
+        'Kira titik pada setiap wang kertas. Satu titik ialah RM1.',
+        'Count the dots on each note. One dot is RM1.',
       ),
     }),
   recompute: (p) => String(p.tens * 10 + p.fives * 5 + p.ones),
@@ -451,12 +443,15 @@ const ruler = defineTemplate<RulerP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `ruler-${p.maxCm}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa cm panjangnya?', 'How many cm long?'),
       visual: { kind: 'ruler', lengthCm: p.lengthCm, maxCm: p.maxCm },
-      unit: 'cm',
       answer: p.lengthCm,
-      hint: tr(ctx, 'Mula dari 0 dan kira setiap cm.', 'Start at 0 and count each cm.'),
+      hint: tr(
+        ctx,
+        'Mula dari tanda hijau dan kira setiap cm.',
+        'Start at the green mark and count each cm.',
+      ),
     }),
   recompute: (p) => String(p.lengthCm),
   fixtures: [{ params: { lengthCm: 7, maxCm: 10 }, expected: { answerText: '7' } }],
@@ -468,36 +463,37 @@ const CUP: Record<Level, { max: number; step: number }> = {
   3: { max: 1000, step: 100 },
   4: { max: 1000, step: 50 },
 };
-type CupP = { ml: number; maxMl: number };
+type CupP = { ml: number; maxMl: number; step: number };
 const cup = defineTemplate<CupP>({
   id: 'y2-easy-cup',
   topicId: 'y2-measurement',
   widget: 'number-pad',
   sk: ['6.1-6.3'],
-  scope: 'Measure liquid volume in millilitres with a measuring cup',
-  levelNotes: [
-    '100s, cup to 500 ml',
-    '100s, cup to 1000 ml',
-    '100s, cup to 1000 ml',
-    '50s, cup to 1000 ml',
-  ],
+  scope: 'Read the water level on a measuring cup (count the marks up to the water)',
+  levelNotes: ['cup of 5 marks', 'cup of 10 marks', 'cup of 10 marks', 'cup of 20 marks'],
   arithmetic: true,
   sample: (rng, level) => ({
     ml: CUP[level].step * rng.int(1, CUP[level].max / CUP[level].step - 1),
     maxMl: CUP[level].max,
+    step: CUP[level].step,
   }),
   build: (p, ctx) =>
     numberBuilt({
       band: `cup-${p.maxMl}`,
-      cue: 'none',
+      cue: 'count',
       text: tr(ctx, 'Berapa ml air?', 'How many ml of water?'),
-      visual: { kind: 'cup', ml: p.ml, maxMl: p.maxMl },
-      unit: 'ml',
-      answer: p.ml,
-      hint: tr(ctx, 'Baca garisan pada aras air.', 'Read the line at the water level.'),
+      visual: { kind: 'cup', ml: p.ml, maxMl: p.maxMl, step: p.step },
+      answer: p.ml / p.step,
+      hint: tr(
+        ctx,
+        'Kira garisan dari bawah hingga air.',
+        'Count the lines from the bottom up to the water.',
+      ),
     }),
-  recompute: (p) => String(p.ml),
-  fixtures: [{ params: { ml: 300, maxMl: 500 }, level: 1, expected: { answerText: '300' } }],
+  recompute: (p) => String(p.ml / p.step),
+  fixtures: [
+    { params: { ml: 300, maxMl: 500, step: 100 }, level: 1, expected: { answerText: '3' } },
+  ],
 });
 
 // ------------------------------------------------------------------------------ 7.0 Space
@@ -520,10 +516,9 @@ const shapeCount = shapeCountTemplate({
 const CHART: Record<Level, { bars: number; scale: number; max: number }> = {
   1: { bars: 3, scale: 1, max: 10 },
   2: { bars: 4, scale: 1, max: 10 },
-  3: { bars: 4, scale: 2, max: 20 },
-  4: { bars: 5, scale: 5, max: 50 },
+  3: { bars: 4, scale: 1, max: 12 },
+  4: { bars: 5, scale: 1, max: 15 },
 };
-const Y_TITLE: LocalText = { bm: 'Bilangan murid', en: 'Number of pupils' };
 type BarP = { pets: boolean; labelIdx: number[]; values: number[]; ask: number };
 const barRead = defineTemplate<BarP>({
   id: 'y2-easy-bar-read',
@@ -531,7 +526,7 @@ const barRead = defineTemplate<BarP>({
   widget: 'number-pad',
   sk: ['8.1-8.2'],
   scope: 'Read a bar chart (how many pupils chose mango?)',
-  levelNotes: ['3 bars, scale 1', '4 bars, scale 1', '4 bars, scale 2', '5 bars, scale 5'],
+  levelNotes: ['3 bars, up to 10', '4 bars, up to 10', '4 bars, up to 12', '5 bars, up to 15'],
   arithmetic: true,
   sample: (rng, level) => {
     const cfg = CHART[level];
@@ -556,7 +551,7 @@ const barRead = defineTemplate<BarP>({
     const bar = categories[p.ask];
     if (!bar) throw new Error('y2-easy-bar-read: ask index out of range');
     return numberBuilt({
-      band: `scale-${cfg.scale}`,
+      band: `bars-${cfg.bars}-to-${cfg.max}`,
       cue: 'count',
       text: tr(
         ctx,
@@ -569,7 +564,6 @@ const barRead = defineTemplate<BarP>({
         scale: cfg.scale,
         max: cfg.max,
         highlight: p.ask,
-        yTitle: text(ctx.language, Y_TITLE),
       },
       answer: bar.value,
       hint: tr(

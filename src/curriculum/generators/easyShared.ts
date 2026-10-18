@@ -23,9 +23,12 @@ export function color(i: number): string {
 }
 
 /** Loose objects for small counts, ten-frames once the picture holds more than 20 things or at `frames`. */
-export function countPicture(groups: ObjectGroup[], frames: boolean): VisualModel {
+export function countPicture(groups: ObjectGroup[], frames: boolean, join?: 'plus'): VisualModel {
   const total = groups.reduce((n, g) => n + g.count, 0);
-  return frames || total > 20 ? { kind: 'ten-frames', groups } : { kind: 'objects', groups };
+  const extra = join ? { join } : {};
+  return frames || total > 20
+    ? { kind: 'ten-frames', groups, ...extra }
+    : { kind: 'objects', groups, ...extra };
 }
 
 /**
@@ -33,7 +36,10 @@ export function countPicture(groups: ObjectGroup[], frames: boolean): VisualMode
  * already in frames has no rearranged version.
  */
 export function framesHint(picture: VisualModel): VisualModel | undefined {
-  return picture.kind === 'objects' ? { kind: 'ten-frames', groups: picture.groups } : undefined;
+  if (picture.kind !== 'objects') return undefined;
+  return picture.join
+    ? { kind: 'ten-frames', groups: picture.groups, join: picture.join }
+    : { kind: 'ten-frames', groups: picture.groups };
 }
 
 export function fivesHint(ctx: BuildContext): string {

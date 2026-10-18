@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { getDefaultRegistry } from '../curriculum/registry';
 import type { GeneratedQuestion, Level } from '../curriculum/schema';
 import { SeededRng } from '../game/core/SeededRng';
+import type { DrawContext } from '../game/ui/DrawContext';
+import { drawCue } from '../game/ui/cueIcons';
 import { computePromptLayout } from '../game/ui/layout';
+import { drawVisual } from '../game/ui/VisualRenderer';
 
 const registry = getDefaultRegistry();
 
@@ -56,8 +59,10 @@ describe('picture-first questions (DECISIONS #45)', () => {
         const hour = band === 'hour';
         if (cue !== (hour ? 'hour' : 'minute')) fail('clock cue');
       }
-      // a question with a sum shows the sum, never a badge as well
-      if ((q.prompt.expression ?? '') !== '' && cue !== 'none') fail('sum and badge together');
+      // a sum is a picture too (DECISIONS #46): the badge says "count", never a printed sum
+      if (['add', 'sub', 'mul'].some((k) => t.endsWith(`-${k}`)) && cue !== 'count')
+        fail('sum badge');
+      if (t.endsWith('-div') && cue !== 'each') fail('share badge');
     });
     expect([...new Set(problems)]).toEqual([]);
   });
@@ -93,5 +98,29 @@ describe('picture-first questions (DECISIONS #45)', () => {
       if (l.cue) expect(l.cue.x + l.cue.w).toBeLessThan(l.visual.x);
       if (l.expression) expect(l.expression.y + l.expression.h).toBeLessThanOrEqual(l.visual.y);
     }
+  });
+
+  it('draws no text at all: every picture, hint picture and badge is shapes only (DECISIONS #46)', () => {
+    const drawn: string[] = [];
+    const g = new Proxy({}, { get: () => () => undefined }) as DrawContext['g'];
+    const ctx: DrawContext = { g, text: (_key, value) => void drawn.push(value) };
+    const area = { x: 0, y: 0, w: 300, h: 160 };
+    everyQuestion((q) => {
+      if (q.prompt.visual) drawVisual(ctx, q.prompt.visual, area, 'v');
+      if (q.hintVisual) drawVisual(ctx, q.hintVisual, area, 'h');
+      drawCue(ctx, q.prompt.cue ?? 'none', { x: 0, y: 0, w: 60, h: 60 });
+    });
+    expect(drawn).toEqual([]);
+  });
+
+  it('a pictograph question points at the row it asks about', () => {
+    let seen = 0;
+    everyQuestion((q) => {
+      const v = q.prompt.visual;
+      if (v?.kind !== 'pictograph') return;
+      seen++;
+      expect(String(v.rows[v.highlight ?? -1]?.count)).toBe(q.acceptedAnswer.value);
+    });
+    expect(seen).toBeGreaterThan(0);
   });
 });

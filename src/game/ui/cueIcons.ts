@@ -1,17 +1,19 @@
 import type { Cue } from '../../curriculum/schema';
 import type { DrawContext } from './DrawContext';
 import type { Rect } from './geometry';
-import { THEME } from './theme';
+import { THEME, hexToNumber } from './theme';
 
 const ORANGE = 0xf97316;
 const BLUE = 0x2563eb;
 const SLATE = 0x475569;
+const INK = hexToNumber(THEME.ink);
 
 /**
- * The word-free badge that stands in for an instruction (DECISIONS #45): a "?" for "how many", +1 / -1, and a
- * small drawing for "coloured parts", "all parts", sides, corners, the hour and the minutes. Vector only.
+ * The word-free badge that stands in for an instruction (DECISIONS #45, #46): a drawn "?" for "how many", one
+ * dot added or taken away, and a small drawing for "coloured parts", "all parts", sides, corners, the hour and
+ * the minutes. Vector only: no glyph of any font is drawn, so nothing here has to be read.
  */
-export function drawCue(ctx: DrawContext, cue: Cue, area: Rect, key: string): void {
+export function drawCue(ctx: DrawContext, cue: Cue, area: Rect): void {
   if (cue === 'none' || area.w < 6 || area.h < 6) return;
   const { g } = ctx;
   const s = Math.min(area.w, area.h);
@@ -21,17 +23,15 @@ export function drawCue(ctx: DrawContext, cue: Cue, area: Rect, key: string): vo
   g.lineStyle(Math.max(2, s * 0.04), 0x94a3b8, 1);
   g.strokeRoundedRect(area.x, area.y, area.w, area.h, r);
   const cx = area.x + area.w / 2;
-  const big = (value: string): void =>
-    ctx.text(`${key}:q`, value, cx, area.y + area.h / 2, {
-      size: s * 0.52,
-      color: THEME.ink,
-      bold: true,
-      maxWidth: area.w * 0.9,
-      minSize: 10,
-    });
-  if (cue === 'count') return big('?');
-  if (cue === 'plus-one') return big('+1');
-  if (cue === 'minus-one') return big('−1');
+  const cy0 = area.y + area.h / 2;
+  if (cue === 'count') return drawQuestionMark(g, cx, cy0, s * 0.7, INK);
+  if (cue === 'plus-one' || cue === 'minus-one') {
+    // one dot, and a plus or a minus: one more or one fewer
+    g.fillStyle(ORANGE, 1);
+    g.fillCircle(cx - s * 0.2, cy0, s * 0.14);
+    drawSign(g, cx + s * 0.2, cy0, s * 0.3, cue === 'plus-one' ? 'plus' : 'minus', INK);
+    return;
+  }
 
   // a small drawing in the upper part and a "?" under it
   const art: Rect = {
@@ -85,6 +85,19 @@ export function drawCue(ctx: DrawContext, cue: Cue, area: Rect, key: string): vo
       }
       break;
     }
+    case 'each': {
+      // one ring holding a few things: the question is about one group
+      g.lineStyle(lw, ORANGE, 1);
+      g.strokeCircle(acx, acy, u * 0.46);
+      g.fillStyle(BLUE, 1);
+      for (const [dx, dy] of [
+        [-0.2, 0.12],
+        [0.2, 0.12],
+        [0, -0.2],
+      ] as const)
+        g.fillCircle(acx + dx * u, acy + dy * u, u * 0.1);
+      break;
+    }
     case 'hour':
     case 'minute': {
       const rad = u * 0.46;
@@ -99,13 +112,61 @@ export function drawCue(ctx: DrawContext, cue: Cue, area: Rect, key: string): vo
       break;
     }
   }
-  ctx.text(`${key}:q`, '?', cx, area.y + area.h * 0.82, {
-    size: s * 0.3,
-    color: THEME.ink,
-    bold: true,
-    maxWidth: area.w * 0.9,
-    minSize: 8,
-  });
+  drawQuestionMark(g, cx, area.y + area.h * 0.82, s * 0.3, INK);
+}
+
+type Gfx = DrawContext['g'];
+
+/** A "?" drawn with an arc, a stem and a dot, `size` tall and centred on (cx, cy). */
+export function drawQuestionMark(
+  g: Gfx,
+  cx: number,
+  cy: number,
+  size: number,
+  color: number,
+): void {
+  const w = Math.max(2, size * 0.13);
+  g.lineStyle(w, color, 1);
+  g.beginPath();
+  g.arc(cx, cy - size * 0.2, size * 0.22, Math.PI, Math.PI * 2.5, false);
+  g.strokePath();
+  g.lineBetween(cx, cy + size * 0.02, cx, cy + size * 0.14);
+  g.fillStyle(color, 1);
+  g.fillCircle(cx, cy + size * 0.4, w * 0.75);
+}
+
+/** A plus or a minus sign, `size` wide, centred on (cx, cy). */
+export function drawSign(
+  g: Gfx,
+  cx: number,
+  cy: number,
+  size: number,
+  sign: 'plus' | 'minus',
+  color: number,
+): void {
+  g.lineStyle(Math.max(2, size * 0.2), color, 1);
+  g.lineBetween(cx - size / 2, cy, cx + size / 2, cy);
+  if (sign === 'plus') g.lineBetween(cx, cy - size / 2, cx, cy + size / 2);
+}
+
+/** A tick: "right". */
+export function drawCheck(g: Gfx, cx: number, cy: number, r: number, color: number): void {
+  g.lineStyle(Math.max(3, r * 0.3), color, 1);
+  g.lineBetween(cx - r * 0.7, cy + r * 0.05, cx - r * 0.2, cy + r * 0.55);
+  g.lineBetween(cx - r * 0.2, cy + r * 0.55, cx + r * 0.75, cy - r * 0.55);
+}
+
+/** A circular arrow: "try again". */
+export function drawRetry(g: Gfx, cx: number, cy: number, r: number, color: number): void {
+  g.lineStyle(Math.max(3, r * 0.26), color, 1);
+  g.beginPath();
+  g.arc(cx, cy, r * 0.7, -Math.PI * 0.35, Math.PI * 1.15, false);
+  g.strokePath();
+  const a = Math.PI * 1.15;
+  const ex = cx + Math.cos(a) * r * 0.7;
+  const ey = cy + Math.sin(a) * r * 0.7;
+  g.fillStyle(color, 1);
+  g.fillTriangle(ex - r * 0.35, ey - r * 0.2, ex + r * 0.35, ey - r * 0.2, ex, ey + r * 0.4);
 }
 
 /** A lightbulb: the hint marker. Drawn, so it needs no font and works in both languages. */

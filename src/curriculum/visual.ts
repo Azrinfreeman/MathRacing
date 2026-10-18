@@ -29,11 +29,11 @@ export type PatternItem = { shape: ObjectShape; color: string } | null; // null 
 
 export type VisualModel =
   /** Countable objects. Several groups are drawn side by side. */
-  | { kind: 'objects'; groups: ObjectGroup[] }
+  | { kind: 'objects'; groups: ObjectGroup[]; join?: 'plus' }
   /** The same groups arranged in ten-frames (2 rows of 5), so larger counts are quick to count. */
-  | { kind: 'ten-frames'; groups: ObjectGroup[] }
+  | { kind: 'ten-frames'; groups: ObjectGroup[]; join?: 'plus' }
   /** One or two sets of base-ten blocks; `crossed` blocks of the first set are drawn crossed out. */
-  | { kind: 'base-ten'; sets: BlockSet[]; crossed?: BlockSet }
+  | { kind: 'base-ten'; sets: BlockSet[]; crossed?: BlockSet; join?: 'plus' }
   /** `groups` circled groups of `perGroup` objects (repeated addition, multiplication, sharing). */
   | { kind: 'equal-groups'; groups: number; perGroup: number; shape: ObjectShape; color: string }
   /** `fives` labels the minute marks 5, 10, ... 55 around the face. */
@@ -55,11 +55,14 @@ export type VisualModel =
   /** A plain bar whose length is the thing being compared. */
   | { kind: 'length-bar'; length: number; max: number; color?: string }
   | { kind: 'ruler'; lengthCm: number; maxCm: number }
-  | { kind: 'cup'; ml: number; maxMl: number }
+  /** `step` ml between two marks (default 100): the cup is read by counting the marks up to the water. */
+  | { kind: 'cup'; ml: number; maxMl: number; step?: number }
   /** One symbol represents one item (Year 1 pictograph). */
   | {
       kind: 'pictograph';
       rows: { label: string; count: number; shape: ObjectShape; color: string }[];
+      /** Index of the one row the question asks about, drawn with a pointer so no sentence is needed. */
+      highlight?: number;
     }
   /** Vertical bar chart. Every value is a multiple of `scale`, so bars align with grid lines. */
   | {
@@ -162,6 +165,7 @@ export function validateVisual(v: VisualModel): string[] {
       break;
     case 'cup':
       if (v.ml < 0 || v.ml > v.maxMl) problems.push('cup: level within max');
+      if (v.ml % (v.step ?? 100) !== 0) problems.push('cup: level on a mark');
       break;
     case 'pictograph': {
       const labels = new Set(v.rows.map((r) => r.label));
@@ -226,10 +230,15 @@ export function visualTotal(v: VisualModel): number | null {
     case 'equal-groups':
       return v.groups * v.perGroup;
     case 'money':
-      return v.items.reduce((n, m) => n + m.valueSen, 0);
+      return moneyCount(v.items);
     default:
       return null;
   }
+}
+
+/** What a money picture asks to count: one per coin, and one dot per ringgit on a note (DECISIONS #46). */
+export function moneyCount(items: readonly MoneyItem[]): number {
+  return items.reduce((n, m) => n + (m.type === 'coin' ? 1 : m.valueSen / 100), 0);
 }
 
 /** Short plain-text description of a visual (used for fixtures, previews and screen-reader labels). */

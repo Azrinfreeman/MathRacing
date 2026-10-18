@@ -8,6 +8,7 @@ import type {
   Shape3D,
   VisualModel,
 } from '../../curriculum/visual';
+import { drawQuestionMark, drawSign } from './cueIcons';
 import { blockLayout, equalGroupLayout, tenFrameCells } from './countLayout';
 import type { DrawContext } from './DrawContext';
 import type { Rect } from './geometry';
@@ -25,22 +26,22 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
   if (area.w < 4 || area.h < 4) return;
   switch (v.kind) {
     case 'objects':
-      drawObjects(ctx, v.groups, area);
+      drawObjects(ctx, v.groups, area, v.join);
       break;
     case 'ten-frames':
-      drawTenFrames(ctx, v.groups, area);
+      drawTenFrames(ctx, v.groups, area, v.join);
       break;
     case 'base-ten':
-      drawBaseTen(ctx, v.sets, v.crossed, area);
+      drawBaseTen(ctx, v.sets, v.crossed, area, v.join);
       break;
     case 'equal-groups':
       drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area);
       break;
     case 'clock':
-      drawClock(ctx, v.hour, v.minute, area, key, v.fives === true);
+      drawClock(ctx, v.hour, v.minute, area);
       break;
     case 'money':
-      drawMoney(ctx, v.items, area, key);
+      drawMoney(ctx, v.items, area);
       break;
     case 'shape2d':
       drawShape2D(ctx.g, v.shape, area, v.color ?? '#2e86de');
@@ -61,19 +62,19 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
       drawLengthBar(ctx, v.length, v.max, v.color ?? '#2563eb', area);
       break;
     case 'ruler':
-      drawRuler(ctx, v.lengthCm, v.maxCm, area, key);
+      drawRuler(ctx, v.lengthCm, v.maxCm, area);
       break;
     case 'cup':
-      drawCup(ctx, v.ml, v.maxMl, area, key);
+      drawCup(ctx, v.ml, v.maxMl, v.step ?? 100, area);
       break;
     case 'pictograph':
-      drawPictograph(ctx, v.rows, area, key);
+      drawPictograph(ctx, v.rows, area, v.highlight);
       break;
     case 'bar-chart':
-      drawBarChart(ctx, v, area, key);
+      drawBarChart(ctx, v, area);
       break;
     case 'pattern':
-      drawPattern(ctx, v.items, area, key);
+      drawPattern(ctx, v.items, area);
       break;
     case 'text':
       ctx.text(`${key}:t`, v.text, area.x + area.w / 2, area.y + area.h / 2, {
@@ -103,9 +104,38 @@ function bestGrid(
   return best;
 }
 
-function drawObjects(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rect): void {
+/** Room between two joined groups, and the drawn "+" that fills it (DECISIONS #46: no numerals, no words). */
+const JOIN_GAP = 0.1;
+function drawJoin(
+  ctx: DrawContext,
+  join: 'plus' | undefined,
+  n: number,
+  area: Rect,
+  cellW: number,
+  gap: number,
+): void {
+  if (join !== 'plus') return;
+  for (let i = 0; i < n - 1; i++) {
+    const x = area.x + (i + 1) * cellW + i * gap + gap / 2;
+    drawSign(
+      ctx.g,
+      x,
+      area.y + area.h / 2,
+      Math.min(gap * 0.8, area.h * 0.3),
+      'plus',
+      hexToNumber(THEME.ink),
+    );
+  }
+}
+
+function drawObjects(
+  ctx: DrawContext,
+  groups: readonly ObjectGroup[],
+  area: Rect,
+  join?: 'plus',
+): void {
   const n = groups.length;
-  const gap = n > 1 ? area.w * 0.03 : 0;
+  const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.03) : 0;
   const cellW = (area.w - gap * (n - 1)) / n;
   groups.forEach((group, gi) => {
     const cell: Rect = { x: area.x + gi * (cellW + gap), y: area.y, w: cellW, h: area.h };
@@ -140,6 +170,7 @@ function drawObjects(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rec
       if (i >= firstCrossed) drawCross(ctx, x, y, size * 0.4);
     }
   });
+  drawJoin(ctx, join, n, area, cellW, gap);
 }
 
 /** A grey X over a crossed-out thing ("Berapa tinggal?"): neutral, never red. */
@@ -151,9 +182,14 @@ function drawCross(ctx: DrawContext, x: number, y: number, r: number): void {
 
 // ---------------------------------------------------------------------------------- counting pictures
 
-function drawTenFrames(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rect): void {
+function drawTenFrames(
+  ctx: DrawContext,
+  groups: readonly ObjectGroup[],
+  area: Rect,
+  join?: 'plus',
+): void {
   const n = groups.length;
-  const gap = n > 1 ? area.w * 0.04 : 0;
+  const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.04) : 0;
   const cellW = (area.w - gap * (n - 1)) / n;
   groups.forEach((group, gi) => {
     const box: Rect = { x: area.x + gi * (cellW + gap), y: area.y, w: cellW, h: area.h };
@@ -177,6 +213,7 @@ function drawTenFrames(ctx: DrawContext, groups: readonly ObjectGroup[], area: R
       if (crossed) drawCross(ctx, p.x, p.y, cell * 0.36);
     });
   });
+  drawJoin(ctx, join, n, area, cellW, gap);
 }
 
 const BLOCK_FILL = 0x60a5fa;
@@ -187,10 +224,11 @@ function drawBaseTen(
   sets: readonly BlockSet[],
   crossed: BlockSet | undefined,
   area: Rect,
+  join?: 'plus',
 ): void {
   const { g } = ctx;
   const n = sets.length;
-  const gap = n > 1 ? area.w * 0.05 : 0;
+  const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.05) : 0;
   const setW = (area.w - gap * (n - 1)) / n;
   sets.forEach((set, si) => {
     const box: Rect = { x: area.x + si * (setW + gap), y: area.y, w: setW, h: area.h };
@@ -229,6 +267,7 @@ function drawBaseTen(
       }
     }
   });
+  drawJoin(ctx, join, n, area, setW, gap);
 }
 
 function drawEqualGroups(
@@ -252,17 +291,10 @@ function drawEqualGroups(
 
 // --------------------------------------------------------------------------------------------- clock
 
-function drawClock(
-  ctx: DrawContext,
-  hour: number,
-  minute: number,
-  area: Rect,
-  key: string,
-  fives = false,
-): void {
+function drawClock(ctx: DrawContext, hour: number, minute: number, area: Rect): void {
   const { g } = ctx;
   const c = center(area);
-  const r = (Math.min(area.w, area.h) / 2) * (fives ? 0.8 : 0.96);
+  const r = (Math.min(area.w, area.h) / 2) * 0.96;
   g.fillStyle(0xffffff, 1);
   g.fillCircle(c.x, c.y, r);
   g.lineStyle(Math.max(2, r * 0.06), 0x0f172a, 1);
@@ -279,38 +311,15 @@ function drawClock(
       c.y - Math.cos(a) * (r * 0.93 - len),
     );
   }
-  if (r > 22) {
-    for (let n = 1; n <= 12; n++) {
-      const a = (n * Math.PI) / 6;
-      ctx.text(
-        `${key}:n${n}`,
-        String(n),
-        c.x + Math.sin(a) * r * 0.72,
-        c.y - Math.cos(a) * r * 0.72,
-        {
-          size: r * 0.27,
-          color: THEME.ink,
-          bold: true,
-        },
-      );
-    }
-  }
-  if (fives && r > 30) {
-    // minute labels 5, 10, ... 55 just outside the face, so the minutes can be counted in fives
-    for (let n = 1; n < 12; n++) {
-      const a = (n * Math.PI) / 6;
-      ctx.text(
-        `${key}:m${n}`,
-        String(n * 5),
-        c.x + Math.sin(a) * r * 1.13,
-        c.y - Math.cos(a) * r * 1.13,
-        {
-          size: r * 0.17,
-          color: '#1d4ed8',
-          bold: true,
-        },
-      );
-    }
+  // no numerals (DECISIONS #46): a dot on each hour mark, a larger blue one at the top where counting starts
+  for (let n = 1; n <= 12; n++) {
+    const a = (n * Math.PI) / 6;
+    g.fillStyle(n === 12 ? 0x1d4ed8 : 0x334155, 1);
+    g.fillCircle(
+      c.x + Math.sin(a) * r * 0.7,
+      c.y - Math.cos(a) * r * 0.7,
+      r * (n === 12 ? 0.1 : 0.055),
+    );
   }
   const hourAngle = (((hour % 12) + minute / 60) * Math.PI) / 6;
   const minuteAngle = (minute * Math.PI) / 30;
@@ -344,11 +353,7 @@ const NOTE_COLORS: Record<number, number> = {
 };
 const COIN_SIZE: Record<number, number> = { 5: 0.7, 10: 0.78, 20: 0.86, 50: 0.96 };
 
-function moneyLabel(sen: number): { big: string; small: string } {
-  return sen < 100 ? { big: String(sen), small: 'sen' } : { big: `RM${sen / 100}`, small: '' };
-}
-
-function drawMoney(ctx: DrawContext, items: readonly MoneyItem[], area: Rect, key: string): void {
+function drawMoney(ctx: DrawContext, items: readonly MoneyItem[], area: Rect): void {
   const { g } = ctx;
   const base = Math.min(area.h * 0.9, area.w * 0.42);
   const widths = items.map((m) =>
@@ -362,7 +367,6 @@ function drawMoney(ctx: DrawContext, items: readonly MoneyItem[], area: Rect, ke
   const cy = area.y + area.h / 2;
   items.forEach((m, i) => {
     const w = (widths[i] as number) * shrink;
-    const label = moneyLabel(m.valueSen);
     if (m.type === 'coin') {
       const r = w / 2;
       g.fillStyle(0xcbd5e1, 1);
@@ -371,18 +375,8 @@ function drawMoney(ctx: DrawContext, items: readonly MoneyItem[], area: Rect, ke
       g.strokeCircle(x + r, cy, r);
       g.lineStyle(Math.max(1, r * 0.05), 0x94a3b8, 1);
       g.strokeCircle(x + r, cy, r * 0.78);
-      ctx.text(`${key}:c${i}`, label.big, x + r, cy - r * 0.12, {
-        size: r * 0.8,
-        color: THEME.ink,
-        bold: true,
-        maxWidth: r * 1.5,
-        minSize: 8,
-      });
-      ctx.text(`${key}:s${i}`, label.small, x + r, cy + r * 0.45, {
-        size: r * 0.4,
-        color: '#334155',
-        bold: true,
-      });
+      g.fillStyle(0x94a3b8, 1);
+      g.fillCircle(x + r, cy, r * 0.3);
     } else {
       const h = w * 0.55;
       const fill = NOTE_COLORS[m.valueSen] ?? 0xe2e8f0;
@@ -396,13 +390,21 @@ function drawMoney(ctx: DrawContext, items: readonly MoneyItem[], area: Rect, ke
         0.8,
       );
       g.strokeRoundedRect(x + h * 0.1, cy - h / 2 + h * 0.1, w - h * 0.2, h - h * 0.2, h * 0.06);
-      ctx.text(`${key}:n${i}`, label.big, x + w / 2, cy, {
-        size: h * 0.46,
-        color: THEME.ink,
-        bold: true,
-        maxWidth: w * 0.8,
-        minSize: 8,
-      });
+      // one dot per ringgit, in rows of 5 (two rows of 5 make RM10)
+      const dots = m.valueSen / 100;
+      const perRow = Math.min(5, dots);
+      const rows = Math.ceil(dots / 5);
+      const dr = Math.min((w * 0.72) / (perRow * 2.3), (h * 0.7) / (rows * 2.3));
+      g.fillStyle(0x1e293b, 1);
+      for (let d = 0; d < dots; d++) {
+        const row = Math.floor(d / 5);
+        const col = d % 5;
+        g.fillCircle(
+          x + w / 2 + (col - (perRow - 1) / 2) * dr * 2.3,
+          cy + (row - (rows - 1) / 2) * dr * 2.3,
+          dr,
+        );
+      }
     }
     x += w + gapUnit * shrink;
   });
@@ -813,13 +815,7 @@ function drawLengthBar(
   g.strokeRoundedRect(x, y, w, h, h * 0.3);
 }
 
-function drawRuler(
-  ctx: DrawContext,
-  lengthCm: number,
-  maxCm: number,
-  area: Rect,
-  key: string,
-): void {
+function drawRuler(ctx: DrawContext, lengthCm: number, maxCm: number, area: Rect): void {
   const { g } = ctx;
   const w = area.w * 0.94;
   const x0 = area.x + (area.w - w) / 2;
@@ -836,26 +832,28 @@ function drawRuler(
   g.fillRect(x0, rulerY, w, rulerH);
   g.lineStyle(Math.max(2, rulerH * 0.03), 0x0f172a, 1);
   g.strokeRect(x0, rulerY, w, rulerH);
-  const labelEvery = maxCm <= 15 ? 1 : 5;
   for (let i = 0; i <= maxCm; i++) {
     const x = x0 + i * per;
-    const long = i % labelEvery === 0;
+    const long = i % 5 === 0;
     g.lineStyle(Math.max(1, rulerH * 0.02), 0x0f172a, 1);
-    g.lineBetween(x, rulerY, x, rulerY + rulerH * (long ? 0.42 : 0.3));
+    g.lineBetween(x, rulerY, x, rulerY + rulerH * (long ? 0.5 : 0.34));
     if (per > 12 && i < maxCm) {
       g.lineBetween(x + per / 2, rulerY, x + per / 2, rulerY + rulerH * 0.18);
     }
-    if (long) {
-      ctx.text(`${key}:r${i}`, String(i), x, rulerY + rulerH * 0.72, {
-        size: Math.max(9, Math.min(rulerH * 0.34, per * 0.75)),
-        color: THEME.ink,
-        bold: true,
-      });
-    }
   }
+  // no numerals (DECISIONS #46): a green mark shows where counting starts, at the end of the ruler
+  g.fillStyle(0x16a34a, 1);
+  g.fillTriangle(
+    x0,
+    rulerY + rulerH * 0.98,
+    x0 - rulerH * 0.16,
+    rulerY + rulerH * 0.62,
+    x0 + rulerH * 0.16,
+    rulerY + rulerH * 0.62,
+  );
 }
 
-function drawCup(ctx: DrawContext, ml: number, maxMl: number, area: Rect, key: string): void {
+function drawCup(ctx: DrawContext, ml: number, maxMl: number, step: number, area: Rect): void {
   const { g } = ctx;
   const cupH = area.h * 0.94;
   const cupW = Math.min(area.w * 0.42, cupH * 0.75);
@@ -868,30 +866,13 @@ function drawCup(ctx: DrawContext, ml: number, maxMl: number, area: Rect, key: s
   g.fillRect(x, level(ml), cupW, y + cupH - level(ml));
   g.lineStyle(Math.max(2, cupW * 0.04), 0x0f172a, 1);
   g.strokeRect(x, y, cupW, cupH);
-  const stepMajor = maxMl <= 500 ? 100 : 200;
-  const perMl = cupH / maxMl;
-  for (let v = 0; v <= maxMl; v += 50) {
-    const yy = level(v);
-    const major = v % stepMajor === 0;
-    const mid = v % 100 === 0;
-    if (!major && !mid && perMl * 50 < 6) continue;
+  // no numerals (DECISIONS #46): one line per mark, a longer one every fifth, counted from the bottom
+  for (let k = 1; k * step <= maxMl; k++) {
+    const yy = level(k * step);
+    const long = k % 5 === 0;
     g.lineStyle(Math.max(1, cupW * 0.02), 0x0f172a, 1);
-    g.lineBetween(x, yy, x - cupW * (major ? 0.28 : mid ? 0.2 : 0.12), yy);
-    if (major) {
-      ctx.text(`${key}:m${v}`, String(v), x - cupW * 0.32, yy, {
-        size: Math.max(9, Math.min(cupH * 0.11, 20)),
-        color: THEME.ink,
-        bold: true,
-        ax: 1,
-      });
-    }
+    g.lineBetween(x, yy, x - cupW * (long ? 0.32 : 0.18), yy);
   }
-  ctx.text(`${key}:ml`, 'ml', x + cupW / 2, y - Math.max(2, cupH * 0.005), {
-    size: Math.max(9, cupH * 0.1),
-    color: THEME.muted,
-    bold: true,
-    ay: 1,
-  });
 }
 
 // -------------------------------------------------------------------------------------------- data
@@ -900,11 +881,11 @@ function drawPictograph(
   ctx: DrawContext,
   rows: readonly { label: string; count: number; shape: ObjectShape; color: string }[],
   area: Rect,
-  key: string,
+  highlight?: number,
 ): void {
   const { g } = ctx;
   const rowH = area.h / rows.length;
-  const labelW = area.w * 0.32;
+  const labelW = area.w * 0.1;
   const symW = (area.w - labelW - area.w * 0.03) / 10;
   const size = Math.min(rowH * 0.78, symW * 0.92);
   rows.forEach((row, ri) => {
@@ -913,17 +894,21 @@ function drawPictograph(
       g.fillStyle(0xf1f5f9, 1);
       g.fillRect(area.x, area.y + ri * rowH, area.w, rowH);
     }
-    ctx.text(`${key}:l${ri}`, row.label, area.x + labelW - area.w * 0.02, cy, {
-      size: Math.min(rowH * 0.5, 30),
-      color: THEME.ink,
-      bold: true,
-      ax: 1,
-      align: 'right',
-      maxWidth: labelW * 0.95,
-      minSize: 9,
-    });
     for (let i = 0; i < row.count; i++) {
       drawObject(g, row.shape, area.x + labelW + symW * i + symW / 2, cy, size * 0.42, row.color);
+    }
+    if (highlight === ri) {
+      // a pointer at the asked row, so the question needs no sentence
+      const ah = Math.min(rowH * 0.6, labelW * 0.8);
+      g.fillStyle(0xf97316, 1);
+      g.fillTriangle(
+        area.x + labelW * 0.9,
+        cy,
+        area.x + labelW * 0.9 - ah,
+        cy - ah / 2,
+        area.x + labelW * 0.9 - ah,
+        cy + ah / 2,
+      );
     }
   });
   g.lineStyle(Math.max(1.5, area.h * 0.01), 0x94a3b8, 1);
@@ -934,36 +919,24 @@ function drawBarChart(
   ctx: DrawContext,
   v: Extract<VisualModel, { kind: 'bar-chart' }>,
   area: Rect,
-  key: string,
 ): void {
   const { g } = ctx;
-  const leftM = area.w * 0.13;
+  // no numbers, labels or titles (DECISIONS #46): each bar is a stack of one-unit blocks that can be counted
   const topM = area.h * 0.12;
-  const bottomM = area.h * 0.34;
   const plot: Rect = {
-    x: area.x + leftM,
+    x: area.x + area.w * 0.03,
     y: area.y + topM,
-    w: area.w - leftM - area.w * 0.03,
-    h: area.h - topM - bottomM,
+    w: area.w * 0.94,
+    h: area.h - topM - area.h * 0.04,
   };
   const lines = v.max / v.scale;
   const per = plot.h / lines;
-  const labelStep = v.scale * Math.max(1, Math.ceil(lines / 5));
   g.fillStyle(0xffffff, 1);
   g.fillRect(plot.x, plot.y, plot.w, plot.h);
   for (let i = 0; i <= lines; i++) {
     const y = plot.y + plot.h - i * per;
-    g.lineStyle(Math.max(1, per * 0.05), i === 0 ? 0x0f172a : 0xcbd5e1, 1);
+    g.lineStyle(Math.max(1, per * 0.05), i === 0 ? 0x0f172a : i % 5 === 0 ? 0x94a3b8 : 0xe2e8f0, 1);
     g.lineBetween(plot.x, y, plot.x + plot.w, y);
-    const val = i * v.scale;
-    if (val % labelStep === 0) {
-      ctx.text(`${key}:y${i}`, String(val), plot.x - area.w * 0.015, y, {
-        size: Math.max(9, Math.min(per * 1.6, area.h * 0.1)),
-        color: THEME.ink,
-        bold: true,
-        ax: 1,
-      });
-    }
   }
   const bandW = plot.w / v.categories.length;
   v.categories.forEach((cat, i) => {
@@ -972,6 +945,9 @@ function drawBarChart(
     const bh = (plot.h * cat.value) / v.max;
     g.fillStyle(hexToNumber(cat.color ?? '#2563eb'), 1);
     g.fillRect(bx, plot.y + plot.h - bh, bw, bh);
+    g.lineStyle(Math.max(1, per * 0.08), 0xffffff, 0.9);
+    for (let k = 1; k < cat.value / v.scale; k++)
+      g.lineBetween(bx, plot.y + plot.h - k * per, bx + bw, plot.y + plot.h - k * per);
     g.lineStyle(Math.max(1, bw * 0.05), 0x0f172a, 1);
     g.strokeRect(bx, plot.y + plot.h - bh, bw, bh);
     if (v.highlight === i) {
@@ -990,37 +966,7 @@ function drawBarChart(
       g.lineStyle(Math.max(3, bw * 0.1), 0xf97316, 1);
       g.strokeRect(bx, plot.y + plot.h - bh, bw, bh);
     }
-    ctx.text(`${key}:c${i}`, cat.label, bx + bw / 2, plot.y + plot.h + area.h * 0.03, {
-      size: Math.max(9, Math.min(area.h * 0.11, bandW * 0.24)),
-      color: THEME.ink,
-      bold: true,
-      ay: 0,
-      maxWidth: bandW * 0.98,
-      minSize: 8,
-    });
   });
-  g.lineStyle(Math.max(2, plot.h * 0.02), 0x0f172a, 1);
-  g.lineBetween(plot.x, plot.y, plot.x, plot.y + plot.h);
-  if (v.yTitle) {
-    ctx.text(`${key}:yt`, v.yTitle, area.x + area.w * 0.01, area.y + area.h * 0.05, {
-      size: Math.max(9, area.h * 0.09),
-      color: THEME.muted,
-      bold: true,
-      ax: 0,
-      maxWidth: area.w * 0.7,
-      minSize: 8,
-    });
-  }
-  if (v.xTitle) {
-    ctx.text(`${key}:xt`, v.xTitle, plot.x + plot.w / 2, area.y + area.h * 0.955, {
-      size: Math.max(9, area.h * 0.1),
-      color: THEME.muted,
-      bold: true,
-      ay: 1,
-      maxWidth: plot.w,
-      minSize: 8,
-    });
-  }
   if (v.highlightAxis) {
     const orange = 0xf97316;
     const lw = Math.max(3, area.h * 0.03);
@@ -1045,12 +991,7 @@ function drawBarChart(
   }
 }
 
-function drawPattern(
-  ctx: DrawContext,
-  items: readonly PatternItem[],
-  area: Rect,
-  key: string,
-): void {
+function drawPattern(ctx: DrawContext, items: readonly PatternItem[], area: Rect): void {
   const { g } = ctx;
   const n = items.length;
   const size = Math.min((area.w * 0.96) / n, area.h * 0.8);
@@ -1063,7 +1004,7 @@ function drawPattern(
     } else {
       g.lineStyle(Math.max(2, size * 0.05), 0x64748b, 1);
       g.strokeRoundedRect(cx - size * 0.4, cy - size * 0.4, size * 0.8, size * 0.8, size * 0.15);
-      ctx.text(`${key}:q`, '?', cx, cy, { size: size * 0.55, color: THEME.muted, bold: true });
+      drawQuestionMark(g, cx, cy, size * 0.55, hexToNumber(THEME.muted));
     }
   });
 }

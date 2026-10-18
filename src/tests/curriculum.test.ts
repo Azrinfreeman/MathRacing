@@ -77,10 +77,7 @@ function expectCountable(q: GeneratedQuestion): void {
   const total = visualTotal(visual);
   if (COUNT_ALL.has(q.templateId)) {
     expect(total, `${q.templateId} draws something to count`).not.toBeNull();
-    const perUnit = q.prompt.unit === 'RM' ? 100 : 1;
-    expect(String((total ?? 0) / perUnit), `${q.templateId} drawn count`).toBe(
-      q.acceptedAnswer.value,
-    );
+    expect(String(total), `${q.templateId} drawn count`).toBe(q.acceptedAnswer.value);
   }
   if (q.hintVisual) {
     expect(q.hintVisual.kind).toBe('ten-frames');
@@ -108,12 +105,12 @@ function expectPictureMatchesQuestion(q: GeneratedQuestion): void {
       break;
     case 'base-ten':
     case 'money':
-      expect(answer * (q.prompt.unit === 'RM' ? 100 : 1)).toBe(visualTotal(visual));
+      // money is counted: a coin is one, a note is one dot per ringgit (DECISIONS #46)
+      expect(answer).toBe(visualTotal(visual));
       if (visual.kind === 'money') {
         const values = visual.items.map((item) => item.valueSen);
-        if (!values.includes(1000)) expect(q.hint).not.toContain('RM10');
         if (!values.includes(500)) expect(q.hint).not.toContain('RM5');
-        if (values.every((v) => v === 20)) expect(q.hint).toContain('20');
+        if (!values.includes(1000)) expect(q.hint).not.toContain('RM10');
       }
       break;
     case 'equal-groups':
@@ -166,7 +163,7 @@ function expectPictureMatchesQuestion(q: GeneratedQuestion): void {
       expect(answer).toBe(visual.lengthCm);
       break;
     case 'cup':
-      expect(answer).toBe(visual.ml);
+      expect(answer * (visual.step ?? 100)).toBe(visual.ml);
       break;
     default:
       throw new Error(`${q.templateId}: picture kind ${visual.kind} has not been audited`);
