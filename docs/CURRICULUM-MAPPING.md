@@ -9,7 +9,7 @@
 - Every pack is marked `draft-pending-academic-review` with `reviewer: null`. Nothing here has been signed off by a Malaysian primary Mathematics educator.
 - Topic titles in Bahasa Melayu are working labels for the plan's English topic names, not quotations of official KPM wording.
 
-## KSSR (Revised 2017) - Edition 3 - Mathematics Year 1 (`kpm-ms-y1` v2.1.0)
+## KSSR (Revised 2017) - Edition 3 - Mathematics Year 1 (`kpm-ms-y1` v2.2.0)
 
 Basis: KSSR (Semakan 2017), Dokumen Penjajaran Edisi 3, Matematik Tahap I. Effective date recorded: 2024-05-03. Templates: 10.
 
@@ -20,7 +20,7 @@ Plan scope: Compare quantities; name, count and write numbers; compare groups; p
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
 | `y1-easy-count` | number-pad | Name, count and write numbers (count objects) | 1-5 objects | 3-10 objects | 8-20 in ten-frames | 20-50 in ten-frames | n/a | - |
-| `y1-easy-one-more` | number-pad | Name, count and write numbers (one more, one fewer) | 1-5 objects (the result is drawn, to count) | 1-10 objects | 1-20 objects | 1-20 objects | n/a | - |
+| `y1-easy-one-more` | number-pad | Name, count and write numbers (one more, one fewer) | 1-5 objects (the result is drawn, to count) | 1-10 objects (the equation is drawn on about half) | 1-20 objects | 1-20 objects | n/a | - |
 
 ### 2.0 Operasi Asas / Basic Operations (SK 2.1-2.5)
 
@@ -28,8 +28,8 @@ Plan scope: Meaning and symbols of +, - and =; addition and subtraction within 1
 
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
-| `y1-easy-add` | number-pad | Addition within 100 (two groups: count them all) | sum 2-5 (one row, two colours) | sum up to 10 | sum up to 20 in ten-frames | sum up to 30 in ten-frames | n/a | - |
-| `y1-easy-sub` | number-pad | Subtraction within 100 (some crossed out: how many are left?) | from 2-5 (only what is left is drawn) | from up to 10 | from up to 20 in ten-frames | from up to 30 in ten-frames | n/a | - |
+| `y1-easy-add` | number-pad | Addition within 100 (two groups: count them all) | sum 2-5 (one row, two colours) | sum up to 10 (the equation is drawn on about half) | sum up to 20 in ten-frames | sum up to 30 in ten-frames | n/a | - |
+| `y1-easy-sub` | number-pad | Subtraction within 100 (some crossed out: how many are left?) | from 2-5 (only what is left is drawn) | from up to 10 (the equation is drawn on about half) | from up to 20 in ten-frames | from up to 30 in ten-frames | n/a | - |
 | `y1-easy-groups` | number-pad | Repeated addition in 2s, 5s and 10s (equal groups: count them all) | groups of 2, up to 10 (no rings) | groups of 2 or 5, up to 20 | groups of 2, 5 or 10, up to 50 | groups of 2, 5 or 10, up to 50 | n/a | - |
 
 ### 3.0 Wang / Money (SK 3.1-3.2)
@@ -72,7 +72,7 @@ Plan scope: Collect, classify and arrange everyday data; read pictographs where 
 |---|---|---|---|---|---|---|---|---|
 | `y1-easy-pictograph` | number-pad | Read a pictograph where one picture represents one item (count one row) | 3 rows, up to 5 (other rows faded) | 3 rows, up to 7 | 4 rows, up to 9 | 4 rows, up to 10 | n/a | - |
 
-## KSSR (Revised 2017) - Edition 3 - Mathematics Year 2 (`kpm-ms-y2` v2.1.0)
+## KSSR (Revised 2017) - Edition 3 - Mathematics Year 2 (`kpm-ms-y2` v2.2.0)
 
 Basis: KSSR (Semakan 2017), Dokumen Penjajaran Edisi 3, Matematik Tahap I. Effective date recorded: 2024-05-03. Templates: 12.
 
@@ -90,10 +90,10 @@ Plan scope: Add up to three numbers and subtract up to three numbers within 1,00
 
 | Template | Widget | Scope reference (from the plan) | Level 1 | Level 2 | Level 3 | Level 4 | Remainder | Depends on |
 |---|---|---|---|---|---|---|---|---|
-| `y2-easy-add` | number-pad | Add within 1000 without regrouping (two sets of blocks: count them all) | sum 20-50 (whole tens, one pile) | sum 10-99 | sum 100-299 | sum 100-599 | n/a | - |
-| `y2-easy-sub` | number-pad | Subtract within 1000 without regrouping (blocks crossed out: how many are left?) | from 20-50 (whole tens; only the rods left are drawn) | from 10-99 | from 100-299 | from 100-599 | n/a | - |
-| `y2-easy-mul` | number-pad | Multiplication facts as equal groups (3 groups of 4: count them all) | groups of 2 or 3; up to 4 groups (no rings) | groups of 2-5; up to 5 groups | groups of 2-5 or 10; up to 6 groups | groups of 2-5 (up to 10 groups) or 10 (up to 5) | n/a | - |
-| `y2-easy-div` | number-pad | Division facts as equal sharing (how many in each group?) | one group of 1-5 to count (sharing is drawn from level 2) | share into 2 or 5 groups, 1-5 each | share into 2-5 groups, 1-6 each | share into 2-5 groups (1-10 each) or 10 groups (1-5 each) | exact division only | - |
+| `y2-easy-add` | number-pad | Add within 1000 without regrouping (two sets of blocks: count them all) | sum 20-50 (whole tens, one pile) | sum 10-99 (the equation is drawn on about half) | sum 100-299 | sum 100-599 | n/a | - |
+| `y2-easy-sub` | number-pad | Subtract within 1000 without regrouping (blocks crossed out: how many are left?) | from 20-50 (whole tens; only the rods left are drawn) | from 10-99 (the equation is drawn on about half) | from 100-299 | from 100-599 | n/a | - |
+| `y2-easy-mul` | number-pad | Multiplication facts as equal groups (3 groups of 4: count them all) | groups of 2 or 3; up to 4 groups (no rings) | groups of 2-5; up to 5 groups (the equation is drawn on about half) | groups of 2-5 or 10; up to 6 groups | groups of 2-5 (up to 10 groups) or 10 (up to 5) | n/a | - |
+| `y2-easy-div` | number-pad | Division facts as equal sharing (how many in each group?) | one group of 1-5 to count (sharing is drawn from level 2) | share into 2 or 5 groups, 1-5 each (the equation is drawn on about half) | share into 2-5 groups, 1-6 each | share into 2-5 groups (1-10 each) or 10 groups (1-5 each) | exact division only | - |
 
 ### 3.0 Pecahan dan Perpuluhan / Fractions and Decimals (SK 3.1-3.3)
 

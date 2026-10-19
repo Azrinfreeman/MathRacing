@@ -1,6 +1,6 @@
 # Implementation plan: Tahap 2 shows the equation on some questions
 
-Status: **proposed, not started**. Prepared 2026-10-19.
+Status: **implemented** (DECISIONS #48; Year 1 equal groups was left out, see the decision). Prepared 2026-10-19.
 Request: "for level 2 questions make it the same as well, only visual, but this time include the text for the equation
 like 1 + 1 = ?, and make it like that randomly, with visual only."
 
