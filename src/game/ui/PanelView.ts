@@ -429,9 +429,30 @@ export class PanelView {
     // With the hint (after two wrong answers) the picture is rearranged into rows of 5 (DECISIONS #42).
     const visual = s.hintShown && q.hintVisual ? q.hintVisual : q.prompt.visual;
     if (!visual) return;
-    // Pictures only (DECISIONS #46): no sentence, no sum, no numeral. A small drawn badge says what to count.
+    // Pictures only (DECISIONS #46): no sentence and no numeral. A small drawn badge says what to count. The one
+    // exception is Tahap 2 (DECISIONS #48): a sum picked at random also shows its equation, and then the "?" in it
+    // replaces the badge.
     const cue = q.prompt.cue ?? 'none';
-    const parts = computePromptLayout(main, { hasExpression: false, hasCue: cue !== 'none' });
+    const equation = q.prompt.showExpression === true ? q.prompt.expression : undefined;
+    const parts = computePromptLayout(main, {
+      hasExpression: equation !== undefined,
+      hasCue: cue !== 'none',
+    });
+    if (parts.expression && equation !== undefined) {
+      this.ctx.text(
+        'equation',
+        equation,
+        parts.expression.x + parts.expression.w / 2,
+        parts.expression.y + parts.expression.h / 2,
+        {
+          size: parts.expression.h * 0.85,
+          color: THEME.ink,
+          bold: true,
+          maxWidth: parts.expression.w * 0.96,
+          minSize: 12,
+        },
+      );
+    }
     if (parts.cue) drawCue(this.ctx, cue, parts.cue);
     drawVisual(this.ctx, visual, parts.visual, 'pv');
   }

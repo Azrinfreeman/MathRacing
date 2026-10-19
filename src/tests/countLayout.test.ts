@@ -9,12 +9,12 @@ import { computePanelZones, computePromptLayout, computeStageLayout } from '../g
 
 const registry = getDefaultRegistry();
 
-/** The picture area PanelView gives a question: the sum line or the cue badge shares the prompt zone. */
+/** The picture area PanelView gives a question: the equation line (Tahap 2) or the cue badge shares the prompt zone. */
 function pictureArea(w: number, h: number, players: number, q: GeneratedQuestion): Rect {
   const panel = computeStageLayout(w, h, players).panels[0] as Rect;
   const prompt = computePanelZones(panel, { hasVisual: true, showAnswerField: true }).prompt;
   return computePromptLayout(prompt, {
-    hasExpression: (q.prompt.expression ?? '').trim().length > 0,
+    hasExpression: q.prompt.showExpression === true,
     hasCue: (q.prompt.cue ?? 'none') !== 'none',
   }).visual;
 }
@@ -60,11 +60,12 @@ describe('counting pictures stay countable (DECISIONS #42)', () => {
   });
 
   // Base-ten blocks for Year 2 levels 3-4 (up to 999 as two sets) are the one known tight case on a small
-  // tablet with 5 players: at least 4 px there, 6 px from 1280x800 up (DECISIONS #42).
+  // tablet with 5 players: at least 4 px there, 5 px at 1280x800 (5.4 px: the cue badge takes a strip at the
+  // left since #45, which this test used to hide by assuming a sum line), 6 px from 1920x1080 up (DECISIONS #42).
   it.each([
     [960, 540, 4],
     [1024, 600, 4],
-    [1280, 800, 6],
+    [1280, 800, 5],
     [1920, 1080, 6],
   ])('%ix%i, 5 players: counted things at least 6 px (blocks %i px)', (w, h, blockMin) => {
     const problems: string[] = [];

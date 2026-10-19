@@ -7,6 +7,7 @@ import {
   color,
   countAllHint,
   countPicture,
+  equationShown,
   fivesHint,
   framesHint,
   moneyItems,
@@ -67,7 +68,13 @@ const count = defineTemplate<CountP>({
 });
 
 const ONE_MORE_MAX: Record<Level, number> = { 1: 5, 2: 10, 3: 20, 4: 20 };
-type OneMoreP = { count: number; more: boolean; shape: ObjectShape; colorIdx: number };
+type OneMoreP = {
+  count: number;
+  more: boolean;
+  shape: ObjectShape;
+  colorIdx: number;
+  eq: boolean;
+};
 const oneMore = defineTemplate<OneMoreP>({
   id: 'y1-easy-one-more',
   topicId: N_TOPIC,
@@ -76,7 +83,7 @@ const oneMore = defineTemplate<OneMoreP>({
   scope: 'Name, count and write numbers (one more, one fewer)',
   levelNotes: [
     '1-5 objects (the result is drawn, to count)',
-    '1-10 objects',
+    '1-10 objects (the equation is drawn on about half)',
     '1-20 objects',
     '1-20 objects',
   ],
@@ -89,6 +96,7 @@ const oneMore = defineTemplate<OneMoreP>({
       more,
       shape: rng.pick(COUNT_SHAPES),
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
+      eq: equationShown(rng, level),
     };
   },
   build: (p, ctx) => {
@@ -116,6 +124,9 @@ const oneMore = defineTemplate<OneMoreP>({
     return numberBuilt({
       band: p.more ? 'one-more' : 'one-fewer',
       cue: p.more ? 'plus-one' : 'minus-one',
+      // Tahap 2 (DECISIONS #48): "4 + 1 = ?" is drawn on some of these questions
+      expression: `${p.count} ${p.more ? '+' : MINUS} 1 = ?`,
+      showExpression: p.eq,
       text: p.more
         ? tr(ctx, 'Tambah satu lagi. Berapa?', 'One more. How many?')
         : tr(ctx, 'Kurang satu. Berapa?', 'One fewer. How many?'),
@@ -138,7 +149,7 @@ const oneMore = defineTemplate<OneMoreP>({
   recompute: (p) => String(p.more ? p.count + 1 : p.count - 1),
   fixtures: [
     {
-      params: { count: 6, more: true, shape: 'star', colorIdx: 1 },
+      params: { count: 6, more: true, shape: 'star', colorIdx: 1, eq: false },
       expected: { answerText: '7' },
     },
   ],
@@ -150,7 +161,14 @@ const O_TOPIC = 'y1-operations';
 const O_SK = ['2.1-2.5'];
 const SUM_MAX: Record<Level, number> = { 1: 5, 2: 10, 3: 20, 4: 30 };
 
-type AddP = { a: number; b: number; shape: ObjectShape; colorA: number; colorB: number };
+type AddP = {
+  a: number;
+  b: number;
+  shape: ObjectShape;
+  colorA: number;
+  colorB: number;
+  eq: boolean;
+};
 const add = defineTemplate<AddP>({
   id: 'y1-easy-add',
   topicId: O_TOPIC,
@@ -159,7 +177,7 @@ const add = defineTemplate<AddP>({
   scope: 'Addition within 100 (two groups: count them all)',
   levelNotes: [
     'sum 2-5 (one row, two colours)',
-    'sum up to 10',
+    'sum up to 10 (the equation is drawn on about half)',
     'sum up to 20 in ten-frames',
     'sum up to 30 in ten-frames',
   ],
@@ -173,6 +191,7 @@ const add = defineTemplate<AddP>({
       shape: rng.pick(COUNT_SHAPES),
       colorA: rng.int(0, 2),
       colorB: rng.int(3, 5),
+      eq: equationShown(rng, level),
     };
   },
   build: (p, ctx) => {
@@ -190,6 +209,7 @@ const add = defineTemplate<AddP>({
       cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.a} + ${p.b} = ?`,
+      showExpression: p.eq,
       visual,
       answer: p.a + p.b,
       hint: ctx.level === 1 ? countAllHint(ctx) : fivesHint(ctx),
@@ -199,14 +219,14 @@ const add = defineTemplate<AddP>({
   recompute: (p) => String(p.a + p.b),
   fixtures: [
     {
-      params: { a: 3, b: 2, shape: 'circle', colorA: 0, colorB: 3 },
+      params: { a: 3, b: 2, shape: 'circle', colorA: 0, colorB: 3, eq: false },
       level: 1,
       expected: { answerText: '5', expression: '3 + 2 = ?' },
     },
   ],
 });
 
-type SubP = { a: number; b: number; shape: ObjectShape; colorIdx: number };
+type SubP = { a: number; b: number; shape: ObjectShape; colorIdx: number; eq: boolean };
 const sub = defineTemplate<SubP>({
   id: 'y1-easy-sub',
   topicId: O_TOPIC,
@@ -215,7 +235,7 @@ const sub = defineTemplate<SubP>({
   scope: 'Subtraction within 100 (some crossed out: how many are left?)',
   levelNotes: [
     'from 2-5 (only what is left is drawn)',
-    'from up to 10',
+    'from up to 10 (the equation is drawn on about half)',
     'from up to 20 in ten-frames',
     'from up to 30 in ten-frames',
   ],
@@ -227,6 +247,7 @@ const sub = defineTemplate<SubP>({
       b: rng.int(1, a - 1),
       shape: rng.pick(COUNT_SHAPES),
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
+      eq: equationShown(rng, level),
     };
   },
   build: (p, ctx) => {
@@ -245,6 +266,7 @@ const sub = defineTemplate<SubP>({
       cue: 'count',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${p.a} ${MINUS} ${p.b} = ?`,
+      showExpression: p.eq,
       visual,
       answer: p.a - p.b,
       hint: left
@@ -256,7 +278,7 @@ const sub = defineTemplate<SubP>({
   recompute: (p) => String(p.a - p.b),
   fixtures: [
     {
-      params: { a: 5, b: 2, shape: 'star', colorIdx: 0 },
+      params: { a: 5, b: 2, shape: 'star', colorIdx: 0, eq: false },
       level: 1,
       expected: { answerText: '3', expression: `5 ${MINUS} 2 = ?` },
     },

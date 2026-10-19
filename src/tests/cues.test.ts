@@ -205,3 +205,75 @@ describe('Tahap 1 shows plain pictures, no operators (DECISIONS #47)', () => {
     expect(faded).toBe(2);
   });
 });
+
+describe('Tahap 2 may show the equation (DECISIONS #48)', () => {
+  const SUMS = [
+    'y1-easy-add',
+    'y1-easy-sub',
+    'y1-easy-one-more',
+    'y2-easy-add',
+    'y2-easy-sub',
+    'y2-easy-mul',
+    'y2-easy-div',
+  ];
+
+  function generate(templateId: string, level: Level, i: number, tag = 'eq'): GeneratedQuestion {
+    return registry.generate({
+      templateId,
+      rng: new SeededRng(`${tag}:${templateId}:${level}:${i}`),
+      level,
+      language: 'bm',
+      questionId: 'e',
+    });
+  }
+
+  /** "a + b = ?" with + − × ÷ evaluates to the accepted answer. */
+  function evaluate(expression: string): number {
+    const m = /^(\d+) ([+−×÷]) (\d+) = \?$/.exec(expression);
+    if (!m) throw new Error(`unreadable equation: ${expression}`);
+    const a = Number(m[1]);
+    const b = Number(m[3]);
+    return { '+': a + b, '−': a - b, '×': a * b, '÷': a / b }[m[2] as '+' | '−' | '×' | '÷'];
+  }
+
+  it('is drawn on about half of the level 2 sums, and on none at other levels', () => {
+    for (const id of SUMS) {
+      let shown = 0;
+      for (let i = 0; i < 400; i++) if (generate(id, 2, i).prompt.showExpression === true) shown++;
+      expect(shown / 400, id).toBeGreaterThan(0.4);
+      expect(shown / 400, id).toBeLessThan(0.6);
+      for (const level of [1, 3, 4] as Level[])
+        for (let i = 0; i < 100; i++)
+          expect(generate(id, level, i).prompt.showExpression, `${id} L${level}`).toBeUndefined();
+    }
+  });
+
+  it('shows an equation whose value is the accepted answer', () => {
+    for (const id of SUMS) {
+      for (let i = 0; i < 200; i++) {
+        const q = generate(id, 2, i);
+        if (q.prompt.showExpression !== true) continue;
+        expect(q.prompt.expression, id).toBeDefined();
+        expect(String(evaluate(q.prompt.expression ?? '')), id).toBe(q.acceptedAnswer.value);
+      }
+    }
+  });
+
+  it('repeats for the same seed', () => {
+    for (const id of SUMS)
+      for (let i = 0; i < 20; i++)
+        expect(generate(id, 2, i).prompt.showExpression).toBe(
+          generate(id, 2, i).prompt.showExpression,
+        );
+  });
+
+  it('only sums can show one, and the equation replaces the badge in the layout', () => {
+    everyQuestion((q) => {
+      if (q.prompt.showExpression === true) expect(SUMS).toContain(q.templateId);
+    });
+    const zone = { x: 0, y: 0, w: 300, h: 150 };
+    const l = computePromptLayout(zone, { hasExpression: true, hasCue: true });
+    expect(l.expression).not.toBeNull();
+    expect(l.cue).toBeNull();
+  });
+});

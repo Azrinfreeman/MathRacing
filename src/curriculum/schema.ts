@@ -63,6 +63,8 @@ export type PromptModel = {
   text: string;
   /** Large mathematical expression shown prominently, e.g. "36 + 14 = ?". */
   expression?: string;
+  /** The pupil panel draws `expression` above the picture (Tahap 2 only, DECISIONS #48); otherwise it stays data. */
+  showExpression?: boolean;
   /** Unit shown beside a numeric input (e.g. "sen", "RM", "ml"); never part of the typed value. */
   unit?: string;
   /** What the pupil panel draws instead of `text`, which stays for teachers and screen readers. */
@@ -211,6 +213,8 @@ export function validateGeneratedQuestion(q: GeneratedQuestion): string[] {
   ) {
     p.push(`prompt expression looks broken: ${q.prompt.expression}`);
   }
+  if (q.prompt.showExpression === true && !hasText(q.prompt.expression))
+    p.push('showExpression is set but there is no expression');
   if (q.prompt.cue === undefined || !CUES.includes(q.prompt.cue))
     p.push(`prompt cue ${String(q.prompt.cue)} invalid`);
   if (q.prompt.visual) p.push(...validateVisual(q.prompt.visual).map((m) => `prompt visual: ${m}`));

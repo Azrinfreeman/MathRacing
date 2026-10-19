@@ -1,3 +1,4 @@
+import type { Rng } from '../../game/core/SeededRng';
 import type { BuildContext, Level, QuestionTemplate } from '../schema';
 import type { JoinMark, ObjectGroup, ObjectShape, Shape2D, VisualModel } from '../visual';
 import { OBJECT_COLORS, SHAPE2D_SIDES } from '../text/vocab';
@@ -45,6 +46,17 @@ export function framesHint(picture: VisualModel): VisualModel | undefined {
 /** The help for a Tahap 1 picture: nothing to work out, just count every one (DECISIONS #47). */
 export function countAllHint(ctx: BuildContext): string {
   return tr(ctx, 'Kira semua gambar.', 'Count all the pictures.');
+}
+
+/** How often a Tahap 2 sum also shows its equation above the picture (DECISIONS #48). */
+export const EQUATION_CHANCE = 0.5;
+
+/**
+ * Random choice, made in `sample` so a seeded session repeats it: does this question show "3 + 2 = ?"? Only at level 2,
+ * and the random stream is touched only there, so levels 1, 3 and 4 draw exactly the numbers they drew before.
+ */
+export function equationShown(rng: Rng, level: Level): boolean {
+  return level === 2 && rng.chance(EQUATION_CHANCE);
 }
 
 export function fivesHint(ctx: BuildContext): string {

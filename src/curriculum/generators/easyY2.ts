@@ -3,7 +3,14 @@ import type { BlockSet, ObjectShape } from '../visual';
 import { blockValue } from '../visual';
 import { FRUITS, OBJECT_COLORS, PETS, text } from '../text/vocab';
 import { numberBuilt } from './builders';
-import { COUNT_SHAPES, color, countAllHint, moneyItems, shapeCountTemplate } from './easyShared';
+import {
+  COUNT_SHAPES,
+  color,
+  countAllHint,
+  equationShown,
+  moneyItems,
+  shapeCountTemplate,
+} from './easyShared';
 import { DIVIDE, MINUS, TIMES, defineTemplate, tr } from './helpers';
 
 /**
@@ -76,14 +83,19 @@ const O_TOPIC = 'y2-operations';
 const O_SK = ['2.1-2.4'];
 
 /** Split every digit of a total into two addends, so the sum never regroups; both addends are at least 1. */
-type AddP = { a: Blocks; b: Blocks };
+type AddP = { a: Blocks; b: Blocks; eq: boolean };
 const add = defineTemplate<AddP>({
   id: 'y2-easy-add',
   topicId: O_TOPIC,
   widget: 'number-pad',
   sk: O_SK,
   scope: 'Add within 1000 without regrouping (two sets of blocks: count them all)',
-  levelNotes: ['sum 20-50 (whole tens, one pile)', 'sum 10-99', 'sum 100-299', 'sum 100-599'],
+  levelNotes: [
+    'sum 20-50 (whole tens, one pile)',
+    'sum 10-99 (the equation is drawn on about half)',
+    'sum 100-299',
+    'sum 100-599',
+  ],
   arithmetic: true,
   sample: (rng, level) => {
     for (let guard = 0; guard < 50; guard++) {
@@ -97,11 +109,11 @@ const add = defineTemplate<AddP>({
       const [ao, bo] = split(total.o);
       const a = { h: ah, t: at, o: ao };
       const b = { h: bh, t: bt, o: bo };
-      if (value(a) > 0 && value(b) > 0) return { a, b };
+      if (value(a) > 0 && value(b) > 0) return { a, b, eq: equationShown(rng, level) };
     }
     return level === 1
-      ? { a: { h: 0, t: 1, o: 0 }, b: { h: 0, t: 1, o: 0 } }
-      : { a: { h: 0, t: 1, o: 2 }, b: { h: 0, t: 1, o: 3 } };
+      ? { a: { h: 0, t: 1, o: 0 }, b: { h: 0, t: 1, o: 0 }, eq: false }
+      : { a: { h: 0, t: 1, o: 2 }, b: { h: 0, t: 1, o: 3 }, eq: equationShown(rng, level) };
   },
   build: (p, ctx) =>
     numberBuilt({
@@ -109,6 +121,7 @@ const add = defineTemplate<AddP>({
       cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${value(p.a)} + ${value(p.b)} = ?`,
+      showExpression: p.eq,
       visual: {
         kind: 'base-ten',
         sets: [toSet(p.a), toSet(p.b)],
@@ -121,7 +134,7 @@ const add = defineTemplate<AddP>({
   recompute: (p) => String(value(p.a) + value(p.b)),
   fixtures: [
     {
-      params: { a: { h: 0, t: 2, o: 3 }, b: { h: 0, t: 1, o: 4 } },
+      params: { a: { h: 0, t: 2, o: 3 }, b: { h: 0, t: 1, o: 4 }, eq: false },
       level: 1,
       expected: { answerText: '37', expression: '23 + 14 = ?' },
     },
@@ -129,7 +142,7 @@ const add = defineTemplate<AddP>({
 });
 
 /** Cross out part of each place (never more than drawn), so nothing needs regrouping. */
-type SubP = { a: Blocks; c: Blocks };
+type SubP = { a: Blocks; c: Blocks; eq: boolean };
 const sub = defineTemplate<SubP>({
   id: 'y2-easy-sub',
   topicId: O_TOPIC,
@@ -138,7 +151,7 @@ const sub = defineTemplate<SubP>({
   scope: 'Subtract within 1000 without regrouping (blocks crossed out: how many are left?)',
   levelNotes: [
     'from 20-50 (whole tens; only the rods left are drawn)',
-    'from 10-99',
+    'from 10-99 (the equation is drawn on about half)',
     'from 100-299',
     'from 100-599',
   ],
@@ -147,11 +160,11 @@ const sub = defineTemplate<SubP>({
     for (let guard = 0; guard < 50; guard++) {
       const a = sampleBlocks(rng, level, ARITH_HUNDREDS[level]);
       const c = { h: rng.int(0, a.h), t: rng.int(0, a.t), o: rng.int(0, a.o) };
-      if (value(c) > 0 && value(a) - value(c) > 0) return { a, c };
+      if (value(c) > 0 && value(a) - value(c) > 0) return { a, c, eq: equationShown(rng, level) };
     }
     return level === 1
-      ? { a: { h: 0, t: 3, o: 0 }, c: { h: 0, t: 1, o: 0 } }
-      : { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 } };
+      ? { a: { h: 0, t: 3, o: 0 }, c: { h: 0, t: 1, o: 0 }, eq: false }
+      : { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 }, eq: equationShown(rng, level) };
   },
   build: (p, ctx) =>
     numberBuilt({
@@ -159,6 +172,7 @@ const sub = defineTemplate<SubP>({
       cue: 'count',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${value(p.a)} ${MINUS} ${value(p.c)} = ?`,
+      showExpression: p.eq,
       // Tahap 1 (DECISIONS #47): only the rods that are left, nothing crossed out
       visual:
         ctx.level === 1
@@ -177,7 +191,7 @@ const sub = defineTemplate<SubP>({
   recompute: (p) => String(value(p.a) - value(p.c)),
   fixtures: [
     {
-      params: { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 } },
+      params: { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 }, eq: false },
       level: 1,
       expected: { answerText: '23', expression: `35 ${MINUS} 12 = ?` },
     },
@@ -190,7 +204,7 @@ const MUL: Record<Level, { sizes: number[]; maxGroups: number }> = {
   3: { sizes: [2, 3, 4, 5, 10], maxGroups: 6 },
   4: { sizes: [2, 3, 4, 5, 10], maxGroups: 10 },
 };
-type MulP = { groups: number; size: number; shape: ObjectShape; colorIdx: number };
+type MulP = { groups: number; size: number; shape: ObjectShape; colorIdx: number; eq: boolean };
 const mul = defineTemplate<MulP>({
   id: 'y2-easy-mul',
   topicId: O_TOPIC,
@@ -199,7 +213,7 @@ const mul = defineTemplate<MulP>({
   scope: 'Multiplication facts as equal groups (3 groups of 4: count them all)',
   levelNotes: [
     'groups of 2 or 3; up to 4 groups (no rings)',
-    'groups of 2-5; up to 5 groups',
+    'groups of 2-5; up to 5 groups (the equation is drawn on about half)',
     'groups of 2-5 or 10; up to 6 groups',
     'groups of 2-5 (up to 10 groups) or 10 (up to 5)',
   ],
@@ -212,6 +226,7 @@ const mul = defineTemplate<MulP>({
       size,
       shape: rng.pick(COUNT_SHAPES),
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
+      eq: equationShown(rng, level),
     };
   },
   build: (p, ctx) =>
@@ -220,6 +235,7 @@ const mul = defineTemplate<MulP>({
       cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${p.groups} ${TIMES} ${p.size} = ?`,
+      showExpression: p.eq,
       visual: {
         kind: 'equal-groups',
         groups: p.groups,
@@ -239,7 +255,7 @@ const mul = defineTemplate<MulP>({
   recompute: (p) => String(p.groups * p.size),
   fixtures: [
     {
-      params: { groups: 3, size: 4, shape: 'circle', colorIdx: 0 },
+      params: { groups: 3, size: 4, shape: 'circle', colorIdx: 0, eq: false },
       level: 2,
       expected: { answerText: '12', expression: `3 ${TIMES} 4 = ?` },
     },
@@ -252,7 +268,7 @@ const DIV: Record<Level, { groups: number[]; maxEach: number }> = {
   3: { groups: [2, 3, 4, 5], maxEach: 6 },
   4: { groups: [2, 3, 4, 5, 10], maxEach: 10 },
 };
-type DivP = { groups: number; each: number; shape: ObjectShape; colorIdx: number };
+type DivP = { groups: number; each: number; shape: ObjectShape; colorIdx: number; eq: boolean };
 const div = defineTemplate<DivP>({
   id: 'y2-easy-div',
   topicId: O_TOPIC,
@@ -261,7 +277,7 @@ const div = defineTemplate<DivP>({
   scope: 'Division facts as equal sharing (how many in each group?)',
   levelNotes: [
     'one group of 1-5 to count (sharing is drawn from level 2)',
-    'share into 2 or 5 groups, 1-5 each',
+    'share into 2 or 5 groups, 1-5 each (the equation is drawn on about half)',
     'share into 2-5 groups, 1-6 each',
     'share into 2-5 groups (1-10 each) or 10 groups (1-5 each)',
   ],
@@ -274,6 +290,7 @@ const div = defineTemplate<DivP>({
       each: rng.int(1, groupCount === 10 ? 5 : DIV[level].maxEach),
       shape: rng.pick(COUNT_SHAPES),
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
+      eq: equationShown(rng, level),
     };
   },
   build: (p, ctx) => {
@@ -296,6 +313,7 @@ const div = defineTemplate<DivP>({
       cue: 'each',
       text: tr(ctx, 'Berapa dalam setiap kumpulan?', 'How many in each group?'),
       expression: `${p.groups * p.each} ${DIVIDE} ${p.groups} = ?`,
+      showExpression: p.eq,
       visual: {
         kind: 'equal-groups',
         groups: p.groups,
@@ -310,7 +328,7 @@ const div = defineTemplate<DivP>({
   recompute: (p) => String(p.each),
   fixtures: [
     {
-      params: { groups: 3, each: 4, shape: 'star', colorIdx: 0 },
+      params: { groups: 3, each: 4, shape: 'star', colorIdx: 0, eq: false },
       level: 3,
       expected: { answerText: '4', expression: `12 ${DIVIDE} 3 = ?` },
     },

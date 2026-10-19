@@ -13,6 +13,8 @@ type NumberBuild = {
   band: string;
   text: string;
   expression?: string;
+  /** Draw `expression` on the pupil panel (Tahap 2, DECISIONS #48). */
+  showExpression?: boolean;
   unit?: string;
   /** Word-free badge for the pupil panel; `none` when the picture alone is clear. */
   cue: Cue;
@@ -35,6 +37,7 @@ export function numberBuilt(o: NumberBuild): BuiltQuestion {
     acceptedAnswer: { kind: 'number', value },
   };
   if (o.expression !== undefined) built.prompt.expression = o.expression;
+  if (o.showExpression === true && o.expression !== undefined) built.prompt.showExpression = true;
   if (o.unit !== undefined) built.prompt.unit = o.unit;
   if (o.visual !== undefined) built.prompt.visual = o.visual;
   if (o.hint !== undefined) built.hint = o.hint;
