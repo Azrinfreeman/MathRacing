@@ -135,7 +135,7 @@
 - `app.test.ts` (680): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `countLayout.test.ts` (96): counting pictures stay countable (DECISIONS #42)
 - `cruise.test.ts` (209): cruise movement
-- `cues.test.ts` (204): picture-first questions (DECISIONS #45), Tahap 1 shows plain pictures, no operators (DECISIONS #47)
+- `cues.test.ts` (207): picture-first questions (DECISIONS #45), Tahap 1 shows plain pictures, no operators (DECISIONS #47)
 - `curriculum.test.ts` (391): curriculum registry, number words
 - `helpers.ts` (6): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
