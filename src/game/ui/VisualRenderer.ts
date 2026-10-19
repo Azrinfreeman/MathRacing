@@ -36,16 +36,16 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
       drawBaseTen(ctx, v.sets, v.crossed, area, v.join);
       break;
     case 'equal-groups':
-      drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area, v.plain);
+      drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area, v.plain, v.focus);
       break;
     case 'clock':
-      drawClock(ctx, v.hour, v.minute, area);
+      drawClock(ctx, v.hour, v.minute, area, v.hands);
       break;
     case 'money':
       drawMoney(ctx, v.items, area);
       break;
     case 'shape2d':
-      drawShape2D(ctx.g, v.shape, area, v.color ?? '#2e86de');
+      drawShape2D(ctx.g, v.shape, area, v.color ?? '#2e86de', v.corners === true);
       break;
     case 'shape3d':
       drawShape3D(ctx, v.shape, area, v.color ?? '#3b82f6');
@@ -347,23 +347,40 @@ function drawEqualGroups(
   color: string,
   area: Rect,
   plain = false,
+  focus = false,
 ): void {
   const layout = equalGroupLayout(groups, perGroup, area);
-  for (const grp of layout.groups) {
+  layout.groups.forEach((grp, gi) => {
     const r = grp.rect;
+    const faded = focus && gi > 0;
     if (!plain) {
       ctx.g.fillStyle(0xf1f5f9, 1);
       ctx.g.fillRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
-      ctx.g.lineStyle(Math.max(1.5, layout.cell * 0.1), 0x64748b, 1);
+      ctx.g.lineStyle(
+        Math.max(1.5, layout.cell * (focus && gi === 0 ? 0.16 : 0.1)),
+        focus && gi === 0 ? 0xf97316 : 0x64748b,
+        1,
+      );
       ctx.g.strokeRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
     }
     for (const p of grp.cells) drawObject(ctx.g, shape, p.x, p.y, layout.cell * 0.36, color);
-  }
+    if (faded) {
+      // the groups that are not asked about: veiled, so the one bright ring is the thing to count
+      ctx.g.fillStyle(0xffffff, 0.72);
+      ctx.g.fillRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+    }
+  });
 }
 
 // --------------------------------------------------------------------------------------------- clock
 
-function drawClock(ctx: DrawContext, hour: number, minute: number, area: Rect): void {
+function drawClock(
+  ctx: DrawContext,
+  hour: number,
+  minute: number,
+  area: Rect,
+  hands?: 'hour' | 'minute',
+): void {
   const { g } = ctx;
   const c = center(area);
   const r = (Math.min(area.w, area.h) / 2) * 0.96;
@@ -395,20 +412,24 @@ function drawClock(ctx: DrawContext, hour: number, minute: number, area: Rect): 
   }
   const hourAngle = (((hour % 12) + minute / 60) * Math.PI) / 6;
   const minuteAngle = (minute * Math.PI) / 30;
-  g.lineStyle(Math.max(3, r * 0.1), 0x0f172a, 1);
-  g.lineBetween(
-    c.x,
-    c.y,
-    c.x + Math.sin(hourAngle) * r * 0.48,
-    c.y - Math.cos(hourAngle) * r * 0.48,
-  );
-  g.lineStyle(Math.max(2, r * 0.06), 0x1d4ed8, 1);
-  g.lineBetween(
-    c.x,
-    c.y,
-    c.x + Math.sin(minuteAngle) * r * 0.78,
-    c.y - Math.cos(minuteAngle) * r * 0.78,
-  );
+  if (hands !== 'minute') {
+    g.lineStyle(Math.max(3, r * 0.1), 0x0f172a, 1);
+    g.lineBetween(
+      c.x,
+      c.y,
+      c.x + Math.sin(hourAngle) * r * 0.48,
+      c.y - Math.cos(hourAngle) * r * 0.48,
+    );
+  }
+  if (hands !== 'hour') {
+    g.lineStyle(Math.max(2, r * 0.06), 0x1d4ed8, 1);
+    g.lineBetween(
+      c.x,
+      c.y,
+      c.x + Math.sin(minuteAngle) * r * 0.78,
+      c.y - Math.cos(minuteAngle) * r * 0.78,
+    );
+  }
   g.fillStyle(0x0f172a, 1);
   g.fillCircle(c.x, c.y, r * 0.06);
 }

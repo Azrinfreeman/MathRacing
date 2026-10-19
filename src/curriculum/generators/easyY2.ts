@@ -310,7 +310,7 @@ const div = defineTemplate<DivP>({
     }
     return numberBuilt({
       band: `share-${p.groups}`,
-      cue: 'each',
+      cue: 'count',
       text: tr(ctx, 'Berapa dalam setiap kumpulan?', 'How many in each group?'),
       expression: `${p.groups * p.each} ${DIVIDE} ${p.groups} = ?`,
       showExpression: p.eq,
@@ -320,6 +320,8 @@ const div = defineTemplate<DivP>({
         perGroup: p.each,
         shape: p.shape,
         color: color(p.colorIdx),
+        // DECISIONS #49: the first group is ringed and bright, the rest are veiled: count what is in the ring
+        focus: true,
       },
       answer: p.each,
       hint: tr(ctx, 'Kira satu kumpulan sahaja.', 'Count just one group.'),
@@ -359,24 +361,22 @@ const fractionParts = defineTemplate<PartsP>({
   build: (p, ctx) =>
     numberBuilt({
       band: `d${p.den}`,
-      cue: p.askShaded ? 'shaded' : 'parts',
+      cue: 'count',
       text: p.askShaded
         ? tr(ctx, 'Berapa bahagian berwarna?', 'How many parts are coloured?')
         : tr(ctx, 'Berapa bahagian semuanya?', 'How many parts altogether?'),
+      // DECISIONS #49: "all the parts" is drawn with every part coloured, so both questions are "count the
+      // coloured parts" and the picture alone says what to count
       visual: {
         kind: 'fraction',
-        numerator: p.num,
+        numerator: p.askShaded ? p.num : p.den,
         denominator: p.den,
         style: p.pie ? 'pie' : 'bar',
       },
       answer: p.askShaded ? p.num : p.den,
       hint: p.askShaded
         ? tr(ctx, 'Kira bahagian yang berwarna sahaja.', 'Count only the coloured parts.')
-        : tr(
-            ctx,
-            'Kira setiap bahagian, berwarna atau tidak.',
-            'Count every part, coloured or not.',
-          ),
+        : tr(ctx, 'Kira setiap bahagian.', 'Count every part.'),
     }),
   recompute: (p) => String(p.askShaded ? p.num : p.den),
   fixtures: [
@@ -455,15 +455,16 @@ const clock = defineTemplate<ClockP>({
   build: (p, ctx) =>
     numberBuilt({
       band: p.minute === 0 ? 'hour' : 'minutes-5',
-      cue: p.minute === 0 ? 'hour' : 'minute',
+      cue: 'count',
       text:
         p.minute === 0
           ? tr(ctx, 'Pukul berapa?', 'What hour is it?')
           : tr(ctx, 'Berapa minit?', 'How many minutes past?'),
+      // DECISIONS #49: only the hand to read is drawn, so the picture is the question
       visual:
         p.minute === 0
-          ? { kind: 'clock', hour: p.hour, minute: 0 }
-          : { kind: 'clock', hour: p.hour, minute: p.minute, fives: true },
+          ? { kind: 'clock', hour: p.hour, minute: 0, hands: 'hour' }
+          : { kind: 'clock', hour: p.hour, minute: p.minute, fives: true, hands: 'minute' },
       answer: p.minute === 0 ? p.hour : p.minute,
       hint:
         p.minute === 0

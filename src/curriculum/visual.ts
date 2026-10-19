@@ -51,11 +51,17 @@ export type VisualModel =
       shape: ObjectShape;
       color: string;
       plain?: boolean;
+      /** Only the first group is bright and ringed in orange; the others are faded (DECISIONS #49). */
+      focus?: boolean;
     }
-  /** `fives` labels the minute marks 5, 10, ... 55 around the face. */
-  | { kind: 'clock'; hour: number; minute: number; fives?: boolean }
+  /**
+   * `fives` labels the minute marks 5, 10, ... 55 around the face. `hands` draws only the hand to read, so the
+   * picture is the question (DECISIONS #49); without it both hands are drawn.
+   */
+  | { kind: 'clock'; hour: number; minute: number; fives?: boolean; hands?: 'hour' | 'minute' }
   | { kind: 'money'; items: MoneyItem[] }
-  | { kind: 'shape2d'; shape: Shape2D; color?: string }
+  /** `corners` puts a dot on every corner (DECISIONS #49): the sides and the corners are the same count. */
+  | { kind: 'shape2d'; shape: Shape2D; color?: string; corners?: boolean }
   | { kind: 'shape3d'; shape: Shape3D; color?: string }
   | { kind: 'net'; shape: Exclude<Shape3D, 'sphere'> }
   /** Fraction of a bar or pie. `shaded` lists the shaded part indices (0-based). */

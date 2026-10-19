@@ -31,32 +31,9 @@ export function pickText(language: Language, text: LocalText): string {
  * A word-free badge drawn beside the picture in place of an instruction (DECISIONS #45). `none` means the picture
  * (or the unit chip on the answer field) already says what to type.
  */
-export type Cue =
-  | 'none'
-  | 'count'
-  | 'plus-one'
-  | 'minus-one'
-  | 'shaded'
-  | 'parts'
-  | 'sides'
-  | 'corners'
-  | 'hour'
-  | 'minute'
-  | 'each';
+export type Cue = 'none' | 'count';
 
-export const CUES: readonly Cue[] = [
-  'none',
-  'count',
-  'plus-one',
-  'minus-one',
-  'shaded',
-  'parts',
-  'sides',
-  'corners',
-  'hour',
-  'minute',
-  'each',
-];
+export const CUES: readonly Cue[] = ['none', 'count'];
 
 export type PromptModel = {
   /** Short instruction, kept brief to limit reading burden. */

@@ -209,6 +209,7 @@ export function drawShape2D(
   shape: Shape2D,
   box: { x: number; y: number; w: number; h: number },
   colorHex: string,
+  corners = false,
 ): void {
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
@@ -216,6 +217,18 @@ export function drawShape2D(
   const fill = hexToNumber(colorHex);
   const stroke = 0x0f172a;
   const lw = Math.max(2, s * 0.03);
+  /** The polygon, with a dot on every corner when the corners are to be counted. */
+  const poly = (
+    pts: readonly { x: number; y: number }[],
+    f: number,
+    st: number,
+    w: number,
+  ): void => {
+    drawPolygon(g, pts, f, st, w);
+    if (!corners) return;
+    g.fillStyle(0xf97316, 1);
+    for (const p of pts) g.fillCircle(p.x, p.y, s * 0.045);
+  };
   switch (shape) {
     case 'circle':
       g.fillStyle(fill, 1);
@@ -225,8 +238,7 @@ export function drawShape2D(
       break;
     case 'square': {
       const h = s * 0.86;
-      drawPolygon(
-        g,
+      poly(
         [
           { x: cx - h / 2, y: cy - h / 2 },
           { x: cx + h / 2, y: cy - h / 2 },
@@ -242,8 +254,7 @@ export function drawShape2D(
     case 'rectangle': {
       const w = Math.min(box.w * 0.94, s * 1.5);
       const h = w * 0.55;
-      drawPolygon(
-        g,
+      poly(
         [
           { x: cx - w / 2, y: cy - h / 2 },
           { x: cx + w / 2, y: cy - h / 2 },
@@ -257,8 +268,7 @@ export function drawShape2D(
       break;
     }
     case 'triangle':
-      drawPolygon(
-        g,
+      poly(
         [
           { x: cx, y: cy - s * 0.47 },
           { x: cx + s * 0.55, y: cy + s * 0.4 },
@@ -270,13 +280,13 @@ export function drawShape2D(
       );
       break;
     case 'pentagon':
-      drawPolygon(g, regularPolygon(cx, cy + s * 0.03, s * 0.5, 5), fill, stroke, lw);
+      poly(regularPolygon(cx, cy + s * 0.03, s * 0.5, 5), fill, stroke, lw);
       break;
     case 'hexagon':
-      drawPolygon(g, regularPolygon(cx, cy, s * 0.5, 6, 0), fill, stroke, lw);
+      poly(regularPolygon(cx, cy, s * 0.5, 6, 0), fill, stroke, lw);
       break;
     case 'octagon':
-      drawPolygon(g, regularPolygon(cx, cy, s * 0.5, 8, Math.PI / 8), fill, stroke, lw);
+      poly(regularPolygon(cx, cy, s * 0.5, 8, Math.PI / 8), fill, stroke, lw);
       break;
   }
 }

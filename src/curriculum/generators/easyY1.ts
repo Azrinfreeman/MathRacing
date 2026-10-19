@@ -117,13 +117,19 @@ const oneMore = defineTemplate<OneMoreP>({
         hintVisual: framesHint(result),
       });
     }
-    const visual = countPicture(
-      [{ count: p.count, shape: p.shape, color: color(p.colorIdx) }],
-      p.count > 10,
-    );
+    // DECISIONS #49: the change is drawn, so there is no badge to decode. One more is one extra object of another
+    // colour after a "+"; one fewer is one object crossed out. The pupil counts what the picture shows.
+    const start = { count: p.count, shape: p.shape, color: color(p.colorIdx) };
+    const visual = p.more
+      ? countPicture(
+          [start, { count: 1, shape: p.shape, color: color(p.colorIdx + 3) }],
+          p.count > 10,
+          'plus',
+        )
+      : countPicture([{ ...start, crossed: 1 }], p.count > 10);
     return numberBuilt({
       band: p.more ? 'one-more' : 'one-fewer',
-      cue: p.more ? 'plus-one' : 'minus-one',
+      cue: 'count',
       // Tahap 2 (DECISIONS #48): "4 + 1 = ?" is drawn on some of these questions
       expression: `${p.count} ${p.more ? '+' : MINUS} 1 = ?`,
       showExpression: p.eq,
@@ -133,16 +139,8 @@ const oneMore = defineTemplate<OneMoreP>({
       visual,
       answer,
       hint: p.more
-        ? tr(
-            ctx,
-            'Kira semua, kemudian sebut nombor seterusnya.',
-            'Count them, then say the next number.',
-          )
-        : tr(
-            ctx,
-            'Kira semua, kemudian sebut nombor sebelumnya.',
-            'Count them, then say the number before.',
-          ),
+        ? fivesHint(ctx)
+        : tr(ctx, 'Kira yang tidak dipangkah sahaja.', 'Count only the ones not crossed out.'),
       hintVisual: framesHint(visual),
     });
   },
@@ -420,9 +418,10 @@ const clockHour = defineTemplate<HourP>({
   build: (p, ctx) =>
     numberBuilt({
       band: 'hour',
-      cue: 'hour',
+      cue: 'count',
       text: tr(ctx, 'Pukul berapa?', 'What hour is it?'),
-      visual: { kind: 'clock', hour: p.hour, minute: 0 },
+      // DECISIONS #49: only the short hand is drawn, so there is one thing to read
+      visual: { kind: 'clock', hour: p.hour, minute: 0, hands: 'hour' },
       answer: p.hour,
       hint: tr(
         ctx,

@@ -93,15 +93,8 @@ function expectPictureMatchesQuestion(q: GeneratedQuestion): void {
   switch (visual.kind) {
     case 'objects':
     case 'ten-frames':
-      if (q.templateId === 'y1-easy-one-more' && q.difficultyBand !== 'count-after') {
-        const delta =
-          q.language === 'bm'
-            ? q.prompt.text.startsWith('Tambah')
-            : q.prompt.text.startsWith('One more');
-        expect(answer).toBe((visualTotal(visual) ?? 0) + (delta ? 1 : -1));
-      } else {
-        expect(answer).toBe(visualTotal(visual));
-      }
+      // the change is drawn (DECISIONS #49): the picture holds exactly what is counted
+      expect(answer).toBe(visualTotal(visual));
       break;
     case 'base-ten':
     case 'money':

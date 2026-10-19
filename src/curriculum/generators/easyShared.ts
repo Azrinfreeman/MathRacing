@@ -93,12 +93,13 @@ export function shapeCountTemplate(o: {
     build: (p, ctx) =>
       numberBuilt({
         band: p.ask,
-        cue: p.ask === 'sides' ? 'sides' : 'corners',
+        cue: 'count',
         text:
           p.ask === 'sides'
             ? tr(ctx, 'Berapa sisi?', 'How many sides?')
             : tr(ctx, 'Berapa bucu?', 'How many corners?'),
-        visual: { kind: 'shape2d', shape: p.shape, color: color(p.colorIdx) },
+        // DECISIONS #49: a dot on every corner; sides and corners are the same number, so one picture fits both
+        visual: { kind: 'shape2d', shape: p.shape, color: color(p.colorIdx), corners: true },
         answer: SHAPE2D_SIDES[p.shape],
         hint:
           p.ask === 'sides'

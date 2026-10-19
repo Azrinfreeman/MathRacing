@@ -51,20 +51,8 @@ describe('picture-first questions (DECISIONS #45)', () => {
       const band = q.difficultyBand;
       const t = q.templateId;
       const fail = (m: string): number => problems.push(`${t} ${band}: ${m}`);
-      if (band === 'one-more' && cue !== 'plus-one') fail('one more needs +1');
-      if (band === 'one-fewer' && cue !== 'minus-one') fail('one fewer needs -1');
-      if (band === 'sides' && cue !== 'sides') fail('sides cue');
-      if (band === 'corners' && cue !== 'corners') fail('corners cue');
-      if (t.endsWith('fraction-parts') && cue !== 'shaded' && cue !== 'parts') fail('fraction cue');
-      if (t.endsWith('clock') || t.endsWith('clock-hour')) {
-        const hour = band === 'hour';
-        if (cue !== (hour ? 'hour' : 'minute')) fail('clock cue');
-      }
-      // a sum is a picture too (DECISIONS #46): the badge says "count", never a printed sum
-      if (['add', 'sub', 'mul'].some((k) => t.endsWith(`-${k}`)) && cue !== 'count')
-        fail('sum badge');
-      if (t.endsWith('-div') && cue !== (band === 'count-one' ? 'count' : 'each'))
-        fail('share badge');
+      // DECISIONS #49: the one badge is the "?"; what to count is said by the picture
+      if (cue !== 'count') fail(`badge ${String(cue)}`);
     });
     expect([...new Set(problems)]).toEqual([]);
   });
@@ -165,8 +153,6 @@ describe('Tahap 1 shows plain pictures, no operators (DECISIONS #47)', () => {
       if (v.kind === 'base-ten' && (v.join === 'plus' || v.crossed))
         problems.push(`${t}: plus or crossed blocks`);
       if (v.kind === 'equal-groups' && !v.plain) problems.push(`${t}: rings`);
-      if (['plus-one', 'minus-one', 'each'].includes(q.prompt.cue ?? ''))
-        problems.push(`${t}: badge`);
     });
     expect(n).toBeGreaterThan(2000);
     expect([...new Set(problems)]).toEqual([]);
@@ -275,5 +261,77 @@ describe('Tahap 2 may show the equation (DECISIONS #48)', () => {
     const l = computePromptLayout(zone, { hasExpression: true, hasCue: true });
     expect(l.expression).not.toBeNull();
     expect(l.cue).toBeNull();
+  });
+});
+
+describe('the picture is the question, with one "?" badge (DECISIONS #49)', () => {
+  function generate(templateId: string, level: Level, i: number): GeneratedQuestion {
+    return registry.generate({
+      templateId,
+      rng: new SeededRng(`pq:${templateId}:${level}:${i}`),
+      level,
+      language: 'bm',
+      questionId: 'p',
+    });
+  }
+  const levels: Level[] = [2, 3, 4];
+
+  it('one more shows one extra object after a plus; one fewer shows one crossed out', () => {
+    let more = 0;
+    let fewer = 0;
+    for (const level of levels) {
+      for (let i = 0; i < 100; i++) {
+        const q = generate('y1-easy-one-more', level, i);
+        const v = q.prompt.visual;
+        if (v?.kind !== 'objects' && v?.kind !== 'ten-frames')
+          throw new Error('not a counted picture');
+        if (q.difficultyBand === 'one-more') {
+          more++;
+          expect(v.join).toBe('plus');
+          expect(v.groups.map((g) => g.count).at(-1)).toBe(1);
+        } else {
+          fewer++;
+          expect(v.groups).toHaveLength(1);
+          expect(v.groups[0]?.crossed).toBe(1);
+        }
+        expect(String(visualTotal(v))).toBe(q.acceptedAnswer.value);
+      }
+    }
+    expect(more).toBeGreaterThan(50);
+    expect(fewer).toBeGreaterThan(50);
+  });
+
+  it('draws only the clock hand that is read', () => {
+    for (const level of [1, 2, 3, 4] as Level[])
+      for (const id of ['y1-easy-clock-hour', 'y2-easy-clock']) {
+        for (let i = 0; i < 40; i++) {
+          const q = generate(id, level, i);
+          const v = q.prompt.visual;
+          if (v?.kind !== 'clock') throw new Error('not a clock');
+          expect(v.hands).toBe(v.minute === 0 ? 'hour' : 'minute');
+        }
+      }
+  });
+
+  it('puts a dot on every corner of a flat shape', () => {
+    for (const id of ['y1-easy-shape-count', 'y2-easy-shape-count'])
+      for (const level of [1, 2, 3, 4] as Level[])
+        for (let i = 0; i < 40; i++) {
+          const v = generate(id, level, i).prompt.visual;
+          expect(v?.kind === 'shape2d' && v.corners).toBe(true);
+        }
+  });
+
+  it('rings only the first group when sharing, and colours every part for "all the parts"', () => {
+    for (const level of levels)
+      for (let i = 0; i < 40; i++) {
+        const d = generate('y2-easy-div', level, i).prompt.visual;
+        expect(d?.kind === 'equal-groups' && d.focus).toBe(true);
+        const q = generate('y2-easy-fraction-parts', level, i);
+        const f = q.prompt.visual;
+        if (f?.kind !== 'fraction') throw new Error('not a fraction');
+        // the number of coloured parts is the answer, whichever of the two questions was asked
+        expect(String(f.numerator)).toBe(q.acceptedAnswer.value);
+      }
   });
 });
