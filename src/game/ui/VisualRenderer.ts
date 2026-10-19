@@ -1,5 +1,6 @@
 import type {
   BlockSet,
+  JoinMark,
   MeasuringUnit,
   MoneyItem,
   ObjectGroup,
@@ -35,7 +36,7 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
       drawBaseTen(ctx, v.sets, v.crossed, area, v.join);
       break;
     case 'equal-groups':
-      drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area);
+      drawEqualGroups(ctx, v.groups, v.perGroup, v.shape, v.color, area, v.plain);
       break;
     case 'clock':
       drawClock(ctx, v.hour, v.minute, area);
@@ -68,7 +69,7 @@ export function drawVisual(ctx: DrawContext, v: VisualModel, area: Rect, key: st
       drawCup(ctx, v.ml, v.maxMl, v.step ?? 100, area);
       break;
     case 'pictograph':
-      drawPictograph(ctx, v.rows, area, v.highlight);
+      drawPictograph(ctx, v.rows, area, v.highlight, v.dimOthers);
       break;
     case 'bar-chart':
       drawBarChart(ctx, v, area);
@@ -108,7 +109,7 @@ function bestGrid(
 const JOIN_GAP = 0.1;
 function drawJoin(
   ctx: DrawContext,
-  join: 'plus' | undefined,
+  join: JoinMark | undefined,
   n: number,
   area: Rect,
   cellW: number,
@@ -132,8 +133,12 @@ function drawObjects(
   ctx: DrawContext,
   groups: readonly ObjectGroup[],
   area: Rect,
-  join?: 'plus',
+  join?: JoinMark,
 ): void {
+  if (join === 'merge') {
+    drawMergedObjects(ctx, groups, area);
+    return;
+  }
   const n = groups.length;
   const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.03) : 0;
   const cellW = (area.w - gap * (n - 1)) / n;
@@ -173,6 +178,34 @@ function drawObjects(
   drawJoin(ctx, join, n, area, cellW, gap);
 }
 
+/**
+ * Tahap 1 (DECISIONS #47): the groups are one row of things, told apart only by colour: no frame, no gap, no sign.
+ * Counting them all is the whole question.
+ */
+function drawMergedObjects(ctx: DrawContext, groups: readonly ObjectGroup[], area: Rect): void {
+  const items = groups.flatMap((group) =>
+    Array.from({ length: group.count }, () => ({ shape: group.shape, color: group.color })),
+  );
+  if (items.length === 0) return;
+  const inner = inset(area, Math.min(area.w, area.h) * 0.05);
+  const { cols, rows, size } = bestGrid(items.length, inner.w, inner.h);
+  const x0 = inner.x + (inner.w - cols * size) / 2;
+  const y0 = inner.y + (inner.h - rows * size) / 2;
+  items.forEach((item, i) => {
+    const r = Math.floor(i / cols);
+    const inRow = r === rows - 1 ? items.length - r * cols : cols;
+    const rowOffset = ((cols - inRow) * size) / 2;
+    drawObject(
+      ctx.g,
+      item.shape,
+      x0 + rowOffset + (i % cols) * size + size / 2,
+      y0 + r * size + size / 2,
+      size * 0.38,
+      item.color,
+    );
+  });
+}
+
 /** A grey X over a crossed-out thing ("Berapa tinggal?"): neutral, never red. */
 function drawCross(ctx: DrawContext, x: number, y: number, r: number): void {
   ctx.g.lineStyle(Math.max(2, r * 0.28), 0x475569, 1);
@@ -186,10 +219,10 @@ function drawTenFrames(
   ctx: DrawContext,
   groups: readonly ObjectGroup[],
   area: Rect,
-  join?: 'plus',
+  join?: JoinMark,
 ): void {
   const n = groups.length;
-  const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.04) : 0;
+  const gap = n > 1 ? area.w * (join === 'plus' ? JOIN_GAP : 0.04) : 0;
   const cellW = (area.w - gap * (n - 1)) / n;
   groups.forEach((group, gi) => {
     const box: Rect = { x: area.x + gi * (cellW + gap), y: area.y, w: cellW, h: area.h };
@@ -224,11 +257,15 @@ function drawBaseTen(
   sets: readonly BlockSet[],
   crossed: BlockSet | undefined,
   area: Rect,
-  join?: 'plus',
+  join?: JoinMark,
 ): void {
+  if (join === 'merge') {
+    drawMergedBlocks(ctx, sets, area);
+    return;
+  }
   const { g } = ctx;
   const n = sets.length;
-  const gap = n > 1 ? area.w * (join ? JOIN_GAP : 0.05) : 0;
+  const gap = n > 1 ? area.w * (join === 'plus' ? JOIN_GAP : 0.05) : 0;
   const setW = (area.w - gap * (n - 1)) / n;
   sets.forEach((set, si) => {
     const box: Rect = { x: area.x + si * (setW + gap), y: area.y, w: setW, h: area.h };
@@ -270,6 +307,38 @@ function drawBaseTen(
   drawJoin(ctx, join, n, area, setW, gap);
 }
 
+const BLOCK_FILL_2 = 0xfbbf24;
+
+/** Tahap 1 (DECISIONS #47): the sets are one pile of blocks; the second set only has another colour. */
+function drawMergedBlocks(ctx: DrawContext, sets: readonly BlockSet[], area: Rect): void {
+  const { g } = ctx;
+  const total = sets.reduce(
+    (n, b) => ({ hundreds: n.hundreds + b.hundreds, tens: n.tens + b.tens, ones: n.ones + b.ones }),
+    { hundreds: 0, tens: 0, ones: 0 },
+  );
+  const first = sets[0] ?? total;
+  const firstCount = { hundred: first.hundreds, ten: first.tens, one: first.ones };
+  const { blocks, unit } = blockLayout(total, inset(area, Math.min(area.w, area.h) * 0.06));
+  const line = Math.max(1, unit * 0.08);
+  const seen = { hundred: 0, ten: 0, one: 0 };
+  for (const b of blocks) {
+    const second = seen[b.kind]++ >= firstCount[b.kind];
+    const r = b.rect;
+    g.fillStyle(second ? BLOCK_FILL_2 : BLOCK_FILL, 1);
+    g.fillRect(r.x, r.y, r.w, r.h);
+    g.lineStyle(line, BLOCK_EDGE, 1);
+    g.strokeRect(r.x, r.y, r.w, r.h);
+    if (b.kind !== 'one' && unit > 5) {
+      g.lineStyle(Math.max(1, line * 0.5), BLOCK_EDGE, 0.45);
+      for (let k = 1; k < 10; k++)
+        g.lineBetween(r.x, r.y + (r.h * k) / 10, r.x + r.w, r.y + (r.h * k) / 10);
+      if (b.kind === 'hundred')
+        for (let k = 1; k < 10; k++)
+          g.lineBetween(r.x + (r.w * k) / 10, r.y, r.x + (r.w * k) / 10, r.y + r.h);
+    }
+  }
+}
+
 function drawEqualGroups(
   ctx: DrawContext,
   groups: number,
@@ -277,14 +346,17 @@ function drawEqualGroups(
   shape: ObjectShape,
   color: string,
   area: Rect,
+  plain = false,
 ): void {
   const layout = equalGroupLayout(groups, perGroup, area);
   for (const grp of layout.groups) {
     const r = grp.rect;
-    ctx.g.fillStyle(0xf1f5f9, 1);
-    ctx.g.fillRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
-    ctx.g.lineStyle(Math.max(1.5, layout.cell * 0.1), 0x64748b, 1);
-    ctx.g.strokeRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+    if (!plain) {
+      ctx.g.fillStyle(0xf1f5f9, 1);
+      ctx.g.fillRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+      ctx.g.lineStyle(Math.max(1.5, layout.cell * 0.1), 0x64748b, 1);
+      ctx.g.strokeRoundedRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) * 0.3);
+    }
     for (const p of grp.cells) drawObject(ctx.g, shape, p.x, p.y, layout.cell * 0.36, color);
   }
 }
@@ -877,11 +949,16 @@ function drawCup(ctx: DrawContext, ml: number, maxMl: number, step: number, area
 
 // -------------------------------------------------------------------------------------------- data
 
+/** Rows and bars that are not asked about (Tahap 1) are mixed 75% towards white. */
+const FADE = 0.75;
+const fadedHex = (hex: string): string => `#${lighten(hex, FADE).toString(16).padStart(6, '0')}`;
+
 function drawPictograph(
   ctx: DrawContext,
   rows: readonly { label: string; count: number; shape: ObjectShape; color: string }[],
   area: Rect,
   highlight?: number,
+  dimOthers = false,
 ): void {
   const { g } = ctx;
   const rowH = area.h / rows.length;
@@ -894,8 +971,17 @@ function drawPictograph(
       g.fillStyle(0xf1f5f9, 1);
       g.fillRect(area.x, area.y + ri * rowH, area.w, rowH);
     }
+    // Tahap 1 (DECISIONS #47): rows that are not asked about fade, so the eye lands on one row
+    const faded = dimOthers && highlight !== undefined && highlight !== ri;
     for (let i = 0; i < row.count; i++) {
-      drawObject(g, row.shape, area.x + labelW + symW * i + symW / 2, cy, size * 0.42, row.color);
+      drawObject(
+        g,
+        row.shape,
+        area.x + labelW + symW * i + symW / 2,
+        cy,
+        size * 0.42,
+        faded ? fadedHex(row.color) : row.color,
+      );
     }
     if (highlight === ri) {
       // a pointer at the asked row, so the question needs no sentence
@@ -943,7 +1029,9 @@ function drawBarChart(
     const bw = bandW * 0.56;
     const bx = plot.x + i * bandW + (bandW - bw) / 2;
     const bh = (plot.h * cat.value) / v.max;
-    g.fillStyle(hexToNumber(cat.color ?? '#2563eb'), 1);
+    const faded = v.dimOthers && v.highlight !== undefined && v.highlight !== i;
+    const barColor = cat.color ?? '#2563eb';
+    g.fillStyle(faded ? lighten(barColor, FADE) : hexToNumber(barColor), 1);
     g.fillRect(bx, plot.y + plot.h - bh, bw, bh);
     g.lineStyle(Math.max(1, per * 0.08), 0xffffff, 0.9);
     for (let k = 1; k < cat.value / v.scale; k++)

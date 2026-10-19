@@ -1,5 +1,5 @@
 import type { BuildContext, Level, QuestionTemplate } from '../schema';
-import type { ObjectGroup, ObjectShape, Shape2D, VisualModel } from '../visual';
+import type { JoinMark, ObjectGroup, ObjectShape, Shape2D, VisualModel } from '../visual';
 import { OBJECT_COLORS, SHAPE2D_SIDES } from '../text/vocab';
 import { numberBuilt } from './builders';
 import { defineTemplate, tr } from './helpers';
@@ -23,7 +23,7 @@ export function color(i: number): string {
 }
 
 /** Loose objects for small counts, ten-frames once the picture holds more than 20 things or at `frames`. */
-export function countPicture(groups: ObjectGroup[], frames: boolean, join?: 'plus'): VisualModel {
+export function countPicture(groups: ObjectGroup[], frames: boolean, join?: JoinMark): VisualModel {
   const total = groups.reduce((n, g) => n + g.count, 0);
   const extra = join ? { join } : {};
   return frames || total > 20
@@ -37,9 +37,14 @@ export function countPicture(groups: ObjectGroup[], frames: boolean, join?: 'plu
  */
 export function framesHint(picture: VisualModel): VisualModel | undefined {
   if (picture.kind !== 'objects') return undefined;
-  return picture.join
-    ? { kind: 'ten-frames', groups: picture.groups, join: picture.join }
+  return picture.join === 'plus'
+    ? { kind: 'ten-frames', groups: picture.groups, join: 'plus' }
     : { kind: 'ten-frames', groups: picture.groups };
+}
+
+/** The help for a Tahap 1 picture: nothing to work out, just count every one (DECISIONS #47). */
+export function countAllHint(ctx: BuildContext): string {
+  return tr(ctx, 'Kira semua gambar.', 'Count all the pictures.');
 }
 
 export function fivesHint(ctx: BuildContext): string {

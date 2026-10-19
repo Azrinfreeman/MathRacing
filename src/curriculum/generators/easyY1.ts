@@ -5,6 +5,7 @@ import { numberBuilt } from './builders';
 import {
   COUNT_SHAPES,
   color,
+  countAllHint,
   countPicture,
   fivesHint,
   framesHint,
@@ -73,18 +74,41 @@ const oneMore = defineTemplate<OneMoreP>({
   widget: 'number-pad',
   sk: N_SK,
   scope: 'Name, count and write numbers (one more, one fewer)',
-  levelNotes: ['1-5 objects', '1-10 objects', '1-20 objects', '1-20 objects'],
+  levelNotes: [
+    '1-5 objects (the result is drawn, to count)',
+    '1-10 objects',
+    '1-20 objects',
+    '1-20 objects',
+  ],
   arithmetic: true,
   sample: (rng, level) => {
     const more = rng.chance(0.5);
     return {
-      count: rng.int(more ? 1 : 2, ONE_MORE_MAX[level]),
+      // level 1 draws the result, so a "one more" start leaves room for it within 5
+      count: rng.int(more ? 1 : 2, more && level === 1 ? 4 : ONE_MORE_MAX[level]),
       more,
       shape: rng.pick(COUNT_SHAPES),
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
     };
   },
   build: (p, ctx) => {
+    const answer = p.more ? p.count + 1 : p.count - 1;
+    if (ctx.level === 1) {
+      // Tahap 1 (DECISIONS #47): just the group that results, to count; no +1 / -1 badge
+      const result = countPicture(
+        [{ count: answer, shape: p.shape, color: color(p.colorIdx) }],
+        false,
+      );
+      return numberBuilt({
+        band: 'count-after',
+        cue: 'count',
+        text: tr(ctx, 'Berapa?', 'How many?'),
+        visual: result,
+        answer,
+        hint: countAllHint(ctx),
+        hintVisual: framesHint(result),
+      });
+    }
     const visual = countPicture(
       [{ count: p.count, shape: p.shape, color: color(p.colorIdx) }],
       p.count > 10,
@@ -96,7 +120,7 @@ const oneMore = defineTemplate<OneMoreP>({
         ? tr(ctx, 'Tambah satu lagi. Berapa?', 'One more. How many?')
         : tr(ctx, 'Kurang satu. Berapa?', 'One fewer. How many?'),
       visual,
-      answer: p.more ? p.count + 1 : p.count - 1,
+      answer,
       hint: p.more
         ? tr(
             ctx,
@@ -134,7 +158,7 @@ const add = defineTemplate<AddP>({
   sk: O_SK,
   scope: 'Addition within 100 (two groups: count them all)',
   levelNotes: [
-    'sum 2-5',
+    'sum 2-5 (one row, two colours)',
     'sum up to 10',
     'sum up to 20 in ten-frames',
     'sum up to 30 in ten-frames',
@@ -158,7 +182,8 @@ const add = defineTemplate<AddP>({
         { count: p.b, shape: p.shape, color: color(p.colorB) },
       ],
       ctx.level >= 3,
-      'plus',
+      // Tahap 1 (DECISIONS #47): one row told apart by colour; the "+" sign starts at level 2
+      ctx.level === 1 ? 'merge' : 'plus',
     );
     return numberBuilt({
       band: `sum-${SUM_MAX[ctx.level]}`,
@@ -167,7 +192,7 @@ const add = defineTemplate<AddP>({
       expression: `${p.a} + ${p.b} = ?`,
       visual,
       answer: p.a + p.b,
-      hint: fivesHint(ctx),
+      hint: ctx.level === 1 ? countAllHint(ctx) : fivesHint(ctx),
       hintVisual: framesHint(visual),
     });
   },
@@ -189,7 +214,7 @@ const sub = defineTemplate<SubP>({
   sk: O_SK,
   scope: 'Subtraction within 100 (some crossed out: how many are left?)',
   levelNotes: [
-    'from 2-5',
+    'from 2-5 (only what is left is drawn)',
     'from up to 10',
     'from up to 20 in ten-frames',
     'from up to 30 in ten-frames',
@@ -205,8 +230,14 @@ const sub = defineTemplate<SubP>({
     };
   },
   build: (p, ctx) => {
+    // Tahap 1 (DECISIONS #47): only the things that are left, nothing crossed out
+    const left = ctx.level === 1;
     const visual = countPicture(
-      [{ count: p.a, crossed: p.b, shape: p.shape, color: color(p.colorIdx) }],
+      [
+        left
+          ? { count: p.a - p.b, shape: p.shape, color: color(p.colorIdx) }
+          : { count: p.a, crossed: p.b, shape: p.shape, color: color(p.colorIdx) },
+      ],
       ctx.level >= 3,
     );
     return numberBuilt({
@@ -216,7 +247,9 @@ const sub = defineTemplate<SubP>({
       expression: `${p.a} ${MINUS} ${p.b} = ?`,
       visual,
       answer: p.a - p.b,
-      hint: tr(ctx, 'Kira yang tidak dipangkah sahaja.', 'Count only the ones not crossed out.'),
+      hint: left
+        ? countAllHint(ctx)
+        : tr(ctx, 'Kira yang tidak dipangkah sahaja.', 'Count only the ones not crossed out.'),
       hintVisual: framesHint(visual),
     });
   },
@@ -232,6 +265,7 @@ const sub = defineTemplate<SubP>({
 
 const GROUP_SIZES: Record<Level, number[]> = { 1: [2], 2: [2, 5], 3: [2, 5, 10], 4: [2, 5, 10] };
 const GROUP_TOTAL: Record<Level, number> = { 1: 10, 2: 20, 3: 50, 4: 50 };
+
 type GroupsP = { size: number; groups: number; shape: ObjectShape; colorIdx: number };
 const groups = defineTemplate<GroupsP>({
   id: 'y1-easy-groups',
@@ -240,7 +274,7 @@ const groups = defineTemplate<GroupsP>({
   sk: O_SK,
   scope: 'Repeated addition in 2s, 5s and 10s (equal groups: count them all)',
   levelNotes: [
-    'groups of 2, up to 10',
+    'groups of 2, up to 10 (no rings)',
     'groups of 2 or 5, up to 20',
     'groups of 2, 5 or 10, up to 50',
     'groups of 2, 5 or 10, up to 50',
@@ -271,6 +305,8 @@ const groups = defineTemplate<GroupsP>({
         perGroup: p.size,
         shape: p.shape,
         color: color(p.colorIdx),
+        // Tahap 1 (DECISIONS #47): pairs set apart, no rings
+        ...(ctx.level === 1 ? { plain: true } : {}),
       },
       answer: p.groups * p.size,
       hint: tr(
@@ -444,7 +480,12 @@ const pictograph = defineTemplate<PictoP>({
   widget: 'number-pad',
   sk: ['7.1-7.2'],
   scope: 'Read a pictograph where one picture represents one item (count one row)',
-  levelNotes: ['3 rows, up to 5', '3 rows, up to 7', '4 rows, up to 9', '4 rows, up to 10'],
+  levelNotes: [
+    '3 rows, up to 5 (other rows faded)',
+    '3 rows, up to 7',
+    '4 rows, up to 9',
+    '4 rows, up to 10',
+  ],
   arithmetic: true,
   sample: (rng, level) => {
     const cfg = PICTO[level];
@@ -468,7 +509,12 @@ const pictograph = defineTemplate<PictoP>({
       band: `rows-${rows.length}`,
       cue: 'count',
       text: tr(ctx, `Berapa ${row.label.toLowerCase()}?`, `How many ${row.label.toLowerCase()}s?`),
-      visual: { kind: 'pictograph', rows, highlight: p.ask },
+      visual: {
+        kind: 'pictograph',
+        rows,
+        highlight: p.ask,
+        ...(ctx.level === 1 ? { dimOthers: true } : {}),
+      },
       answer: row.count,
       hint: tr(ctx, 'Kira gambar pada baris itu sahaja.', 'Count the pictures in that row only.'),
     });

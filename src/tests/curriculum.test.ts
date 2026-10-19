@@ -93,7 +93,7 @@ function expectPictureMatchesQuestion(q: GeneratedQuestion): void {
   switch (visual.kind) {
     case 'objects':
     case 'ten-frames':
-      if (q.templateId === 'y1-easy-one-more') {
+      if (q.templateId === 'y1-easy-one-more' && q.difficultyBand !== 'count-after') {
         const delta =
           q.language === 'bm'
             ? q.prompt.text.startsWith('Tambah')

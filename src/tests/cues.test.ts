@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getDefaultRegistry } from '../curriculum/registry';
+import { visualTotal } from '../curriculum/visual';
 import type { GeneratedQuestion, Level } from '../curriculum/schema';
 import { SeededRng } from '../game/core/SeededRng';
 import type { DrawContext } from '../game/ui/DrawContext';
@@ -62,7 +63,8 @@ describe('picture-first questions (DECISIONS #45)', () => {
       // a sum is a picture too (DECISIONS #46): the badge says "count", never a printed sum
       if (['add', 'sub', 'mul'].some((k) => t.endsWith(`-${k}`)) && cue !== 'count')
         fail('sum badge');
-      if (t.endsWith('-div') && cue !== 'each') fail('share badge');
+      if (t.endsWith('-div') && cue !== (band === 'count-one' ? 'count' : 'each'))
+        fail('share badge');
     });
     expect([...new Set(problems)]).toEqual([]);
   });
@@ -122,5 +124,84 @@ describe('picture-first questions (DECISIONS #45)', () => {
       expect(String(v.rows[v.highlight ?? -1]?.count)).toBe(q.acceptedAnswer.value);
     });
     expect(seen).toBeGreaterThan(0);
+  });
+});
+
+describe('Tahap 1 shows plain pictures, no operators (DECISIONS #47)', () => {
+  function levelOne(each: (q: GeneratedQuestion) => void): number {
+    let n = 0;
+    for (const pack of registry.allPacks()) {
+      for (const template of pack.templates) {
+        for (let i = 0; i < 200; i++) {
+          each(
+            registry.generate({
+              templateId: template.id,
+              rng: new SeededRng(`t1:${template.id}:${i}`),
+              level: 1,
+              language: i % 2 === 0 ? 'bm' : 'en',
+              questionId: 't',
+            }),
+          );
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
+  it('draws no plus sign, crossed-out things, rings or operator badges', () => {
+    const problems: string[] = [];
+    const n = levelOne((q) => {
+      const v = q.prompt.visual;
+      const t = q.templateId;
+      if (!v) {
+        problems.push(`${t}: no picture`);
+        return;
+      }
+      if (v.kind === 'objects' || v.kind === 'ten-frames') {
+        if (v.join === 'plus') problems.push(`${t}: plus sign`);
+        if (v.groups.some((g) => (g.crossed ?? 0) > 0)) problems.push(`${t}: crossed out`);
+      }
+      if (v.kind === 'base-ten' && (v.join === 'plus' || v.crossed))
+        problems.push(`${t}: plus or crossed blocks`);
+      if (v.kind === 'equal-groups' && !v.plain) problems.push(`${t}: rings`);
+      if (['plus-one', 'minus-one', 'each'].includes(q.prompt.cue ?? ''))
+        problems.push(`${t}: badge`);
+    });
+    expect(n).toBeGreaterThan(2000);
+    expect([...new Set(problems)]).toEqual([]);
+  });
+
+  it('keeps the old answers: the picture is exactly what is counted', () => {
+    const rodTemplates = ['y2-easy-blocks', 'y2-easy-add', 'y2-easy-sub'];
+    levelOne((q) => {
+      const v = q.prompt.visual;
+      if (!v) return;
+      if (['y1-easy-add', 'y1-easy-sub', 'y1-easy-one-more', 'y2-easy-div'].includes(q.templateId))
+        expect(String(visualTotal(v))).toBe(q.acceptedAnswer.value);
+      if (rodTemplates.includes(q.templateId) && v.kind === 'base-ten') {
+        expect(v.sets.every((b) => b.hundreds === 0 && b.ones === 0)).toBe(true);
+        expect(String(visualTotal(v))).toBe(q.acceptedAnswer.value);
+      }
+    });
+  });
+
+  it('fades every row and bar that is not asked about, and only at level 1', () => {
+    let faded = 0;
+    for (const level of [1, 2, 3, 4] as Level[]) {
+      for (const id of ['y1-easy-pictograph', 'y2-easy-bar-read']) {
+        const v = registry.generate({
+          templateId: id,
+          rng: new SeededRng(`dim:${id}:${level}`),
+          level,
+          language: 'bm',
+          questionId: 'd',
+        }).prompt.visual;
+        if (v?.kind !== 'pictograph' && v?.kind !== 'bar-chart') throw new Error('wrong picture');
+        expect(v.dimOthers === true).toBe(level === 1);
+        if (v.dimOthers) faded++;
+      }
+    }
+    expect(faded).toBe(2);
   });
 });

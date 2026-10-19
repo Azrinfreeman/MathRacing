@@ -4,6 +4,9 @@
  * Every visual is original vector art (no bitmap or third-party assets).
  */
 
+/** How two joined groups are drawn: with a "+" between them, or merged into one row (Tahap 1). */
+export type JoinMark = 'plus' | 'merge';
+
 export type ObjectShape = 'circle' | 'star' | 'square' | 'triangle' | 'diamond' | 'heart';
 export type MeasuringUnit = 'paperclip' | 'block' | 'cube';
 export type Shape2D =
@@ -28,14 +31,27 @@ export type ChartCategory = { label: string; value: number; color?: string };
 export type PatternItem = { shape: ObjectShape; color: string } | null; // null = the "?" slot
 
 export type VisualModel =
-  /** Countable objects. Several groups are drawn side by side. */
-  | { kind: 'objects'; groups: ObjectGroup[]; join?: 'plus' }
+  /**
+   * Countable objects. Several groups are drawn side by side; `join: 'plus'` puts a drawn "+" between them and
+   * `'merge'` (Tahap 1, DECISIONS #47) draws them as one row that only differs in colour.
+   */
+  | { kind: 'objects'; groups: ObjectGroup[]; join?: JoinMark }
   /** The same groups arranged in ten-frames (2 rows of 5), so larger counts are quick to count. */
-  | { kind: 'ten-frames'; groups: ObjectGroup[]; join?: 'plus' }
+  | { kind: 'ten-frames'; groups: ObjectGroup[]; join?: JoinMark }
   /** One or two sets of base-ten blocks; `crossed` blocks of the first set are drawn crossed out. */
-  | { kind: 'base-ten'; sets: BlockSet[]; crossed?: BlockSet; join?: 'plus' }
-  /** `groups` circled groups of `perGroup` objects (repeated addition, multiplication, sharing). */
-  | { kind: 'equal-groups'; groups: number; perGroup: number; shape: ObjectShape; color: string }
+  | { kind: 'base-ten'; sets: BlockSet[]; crossed?: BlockSet; join?: JoinMark }
+  /**
+   * `groups` circled groups of `perGroup` objects (repeated addition, multiplication, sharing). `plain` draws the
+   * groups spaced apart with no ring (Tahap 1).
+   */
+  | {
+      kind: 'equal-groups';
+      groups: number;
+      perGroup: number;
+      shape: ObjectShape;
+      color: string;
+      plain?: boolean;
+    }
   /** `fives` labels the minute marks 5, 10, ... 55 around the face. */
   | { kind: 'clock'; hour: number; minute: number; fives?: boolean }
   | { kind: 'money'; items: MoneyItem[] }
@@ -63,6 +79,8 @@ export type VisualModel =
       rows: { label: string; count: number; shape: ObjectShape; color: string }[];
       /** Index of the one row the question asks about, drawn with a pointer so no sentence is needed. */
       highlight?: number;
+      /** Draw the rows that are not asked about faded, so the eye lands on one row (Tahap 1). */
+      dimOthers?: boolean;
     }
   /** Vertical bar chart. Every value is a multiple of `scale`, so bars align with grid lines. */
   | {
@@ -74,6 +92,8 @@ export type VisualModel =
       yTitle?: string;
       /** Index of the one bar the question asks about, drawn with a pointer so no sentence is needed. */
       highlight?: number;
+      /** Draw the bars that are not asked about faded (Tahap 1). */
+      dimOthers?: boolean;
       /** Draw an arrow on one axis, used by the "which axis" question. */
       highlightAxis?: 'x' | 'y';
     }

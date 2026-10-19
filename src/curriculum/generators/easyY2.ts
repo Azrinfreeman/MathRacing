@@ -3,7 +3,7 @@ import type { BlockSet, ObjectShape } from '../visual';
 import { blockValue } from '../visual';
 import { FRUITS, OBJECT_COLORS, PETS, text } from '../text/vocab';
 import { numberBuilt } from './builders';
-import { COUNT_SHAPES, color, moneyItems, shapeCountTemplate } from './easyShared';
+import { COUNT_SHAPES, color, countAllHint, moneyItems, shapeCountTemplate } from './easyShared';
 import { DIVIDE, MINUS, TIMES, defineTemplate, tr } from './helpers';
 
 /**
@@ -21,7 +21,8 @@ function sampleBlocks(
   level: Level,
   maxHundreds = 9,
 ): Blocks {
-  if (level === 1) return { h: 0, t: rng.int(1, 4), o: rng.int(0, 9) };
+  // Tahap 1 (DECISIONS #47): whole tens only, so the pupil counts rods and nothing else
+  if (level === 1) return { h: 0, t: rng.int(2, 5), o: 0 };
   if (level === 2) return { h: 0, t: rng.int(1, 9), o: rng.int(0, 9) };
   if (level === 3)
     return { h: rng.int(1, Math.min(4, maxHundreds)), t: rng.int(0, 9), o: rng.int(0, 9) };
@@ -33,6 +34,11 @@ function sampleBlocks(
  * berapa?" (up to 299 and 599): every block stays large enough to count on a small tablet (DECISIONS #42).
  */
 const ARITH_HUNDREDS: Record<Level, number> = { 1: 0, 2: 0, 3: 2, 4: 5 };
+
+const ROD_HINT: LocalText = {
+  bm: 'Kira batang: setiap batang ialah 10.',
+  en: 'Count the rods: each rod is 10.',
+};
 
 const BLOCK_HINT: LocalText = {
   bm: 'Kira ratus, kemudian puluh, kemudian sa.',
@@ -48,7 +54,7 @@ const blocks = defineTemplate<BlocksP>({
   widget: 'number-pad',
   sk: ['1.1-1.5'],
   scope: 'Name and write numbers; place value (count base-ten blocks)',
-  levelNotes: ['10-49', '10-99', '100-499', '100-999'],
+  levelNotes: ['20-50 (whole tens)', '10-99', '100-499', '100-999'],
   arithmetic: true,
   sample: (rng, level) => sampleBlocks(rng, level),
   build: (p, ctx) =>
@@ -58,7 +64,7 @@ const blocks = defineTemplate<BlocksP>({
       text: tr(ctx, 'Nombor berapa?', 'What number is this?'),
       visual: { kind: 'base-ten', sets: [toSet(p)] },
       answer: value(p),
-      hint: text(ctx.language, BLOCK_HINT),
+      hint: text(ctx.language, ctx.level === 1 ? ROD_HINT : BLOCK_HINT),
     }),
   recompute: (p) => String(value(p)),
   fixtures: [{ params: { h: 1, t: 3, o: 6 }, level: 3, expected: { answerText: '136' } }],
@@ -77,7 +83,7 @@ const add = defineTemplate<AddP>({
   widget: 'number-pad',
   sk: O_SK,
   scope: 'Add within 1000 without regrouping (two sets of blocks: count them all)',
-  levelNotes: ['sum 10-49', 'sum 10-99', 'sum 100-299', 'sum 100-599'],
+  levelNotes: ['sum 20-50 (whole tens, one pile)', 'sum 10-99', 'sum 100-299', 'sum 100-599'],
   arithmetic: true,
   sample: (rng, level) => {
     for (let guard = 0; guard < 50; guard++) {
@@ -93,7 +99,9 @@ const add = defineTemplate<AddP>({
       const b = { h: bh, t: bt, o: bo };
       if (value(a) > 0 && value(b) > 0) return { a, b };
     }
-    return { a: { h: 0, t: 1, o: 2 }, b: { h: 0, t: 1, o: 3 } };
+    return level === 1
+      ? { a: { h: 0, t: 1, o: 0 }, b: { h: 0, t: 1, o: 0 } }
+      : { a: { h: 0, t: 1, o: 2 }, b: { h: 0, t: 1, o: 3 } };
   },
   build: (p, ctx) =>
     numberBuilt({
@@ -101,9 +109,14 @@ const add = defineTemplate<AddP>({
       cue: 'count',
       text: tr(ctx, 'Berapa semua?', 'How many altogether?'),
       expression: `${value(p.a)} + ${value(p.b)} = ?`,
-      visual: { kind: 'base-ten', sets: [toSet(p.a), toSet(p.b)], join: 'plus' },
+      visual: {
+        kind: 'base-ten',
+        sets: [toSet(p.a), toSet(p.b)],
+        // Tahap 1: one pile of rods in two colours; the "+" starts at level 2
+        join: ctx.level === 1 ? 'merge' : 'plus',
+      },
       answer: value(p.a) + value(p.b),
-      hint: text(ctx.language, BLOCK_HINT),
+      hint: text(ctx.language, ctx.level === 1 ? ROD_HINT : BLOCK_HINT),
     }),
   recompute: (p) => String(value(p.a) + value(p.b)),
   fixtures: [
@@ -123,7 +136,12 @@ const sub = defineTemplate<SubP>({
   widget: 'number-pad',
   sk: O_SK,
   scope: 'Subtract within 1000 without regrouping (blocks crossed out: how many are left?)',
-  levelNotes: ['from 10-49', 'from 10-99', 'from 100-299', 'from 100-599'],
+  levelNotes: [
+    'from 20-50 (whole tens; only the rods left are drawn)',
+    'from 10-99',
+    'from 100-299',
+    'from 100-599',
+  ],
   arithmetic: true,
   sample: (rng, level) => {
     for (let guard = 0; guard < 50; guard++) {
@@ -131,7 +149,9 @@ const sub = defineTemplate<SubP>({
       const c = { h: rng.int(0, a.h), t: rng.int(0, a.t), o: rng.int(0, a.o) };
       if (value(c) > 0 && value(a) - value(c) > 0) return { a, c };
     }
-    return { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 } };
+    return level === 1
+      ? { a: { h: 0, t: 3, o: 0 }, c: { h: 0, t: 1, o: 0 } }
+      : { a: { h: 0, t: 3, o: 5 }, c: { h: 0, t: 1, o: 2 } };
   },
   build: (p, ctx) =>
     numberBuilt({
@@ -139,13 +159,20 @@ const sub = defineTemplate<SubP>({
       cue: 'count',
       text: tr(ctx, 'Berapa tinggal?', 'How many are left?'),
       expression: `${value(p.a)} ${MINUS} ${value(p.c)} = ?`,
-      visual: { kind: 'base-ten', sets: [toSet(p.a)], crossed: toSet(p.c) },
+      // Tahap 1 (DECISIONS #47): only the rods that are left, nothing crossed out
+      visual:
+        ctx.level === 1
+          ? { kind: 'base-ten', sets: [toSet({ h: 0, t: p.a.t - p.c.t, o: 0 })] }
+          : { kind: 'base-ten', sets: [toSet(p.a)], crossed: toSet(p.c) },
       answer: value(p.a) - value(p.c),
-      hint: tr(
-        ctx,
-        'Kira blok yang tidak dipangkah sahaja.',
-        'Count only the blocks not crossed out.',
-      ),
+      hint:
+        ctx.level === 1
+          ? text(ctx.language, ROD_HINT)
+          : tr(
+              ctx,
+              'Kira blok yang tidak dipangkah sahaja.',
+              'Count only the blocks not crossed out.',
+            ),
     }),
   recompute: (p) => String(value(p.a) - value(p.c)),
   fixtures: [
@@ -158,7 +185,7 @@ const sub = defineTemplate<SubP>({
 });
 
 const MUL: Record<Level, { sizes: number[]; maxGroups: number }> = {
-  1: { sizes: [2, 5, 10], maxGroups: 5 },
+  1: { sizes: [2, 3], maxGroups: 4 },
   2: { sizes: [2, 3, 4, 5], maxGroups: 5 },
   3: { sizes: [2, 3, 4, 5, 10], maxGroups: 6 },
   4: { sizes: [2, 3, 4, 5, 10], maxGroups: 10 },
@@ -171,7 +198,7 @@ const mul = defineTemplate<MulP>({
   sk: O_SK,
   scope: 'Multiplication facts as equal groups (3 groups of 4: count them all)',
   levelNotes: [
-    'groups of 2, 5, 10; up to 5 groups',
+    'groups of 2 or 3; up to 4 groups (no rings)',
     'groups of 2-5; up to 5 groups',
     'groups of 2-5 or 10; up to 6 groups',
     'groups of 2-5 (up to 10 groups) or 10 (up to 5)',
@@ -199,6 +226,8 @@ const mul = defineTemplate<MulP>({
         perGroup: p.size,
         shape: p.shape,
         color: color(p.colorIdx),
+        // Tahap 1 (DECISIONS #47): groups set apart, no rings
+        ...(ctx.level === 1 ? { plain: true } : {}),
       },
       answer: p.groups * p.size,
       hint: tr(
@@ -231,7 +260,7 @@ const div = defineTemplate<DivP>({
   sk: O_SK,
   scope: 'Division facts as equal sharing (how many in each group?)',
   levelNotes: [
-    'share into 2 groups, 1-5 each',
+    'one group of 1-5 to count (sharing is drawn from level 2)',
     'share into 2 or 5 groups, 1-5 each',
     'share into 2-5 groups, 1-6 each',
     'share into 2-5 groups (1-10 each) or 10 groups (1-5 each)',
@@ -247,8 +276,22 @@ const div = defineTemplate<DivP>({
       colorIdx: rng.int(0, OBJECT_COLORS.length - 1),
     };
   },
-  build: (p, ctx) =>
-    numberBuilt({
+  build: (p, ctx) => {
+    if (ctx.level === 1) {
+      // Tahap 1 (DECISIONS #47): one group to count; sharing into groups is drawn from level 2
+      return numberBuilt({
+        band: 'count-one',
+        cue: 'count',
+        text: tr(ctx, 'Berapa?', 'How many?'),
+        visual: {
+          kind: 'objects',
+          groups: [{ count: p.each, shape: p.shape, color: color(p.colorIdx) }],
+        },
+        answer: p.each,
+        hint: countAllHint(ctx),
+      });
+    }
+    return numberBuilt({
       band: `share-${p.groups}`,
       cue: 'each',
       text: tr(ctx, 'Berapa dalam setiap kumpulan?', 'How many in each group?'),
@@ -262,7 +305,8 @@ const div = defineTemplate<DivP>({
       },
       answer: p.each,
       hint: tr(ctx, 'Kira satu kumpulan sahaja.', 'Count just one group.'),
-    }),
+    });
+  },
   recompute: (p) => String(p.each),
   fixtures: [
     {
@@ -526,7 +570,12 @@ const barRead = defineTemplate<BarP>({
   widget: 'number-pad',
   sk: ['8.1-8.2'],
   scope: 'Read a bar chart (how many pupils chose mango?)',
-  levelNotes: ['3 bars, up to 10', '4 bars, up to 10', '4 bars, up to 12', '5 bars, up to 15'],
+  levelNotes: [
+    '3 bars, up to 10 (other bars faded)',
+    '4 bars, up to 10',
+    '4 bars, up to 12',
+    '5 bars, up to 15',
+  ],
   arithmetic: true,
   sample: (rng, level) => {
     const cfg = CHART[level];
@@ -564,13 +613,10 @@ const barRead = defineTemplate<BarP>({
         scale: cfg.scale,
         max: cfg.max,
         highlight: p.ask,
+        ...(ctx.level === 1 ? { dimOthers: true } : {}),
       },
       answer: bar.value,
-      hint: tr(
-        ctx,
-        'Ikut hujung bar ke nombor di tepi.',
-        'Follow the top of the bar to the numbers.',
-      ),
+      hint: tr(ctx, 'Kira blok pada bar itu sahaja.', 'Count the blocks in that bar only.'),
     });
   },
   recompute: (p) => String(p.values[p.ask]),
