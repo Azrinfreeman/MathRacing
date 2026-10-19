@@ -4,6 +4,7 @@ Offline-first PWA maths racing game, 2-5 pupils on one touchscreen, KSSR Year 1-
 Phaser 4.2.1 + TypeScript 6.0.3 (pinned, do not bump) + Vite 8 + Vitest 5 + Playwright 1.63.
 Hard rules: works fully offline; no pupil data leaves the device; player names are never persisted in settings.
 Full file list with exports: `docs/REPO-MAP.md` (generated). Rationale for every rule: `docs/DECISIONS.md`.
+Two agents: Claude (lead: logic, data, platform) and Codex (UI/UX). Check `docs/AI_OWNERSHIP.md` before editing a file.
 
 ## Where things live (open only what the task needs)
 
