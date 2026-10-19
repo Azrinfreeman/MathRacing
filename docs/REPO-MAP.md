@@ -43,14 +43,14 @@
 - `blueprint.ts` (127): BlueprintConfig, QuestionSource, buildBlueprint, createQuestionSource, previewQuestions
 - `registry.ts` (239): CurriculumError, GenerationError, GenerateRequest, CurriculumRegistry, getDefaultRegistry
 - `schema.ts` (269): Year, Level, Language, WidgetKind, LEVELS, WIDGET_KINDS, JsonPrimitive, JsonValue, JsonObject, LocalText, pickText, Cue, CUES, PromptModel, +11 more
-- `visual.ts` (284): ObjectShape, MeasuringUnit, Shape2D, Shape3D, ObjectGroup, BlockSet, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, blockValue, visualTotal, moneyCount, +2 more
+- `visual.ts` (304): JoinMark, ObjectShape, MeasuringUnit, Shape2D, Shape3D, ObjectGroup, BlockSet, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, blockValue, visualTotal, +3 more
 
 ## src/curriculum/generators/
 
 - `builders.ts` (49): Y1_MAX, bandWithin, numberBuilt, clamp
-- `easyShared.ts` (108): COUNT_SHAPES, color, countPicture, framesHint, fivesHint, shapeCountTemplate, moneyItems
-- `easyY1.ts` (497): Y1_EASY_TEMPLATES
-- `easyY2.ts` (599): Y2_EASY_TEMPLATES
+- `easyShared.ts` (113): COUNT_SHAPES, color, countPicture, framesHint, countAllHint, fivesHint, shapeCountTemplate, moneyItems
+- `easyY1.ts` (543): Y1_EASY_TEMPLATES
+- `easyY2.ts` (645): Y2_EASY_TEMPLATES
 - `helpers.ts` (91): tr, TemplateDef, defineTemplate, isPrime, gcd, fingerprint, MINUS, TIMES, DIVIDE
 
 ## src/curriculum/packs/
@@ -91,7 +91,7 @@
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
 - `PanelView.ts` (667): PanelAction, PanelMode, PanelView
 - `TrackView.ts` (640): TrackPlayer, TrackView
-- `VisualRenderer.ts` (1010): drawVisual
+- `VisualRenderer.ts` (1098): drawVisual
 - `countLayout.ts` (169): tenFrameCells, BlockKind, PlacedBlock, blockLayout, equalGroupLayout
 - `cueIcons.ts` (186): drawCue, drawQuestionMark, drawSign, drawCheck, drawRetry, drawBulb
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
@@ -135,7 +135,7 @@
 - `app.test.ts` (680): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `countLayout.test.ts` (96): counting pictures stay countable (DECISIONS #42)
 - `cruise.test.ts` (209): cruise movement
-- `cues.test.ts` (126): picture-first questions (DECISIONS #45)
+- `cues.test.ts` (204): picture-first questions (DECISIONS #45), Tahap 1 shows plain pictures, no operators (DECISIONS #47)
 - `curriculum.test.ts` (391): curriculum registry, number words
 - `helpers.ts` (6): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership

@@ -1,6 +1,6 @@
 # Implementation plan: Tahap 1 shows plain pictures, no operators
 
-Status: **proposed, not implemented**. Prepared 2026-10-19.
+Status: **implemented** (DECISIONS #47). Prepared 2026-10-19.
 Request: "for tahap 1 questions, make the questions more direct and not complicated. Just display images that kids
 understand easily, instead of trying to show the operator in a visual form."
 
