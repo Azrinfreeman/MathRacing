@@ -1,6 +1,6 @@
 # Implementation plan: replace the confusing "one more / one fewer" badge
 
-Status: **proposed, not started**. Prepared 2026-10-20.
+Status: **implemented (DECISIONS #49; the owner asked for every badge to change, not only one more / one fewer)**. Prepared 2026-10-20.
 Request: the screenshot (Pemain 1, five purple stars, a white box with an orange dot and a dash) "is too complicated for
 the kid, even the adult tester; we don't understand what this question means. If you can come up with something better,
 or remove them entirely, that is good for Tahap 2."

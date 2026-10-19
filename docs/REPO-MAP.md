@@ -42,15 +42,15 @@
 - `answers.ts` (53): normalizeDecimal, senToRmText, AnswerEvaluation, evaluateAnswer, answerText
 - `blueprint.ts` (127): BlueprintConfig, QuestionSource, buildBlueprint, createQuestionSource, previewQuestions
 - `registry.ts` (239): CurriculumError, GenerationError, GenerateRequest, CurriculumRegistry, getDefaultRegistry
-- `schema.ts` (273): Year, Level, Language, WidgetKind, LEVELS, WIDGET_KINDS, JsonPrimitive, JsonValue, JsonObject, LocalText, pickText, Cue, CUES, PromptModel, +11 more
-- `visual.ts` (304): JoinMark, ObjectShape, MeasuringUnit, Shape2D, Shape3D, ObjectGroup, BlockSet, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, blockValue, visualTotal, +3 more
+- `schema.ts` (250): Year, Level, Language, WidgetKind, LEVELS, WIDGET_KINDS, JsonPrimitive, JsonValue, JsonObject, LocalText, pickText, Cue, CUES, PromptModel, +11 more
+- `visual.ts` (310): JoinMark, ObjectShape, MeasuringUnit, Shape2D, Shape3D, ObjectGroup, BlockSet, MoneyItem, ChartCategory, PatternItem, VisualModel, validateVisual, blockValue, visualTotal, +3 more
 
 ## src/curriculum/generators/
 
 - `builders.ts` (52): Y1_MAX, bandWithin, numberBuilt, clamp
-- `easyShared.ts` (125): COUNT_SHAPES, color, countPicture, framesHint, countAllHint, EQUATION_CHANCE, equationShown, fivesHint, shapeCountTemplate, moneyItems
-- `easyY1.ts` (565): Y1_EASY_TEMPLATES
-- `easyY2.ts` (663): Y2_EASY_TEMPLATES
+- `easyShared.ts` (126): COUNT_SHAPES, color, countPicture, framesHint, countAllHint, EQUATION_CHANCE, equationShown, fivesHint, shapeCountTemplate, moneyItems
+- `easyY1.ts` (564): Y1_EASY_TEMPLATES
+- `easyY2.ts` (664): Y2_EASY_TEMPLATES
 - `helpers.ts` (91): tr, TemplateDef, defineTemplate, isPrime, gcd, fingerprint, MINUS, TIMES, DIVIDE
 
 ## src/curriculum/packs/
@@ -91,14 +91,14 @@
 - `DrawContext.ts` (151): TextStyleLite, DrawContext, TextPool
 - `PanelView.ts` (688): PanelAction, PanelMode, PanelView
 - `TrackView.ts` (640): TrackPlayer, TrackView
-- `VisualRenderer.ts` (1098): drawVisual
+- `VisualRenderer.ts` (1119): drawVisual
 - `countLayout.ts` (169): tenFrameCells, BlockKind, PlacedBlock, blockLayout, equalGroupLayout
-- `cueIcons.ts` (186): drawCue, drawQuestionMark, drawSign, drawCheck, drawRetry, drawBulb
+- `cueIcons.ts` (93): drawCue, drawQuestionMark, drawSign, drawCheck, drawRetry, drawBulb
 - `geometry.ts` (59): Rect, rect, contains, inset, overlaps, center, gridCells, flowCells
 - `layout.ts` (147): StageLayout, trackShare, computeStageLayout, PanelZones, computePanelZones, PromptLayout, computePromptLayout
 - `motion.ts` (132): Direction, CarMotion
 - `racerShapes.ts` (799): Pose, STILL_POSE, Pt, RacerPart, OUTLINE_WIDTH, ANIMAL_OUTLINE, gaitPhase, racerKind, ANIMAL_COLORS, racerParts, partsBounds
-- `shapes.ts` (282): drawPolygon, regularPolygon, starPoints, drawSymbol, drawObject, drawShape2D
+- `shapes.ts` (292): drawPolygon, regularPolygon, starPoints, drawSymbol, drawObject, drawShape2D
 - `theme.ts` (50): FONT_FAMILY, THEME, hexToNumber, lighten, darken
 - `trackGeometry.ts` (84): CAR_TAIL, CAR_NOSE, TrackGeometry, computeTrackGeometry
 
@@ -135,8 +135,8 @@
 - `app.test.ts` (680): normalizeNames, main menu, setup steps, teacher settings, race flow, export and deletion, failure handling
 - `countLayout.test.ts` (97): counting pictures stay countable (DECISIONS #42)
 - `cruise.test.ts` (209): cruise movement
-- `cues.test.ts` (279): picture-first questions (DECISIONS #45), Tahap 1 shows plain pictures, no operators (DECISIONS #47), Tahap 2 may show the equation (DECISIONS #48)
-- `curriculum.test.ts` (391): curriculum registry, number words
+- `cues.test.ts` (337): picture-first questions (DECISIONS #45), Tahap 1 shows plain pictures, no operators (DECISIONS #47), Tahap 2 may show the equation (DECISIONS #48), the picture is the question, with one "?" badge (DECISIONS #49)
+- `curriculum.test.ts` (384): curriculum registry, number words
 - `helpers.ts` (6): correctSubmission
 - `inputOwnership.test.ts` (101): InputOwnership
 - `layout.test.ts` (194): geometry helpers, stage layout, player identity palette, menu screen colours (DECISIONS #43)
