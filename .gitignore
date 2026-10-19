@@ -21,3 +21,7 @@ output/apk/
 *.jks
 *.keystore
 keystore.properties
+
+# Private planning documents (kept local, not published)
+Claude_Code_Opus_Super_Prompt_MathRacing_JS.pdf
+output/pdf/
